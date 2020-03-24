@@ -1,0 +1,26 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "po4"
+author = "Kale Kundert"
+author-email = "kale@thekunderts.net"
+home-page = 'https://github.com/kalekundert/po4'
+requires-python = "~=3.8"
+requires = []
+classifiers = [
+  'Programming Language :: Python :: 3',
+  'License :: OSI Approved :: MIT License',
+]
+
+
+
+[tool.flit.metadata.urls]
+'Documentation' = 'https://po4.readthedocs.io/en/latest/'
+'Version Control' = 'https://github.com/kalekundert/po4'
+'Bug Tracker' = 'https://github.com/kalekundert/po4/issues'
+'Continuous Integration' = 'https://travis-ci.org/kalekundert/po4'
+'Test Coverage' = 'https://coveralls.io/github/kalekundert/po4'
+
+
