@@ -22,6 +22,7 @@ requires = [
   'tabulate',
   'toml',
   'voluptuous',
+  'xlrd>=1.0',
 ]
 classifiers = [
   'Programming Language :: Python :: 3',
