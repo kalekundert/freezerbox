@@ -20,6 +20,7 @@ requires = [
   'pandas',
   'setuptools',
   'tabulate',
+  'toml',
   'voluptuous',
 ]
 classifiers = [
