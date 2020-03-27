@@ -8,13 +8,33 @@ author = "Kale Kundert"
 author-email = "kale@thekunderts.net"
 home-page = 'https://github.com/kalekundert/po4'
 requires-python = "~=3.8"
-requires = []
+requires = [
+  'appdirs',
+  'autoprop',
+  'autosnapgene',
+  'Bio',
+  'configurator',
+  'docopt',
+  'inform',
+  'more_itertools',
+  'pandas',
+  'setuptools',
+  'tabulate',
+  'voluptuous',
+]
 classifiers = [
   'Programming Language :: Python :: 3',
   'License :: OSI Approved :: MIT License',
 ]
 
+[tool.flit.scripts]
+po4 = "po4.cli.main:main"
 
+[tool.flit.entrypoints."po4.databases"]
+excel = "po4.loaders.excel"
+
+[tool.flit.entrypoints."stepwise.protocols"]
+protocols = "po4.stepwise:Plugin"
 
 [tool.flit.metadata.urls]
 'Documentation' = 'https://po4.readthedocs.io/en/latest/'

@@ -1,0 +1,102 @@
+[[test_construct_seq]]
+given_seq = {seq='AAAA', defer=false}
+protocol_seq = 'CCCC'
+expected = 'AAAA'
+
+[[test_construct_seq]]
+given_seq = {seq='AAAA', defer=true}
+protocol_seq = 'CCCC'
+expected = 'AAAA'
+
+[[test_construct_seq]]
+given_seq = {seq='AAAA', defer=false}
+protocol_seq = false
+expected = 'AAAA'
+
+[[test_construct_seq]]
+given_seq = {seq='AAAA', defer=true}
+protocol_seq = false
+expected = 'AAAA'
+
+[[test_construct_seq]]
+given_seq = false
+protocol_seq = 'CCCC'
+expected = 'CCCC'
+
+[[test_construct_length]]
+columns = {length=20}
+expected = 20
+
+[[test_construct_length]]
+columns = {length=20, seq='AAAA'}
+expected = 20
+
+[[test_construct_length]]
+columns = {seq='AAAA'}
+expected = 4
+
+[[test_construct_name]]
+columns = {}
+expected = false
+
+[[test_construct_name]]
+columns = {name='Dummy'}
+expected = 'Dummy'
+
+[[test_construct_date]]
+columns = {}
+expected = false
+
+[[test_construct_date]]
+columns = {date=2020-03-25}
+expected = 2020-03-25
+
+[[test_construct_desc]]
+columns = {}
+expected = false
+
+[[test_construct_desc]]
+columns = {desc='Dummy'}
+expected = 'Dummy'
+
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = ''
+expected = 60
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer'
+expected = 60
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer tm63'
+expected = 63
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer Tm63'
+expected = 63
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer TM63'
+expected = 63
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer_tm63'
+expected = 63
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer-tm63'
+expected = 63
+
+[[test_oligo_tm]]
+seq = 'GGTTATTGTCTCATGAGCGG'
+name = 'primer tm=63'
+expected = 63
+

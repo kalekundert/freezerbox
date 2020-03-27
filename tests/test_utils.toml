@@ -1,0 +1,433 @@
+[[test_normalize_seq]]
+raw_seq = 'GATTACA'
+expected = 'GATTACA'
+
+[[test_normalize_seq]]
+raw_seq = 'gattaca'
+expected = 'GATTACA'
+
+[[test_normalize_seq]]
+raw_seq = '/5Cy5/GATTACA'
+expected = 'XGATTACA'
+
+[[test_normalize_seq]]
+raw_seq = '/5Cy5/GATTACA/3Puro/'
+expected = 'XGATTACAX'
+
+
+[[test_parse_tag]]
+tag_str = 'p1'
+expected = {type='p', id=1}
+
+[[test_parse_tag]]
+tag_str = ' p1'
+expected = {type='p', id=1}
+
+[[test_parse_tag]]
+tag_str = 'p1 '
+expected = {type='p', id=1}
+
+[[test_parse_tag]]
+tag_str = 'f1'
+expected = {type='f', id=1}
+
+[[test_parse_tag]]
+tag_str = 'o1'
+expected = {type='o', id=1}
+
+[[test_parse_tag]]
+tag_str = 'p01'
+expected = {type='p', id=1}
+
+[[test_parse_tag]]
+tag_str = 'p10'
+expected = {type='p', id=10}
+
+[[test_parse_tag_err]]
+tag_str = 'p'
+error = "not 'p'"
+
+[[test_parse_tag_err]]
+tag_str = '1'
+error = "not '1'"
+
+[[test_parse_tag_err]]
+tag_str = 'p-1'
+error = "not 'p-1'"
+
+[[test_parse_tag_err]]
+tag_str = 'p1.0'
+error = "not 'p1.0'"
+
+[[test_parse_tag_err]]
+tag_str = 'p 1'
+error = "not 'p 1'"
+
+[[test_parse_tag_err]]
+tag_str = 'a1'
+error = "not 'a1'"
+
+
+[[test_parse_params]]
+params_str = ''
+expected = {}
+
+[[test_parse_params]]
+params_str = 'a=b'
+expected = {a='b'}
+
+[[test_parse_params]]
+params_str = ' a=b'
+expected = {a='b'}
+
+[[test_parse_params]]
+params_str = 'a=b '
+expected = {a='b'}
+
+[[test_parse_params]]
+params_str = ' a=b '
+expected = {a='b'}
+
+[[test_parse_params]]
+params_str = 'a="b"'
+expected = {a='b'}
+
+[[test_parse_params]]
+params_str = 'a="b c"'
+expected = {a='b c'}
+
+[[test_parse_params]]
+params_str = 'a=b c=d'
+expected = {a='b', c='d'}
+
+[[test_parse_params]]
+params_str = 'a=b c="d"'
+expected = {a='b', c='d'}
+
+[[test_parse_params]]
+params_str = 'a=b c="d e"'
+expected = {a='b', c='d e'}
+
+[[test_parse_params]]
+params_str = "a=b c='d'"
+expected = {a='b', c='d'}
+
+[[test_parse_params]]
+params_str = "a=b c='d e'"
+expected = {a='b', c='d e'}
+
+[[test_parse_params_err]]
+params_str = 'a'
+error = "can't parse 'a'"
+
+[[test_parse_params_err]]
+params_str = 'a=b c'
+error = "can't parse 'a=b c': didn't expect 'c'"
+
+[[test_parse_params_err]]
+params_str = 'a b=c'
+error = "can't parse 'a b=c': didn't expect 'a'"
+
+[[test_parse_params_err]]
+params_str = 'a=b a=c'
+error = "duplicate key 'a' in 'a=b a=c'"
+
+
+[[test_parse_param]]
+params = {a='abc'}
+key = 'a'
+pattern = 'abc'
+default = 'xyz'
+expected = 'abc'
+
+[[test_parse_param]]
+params = {}
+key = 'a'
+pattern = 'abc'
+default = 'xyz'
+expected = 'xyz'
+
+[[test_parse_param]]
+params = {a='abc'}
+key = 'a'
+pattern = '(abc)'
+default = 'xyz'
+expected = ['abc']
+
+[[test_parse_param]]
+params = {a='abc'}
+key = 'a'
+pattern = '(a)b(c)'
+default = 'xyz'
+expected = ['a', 'c']
+
+[[test_parse_param_err]]
+params = {a='abc'}
+key = 'b'
+pattern = ''
+error = "missing required 'b' parameter"
+
+[[test_parse_param_err]]
+params = {a='abc'}
+key = 'a'
+pattern = 'ab'  # Full match required
+error = "expected a≈'ab', found 'abc'"
+
+
+[[test_parse_time_s]]
+time_str = '1s'
+expected = 1
+
+[[test_parse_time_s]]
+time_str = '1 sec'
+expected = 1
+
+[[test_parse_time_s]]
+time_str = '1 second'
+expected = 1
+
+[[test_parse_time_s]]
+time_str = '2 seconds'
+expected = 2
+
+[[test_parse_time_s]]
+time_str = '1m'
+expected = 60
+
+[[test_parse_time_s]]
+time_str = '1 min'
+expected = 60
+
+[[test_parse_time_s]]
+time_str = '1 minute'
+expected = 60
+
+[[test_parse_time_s]]
+time_str = '2 minutes'
+expected = 120
+
+[[test_parse_time_s]]
+time_str = '1h'
+expected = 3600
+
+[[test_parse_time_s]]
+time_str = '1 hr'
+expected = 3600
+
+[[test_parse_time_s]]
+time_str = '1 hour'
+expected = 3600
+
+[[test_parse_time_s]]
+time_str = '2 hours'
+expected = 7200
+
+[[test_parse_time_s]]
+time_str = '1m30'
+expected = 90
+
+[[test_parse_time_s_err]]
+time_str = ''
+error = "can't interpret '' as a time"
+
+[[test_parse_time_s_err]]
+time_str = '30'
+error = "can't interpret '30' as a time"
+
+[[test_parse_time_s_err]]
+time_str = '1:30'
+error = "can't interpret '1:30' as a time"
+
+
+[[test_parse_temp_C]]
+temp_str = '60C'
+expected = 60
+
+[[test_parse_temp_C]]
+temp_str = '60 C'
+expected = 60
+
+[[test_parse_temp_C]]
+temp_str = '60°C'
+expected = 60
+
+[[test_parse_temp_C]]
+temp_str = '60 °C'
+expected = 60
+
+[[test_parse_temp_C_err]]
+temp_str = ''
+error = "can't interpret '' as a temperature"
+
+[[test_parse_temp_C_err]]
+temp_str = '60'
+error = "can't interpret '60' as a temperature"
+
+
+[[test_parse_volume_uL]]
+vol_str = '1uL'
+expected = 1
+
+[[test_parse_volume_uL]]
+vol_str = '1 uL'
+expected = 1
+
+[[test_parse_volume_uL]]
+vol_str = '1µL'
+expected = 1
+
+[[test_parse_volume_uL]]
+vol_str = '1 µL'
+expected = 1
+
+[[test_parse_volume_uL]]
+vol_str = '1 mL'
+expected = 1000
+
+[[test_parse_volume_uL]]
+vol_str = '100 nL'
+expected = 0.1
+
+[[test_parse_volume_uL_err]]
+vol_str = ''
+error = "can't interpret '' as a volume"
+
+[[test_parse_volume_uL_err]]
+vol_str = '1'
+error = "can't interpret '1' as a volume"
+
+[[test_parse_volume_uL_err]]
+vol_str = '1 xL'
+error = "can't interpret '1 xL' as a volume"
+
+
+[[test_parse_conc]]
+conc_str = '4nM'
+mw = 1e6
+expected_nM = 4
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4 nM'
+mw = 1e6
+expected_nM = 4
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4nM'
+mw = 2e6
+expected_nM = 4
+expected_ng_uL = 8
+
+[[test_parse_conc_nM]]
+conc_str = '4 nM'
+mw = 2e6
+expected_nM = 4
+expected_ng_uL = 8
+
+[[test_parse_conc_nM]]
+conc_str = '4uM'
+mw = 1e6
+expected_nM = 4000
+expected_ng_uL = 4000
+
+[[test_parse_conc_nM]]
+conc_str = '4 uM'
+mw = 1e6
+expected_nM = 4000
+expected_ng_uL = 4000
+
+[[test_parse_conc_nM]]
+conc_str = '4µM'
+mw = 1e6
+expected_nM = 4000
+expected_ng_uL = 4000
+
+[[test_parse_conc_nM]]
+conc_str = '4 µM'
+mw = 1e6
+expected_nM = 4000
+expected_ng_uL = 4000
+
+[[test_parse_conc_nM]]
+conc_str = '4uM'
+mw = 2e6
+expected_nM = 4000
+expected_ng_uL = 8000
+
+[[test_parse_conc_nM]]
+conc_str = '4 uM'
+mw = 2e6
+expected_nM = 4000
+expected_ng_uL = 8000
+
+[[test_parse_conc_nM]]
+conc_str = '4µM'
+mw = 2e6
+expected_nM = 4000
+expected_ng_uL = 8000
+
+[[test_parse_conc_nM]]
+conc_str = '4 µM'
+mw = 2e6
+expected_nM = 4000
+expected_ng_uL = 8000
+
+[[test_parse_conc_nM]]
+conc_str = '4ng/uL'
+mw = 1e6
+expected_nM = 4
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4 ng/uL'
+mw = 1e6
+expected_nM = 4
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4ng/µL'
+mw = 1e6
+expected_nM = 4
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4 ng/µL'
+mw = 1e6
+expected_nM = 4
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4ng/uL'
+mw = 2e6
+expected_nM = 2
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4 ng/uL'
+mw = 2e6
+expected_nM = 2
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4ng/µL'
+mw = 2e6
+expected_nM = 2
+expected_ng_uL = 4
+
+[[test_parse_conc_nM]]
+conc_str = '4 ng/µL'
+mw = 2e6
+expected_nM = 2
+expected_ng_uL = 4
+
+[[test_parse_conc_err]]
+conc_str = ''
+mw = 1e6
+error = "can't interpret '' as a concentration"
+
+[[test_parse_conc_err]]
+conc_str = '4'
+mw = 1e6
+error = "can't interpret '4' as a concentration"
+

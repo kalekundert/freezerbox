@@ -1,0 +1,251 @@
+[[test_pcr_from_params_err]]
+params = {}
+error = "PCR: missing required 'template' parameter"
+
+[[test_pcr_from_params_err]]
+params = {template='1', primers='o1,o2'}
+error = "PCR: expected template≈'.*', found '1'"
+
+[[test_pcr_from_params_err]]
+params = {template='p', primers='o1,o2'}
+error = "PCR: expected template≈'.*?', found 'p'"
+
+[[test_pcr_from_params_err]]
+params = {template='o1', primers='o1,o2'}
+error = "PCR: expected template≈'.*?', found 'o1'"
+
+[[test_pcr_from_params_err]]
+params = {template='p1'}
+error = "PCR: missing required 'primers' parameter"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='o1'}
+error = "PCR: expected primers≈'.*', found 'o1'"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='o1,'}
+error = "PCR: expected primers≈'.*', found 'o1,'"
+
+
+# This crashes the TOML parser...
+#[[test_pcr_from_params_err]]
+#params = {template='p1', primers=',o2'}
+#error = "PCR: expected primers≈'.*', found ',o2'"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='p1,o2'}
+error = "PCR: expected primers≈'.*', found 'p1,o2'"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='o1,p2'}
+error = "PCR: expected primers≈'.*', found 'o1,p2'"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='o1,o2', Ta='60'}
+error = "PCR: can't interpret '60' as a temperature"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='o1,o2', tx='60'}
+error = "PCR: can't interpret '60' as a time"
+
+[[test_pcr_from_params_err]]
+params = {template='p1', primers='o1,o2', volume='50'}
+error = "PCR: can't interpret '50' as a volume"
+
+[[test_pcr_product]]
+id = 'pcr-no-extra'
+primer_fwd = 'tataacaggctgctgagacc'  # SR001
+primer_rev = 'tctaggactatcaccggagg'  # SR002
+template = 'tataacaggctgctgagaccGATTACAcctccggtgatagtcctaga'
+product =  'tataacaggctgctgagaccGATTACAcctccggtgatagtcctaga'
+
+[[test_pcr_product]]
+id = 'pcr-extra-template'
+primer_fwd = 'tataacaggctgctgagacc'  # SR001
+primer_rev = 'tctaggactatcaccggagg'  # SR002
+template = 'AAAAAAAtataacaggctgctgagaccGATTACAcctccggtgatagtcctagaAAAAAAA'
+product =         'tataacaggctgctgagaccGATTACAcctccggtgatagtcctaga'
+
+[[test_pcr_product]]
+id = 'pcr-extra-primer'
+primer_fwd = 'GATTACAtataacaggctgctgagacc'  # SR001
+primer_rev = 'TGTAATCtctaggactatcaccggagg'  # SR002
+template =       'tataacaggctgctgagaccAAAAAAAcctccggtgatagtcctaga'
+product = 'GATTACAtataacaggctgctgagaccAAAAAAAcctccggtgatagtcctagaGATTACA'
+
+[[test_pcr_product]]
+id = 'pcr-around-plasmid'
+primer_fwd = 'tataacaggctgctgagacc'  # SR001
+primer_rev = 'tctaggactatcaccggagg'  # SR002
+template = 'cctccggtgatagtcctagaAAAAAAAAAAtataacaggctgctgagaccGATTACA'
+product = 'tataacaggctgctgagaccGATTACAcctccggtgatagtcctaga'
+
+
+[[test_pcr_product_err]]
+id = 'pcr-no-fwd-binding-site'
+primer_fwd = 'tataacaggctgctgagacc'  # SR001
+primer_rev = 'tctaggactatcaccggagg'  # SR002
+template = 'AAGGCCTGTTcctccggtgatagtcctaga'
+error = "'o1' and 'o2' do not amplify 'f1'"
+
+[[test_pcr_product_err]]
+id = 'pcr-no-rev-binding-site'
+primer_fwd = 'tataacaggctgctgagacc'  # SR001
+primer_rev = 'tctaggactatcaccggagg'  # SR002
+template = 'tataacaggctgctgagaccAAGGCCTGTT'
+error = "'o1' and 'o2' do not amplify 'f1'"
+
+[[test_pcr_extension_time]]
+product_len = 333
+extension_time_s = 10
+
+[[test_pcr_extension_time]]
+product_len = 334
+extension_time_s = 15
+
+[[test_pcr_extension_time]]
+product_len = 500
+extension_time_s = 15
+
+[[test_pcr_extension_time]]
+product_len = 501
+extension_time_s = 30
+
+[[test_pcr_extension_time]]
+product_len = 1000
+extension_time_s = 30
+
+[[test_pcr_extension_time]]
+product_len = 1001
+extension_time_s = 60
+
+
+[[test_digest_from_params_err]]
+params = {}
+error = "RE: missing required 'template' parameter"
+
+[[test_digest_from_params_err]]
+params = {enzyme='BsaI'}
+error = "RE: missing required 'template' parameter"
+
+[[test_digest_from_params_err]]
+params = {template='p1'}
+error = "RE: missing required 'enzyme' parameter"
+
+[[test_digest_from_params_err]]
+params = {template='1', enzyme='BsaI'}
+error = "RE: expected template≈'.*', found '1'"
+
+[[test_digest_from_params_err]]
+params = {template='f1', enzyme='BsaI'}
+error = "RE: expected template≈'.*', found 'f1'"
+
+[[test_digest_from_params_err]]
+params = {template='o1', enzyme='BsaI'}
+error = "RE: expected template≈'.*', found 'o1'"
+
+[[test_digest_from_params_err]]
+params = {template='p1', enzyme='!@#$'}
+error = "RE: expected enzyme≈'.*', found '!@#\\$'"
+
+[[test_digest_product]]
+seq = 'GAATTCAAGCTT'
+enzymes = ['EcoRI']
+expected = 'AATTCAAGCTTG'
+
+[[test_digest_product]]
+seq = 'GAATTCAAGCTT'
+enzymes = ['HindIII']
+expected = 'AGCTTGAATTCA'
+
+[[test_digest_product_err]]
+seq = 'GAATTCGAATTC'
+enzymes = ['EcoRI', 'HindIII']
+error = "RE: double-digests not yet supported: 2 enzymes specified: 'EcoRI', 'HindIII'"
+
+[[test_digest_product_err]]
+seq = 'GAATTCGAATTC'
+enzymes = ['EcoRI']
+error = "RE: 'EcoRI' cuts 'p1' 2 times"
+
+[[test_digest_product_err]]
+seq = 'GAATTCGAATTC'
+enzymes = ['HindIII']
+error = "RE: 'HindIII' does not cut 'p1'"
+
+[[test_digest_product_err]]
+seq = 'GAATTCGAATTC'
+enzymes = ['unknown enzyme']
+error = "RE: unknown enzyme 'unknown enzyme'"
+
+
+[[test_ivt_from_params_err]]
+params = {}
+error = "IVT: missing required 'template' parameter"
+
+[[test_ivt_from_params_err]]
+params = {template='1'}
+error = "IVT: expected template≈'.*', found '1'"
+
+[[test_ivt_from_params_err]]
+params = {template='o1'}
+error = "IVT: expected template≈'.*', found 'o1'"
+
+[[test_ivt_product]]
+template = 'taatacgactcactataGATTACA'
+expected = 'GAUUACA'
+
+[[test_ivt_product_err]]
+template = 'GATTACA'
+error = "IVT: 'f1' does not contain a T7 promoter"
+
+
+[[test_gg_from_params_err]]
+params = {}
+error = "GG: missing required 'bb' parameter"
+
+[[test_gg_from_params_err]]
+params = {bb='p1'}
+error = "GG: missing required 'ins' parameter"
+
+[[test_gg_from_params_err]]
+params = {ins='f1,f2'}
+error = "GG: missing required 'bb' parameter"
+
+[[test_gg_from_params_err]]
+params = {bb='1', ins='f1,f2'}
+error = "GG: expected bb≈'.*', found '1'"
+
+[[test_gg_from_params_err]]
+params = {bb='o1', ins='f1,f2'}
+error = "GG: expected bb≈'.*', found 'o1'"
+
+[[test_gg_from_params_err]]
+params = {bb='p1', ins=''}
+error = "GG: expected ins≈'.*', found ''"
+
+[[test_gg_from_params_err]]
+params = {bb='p1', ins='f1,'}
+error = "GG: expected ins≈'.*', found 'f1,'"
+
+[[test_gg_from_params_err]]
+params = {bb='p1', ins='o1,f2'}
+error = "GG: expected ins≈'.*', found 'o1,f2'"
+
+[[test_gg_from_params_err]]
+params = {bb='p1', ins='f1,o2'}
+error = "GG: expected ins≈'.*', found 'f1,o2'"
+
+[[test_gg_from_params_err]]
+params = {bb='p1', ins='f1,f2', enzyme='!@#$'}
+error = "GG: expected enzyme≈'.*', found '!@#\\$'"
+
+
+[[test_idt_from_params_err]]
+params = {}
+error = "IDT: missing required 'seq' parameter"
+
+[[test_idt_from_params_err]]
+params = {seq='not a sequence'}
+error = "IDT: expected seq≈'.*', found 'not a sequence'"
+

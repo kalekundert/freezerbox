@@ -1,0 +1,40 @@
+[[test_path_from_tag]]
+path = '1.dna'
+tag = 'p1'
+expected = true
+
+[[test_path_from_tag]]
+path = '01.dna'
+tag = 'p1'
+expected = true
+
+[[test_path_from_tag]]
+path = 'p1.dna'
+tag = 'p1'
+expected = true
+
+[[test_path_from_tag]]
+path = '1_name.dna'
+tag = 'p1'
+expected = true
+
+[[test_path_from_tag]]
+path = '1-name.dna'
+tag = 'p1'
+expected = true
+
+[[test_path_from_tag]]
+path = 'name.dna'
+tag = 'p1'
+expected = false
+
+[[test_path_from_tag]]
+path = 'name_1.dna'
+tag = 'p1'
+expected = false
+
+[[test_path_from_tag]]
+path = '10.dna'
+tag = 'p1'
+expected = false
+

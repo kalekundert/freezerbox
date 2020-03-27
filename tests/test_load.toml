@@ -1,0 +1,28 @@
+[[test_load_db_err]]
+error = "no database specified"
+
+  [test_load_db_err.config]
+  database = {}
+
+[[test_load_db_err]]
+error = "unknown database 'db1'"
+
+  [test_load_db_err.config]
+  use = 'db1'
+
+[[test_load_db_err]]
+error = "no 'type' specified for database 'db1'"
+
+  [test_load_db_err.config]
+  use = 'db1'
+  database = {db1={}}
+
+[[test_load_db_err]]
+error = "no 'unknown' database plugin found"
+
+  [test_load_db_err.config]
+  use = 'db1'
+  database = {db1={type='unknown'}}
+
+
+

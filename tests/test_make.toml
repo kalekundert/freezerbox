@@ -1,0 +1,302 @@
+# PCR
+
+[[test_make]]
+id = 'pcr-1'
+protocols = [
+  'PCR: template=p1 primers=o1,o2 Ta=60°C tx=30s',
+]
+options = [
+]
+expected = [
+  'stepwise pcr p1 o1 o2 1 60 30',
+]
+
+[[test_make]]
+id = 'pcr-1-volume'
+protocols = [
+  'PCR: template=p1 primers=o1,o2 Ta=60°C tx=30s volume=50µL',
+]
+options = [
+]
+expected = [
+  'stepwise pcr p1 o1 o2 1 60 30 -v 50',
+]
+
+[[test_make]]
+id = 'pcr-2-templates'
+protocols = [
+  'PCR: template=p1 primers=o1,o2 Ta=60°C tx=30s',
+  'PCR: template=p2 primers=o1,o2 Ta=60°C tx=30s',
+]
+options = [
+]
+expected = [
+  'stepwise pcr p1,p2 o1 o2 2 60 30 -m primers',
+]
+
+[[test_make]]
+id = 'pcr-2-fwd-primers'
+protocols = [
+  'PCR: template=p1 primers=o1,o3 Ta=60°C tx=30s',
+  'PCR: template=p1 primers=o2,o3 Ta=60°C tx=30s',
+]
+options = [
+]
+expected = [
+  'stepwise pcr p1 o1,o2 o3 2 60 30 -m dna',
+]
+
+[[test_make]]
+id = 'pcr-2-rev-primers'
+protocols = [
+  'PCR: template=p1 primers=o1,o2 Ta=60°C tx=30s',
+  'PCR: template=p1 primers=o1,o3 Ta=60°C tx=30s',
+]
+options = [
+]
+expected = [
+  'stepwise pcr p1 o1 o2,o3 2 60 30 -m dna',
+]
+
+[[test_make]]
+id = 'pcr-2-no-master-mix'
+protocols = [
+  'PCR: template=p1 primers=o1,o2 Ta=60°C tx=30s',
+  'PCR: template=p2 primers=o3,o4 Ta=60°C tx=30s',
+]
+options = [
+]
+expected = [
+  'stepwise pcr p1,p2 o1,o3 o2,o4 2 60 30 -M',
+]
+
+
+# Inverse PCR
+
+[[test_make]]
+id = 'inv-1'
+protocols = [
+  'INV: template=p1 primers=o1,o2 Ta=60°C tx=30s',
+]
+options = [
+]
+expected = [
+  'stepwise invpcr p1 o1 o2 1 60 30',
+]
+
+
+# In vitro transcription
+
+[[test_make]]
+id = 'ivt-1'
+protocols = [
+  'IVT: template=f1',
+]
+options = [
+]
+expected = [
+  'stepwise ivt 1',
+]
+
+[[test_make]]
+id = 'ivt-2'
+protocols = [
+  'IVT: template=f1',
+  'IVT: template=f2',
+]
+options = [
+]
+expected = [
+  'stepwise ivt 2',
+]
+
+
+# Restriction digest
+
+[[test_make]]
+id = 're-1'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI',
+]
+options = [
+]
+expected = [
+  'stepwise digest p1 EcoRI',
+]
+
+[[test_make]]
+id = 're-1-double-digest'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI,HindIII',
+]
+options = [
+]
+expected = [
+  'stepwise digest p1 EcoRI,HindIII',
+]
+
+[[test_make]]
+id = 're-2-templates'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p2 enzyme=EcoRI',
+]
+options = [
+]
+expected = [
+  'stepwise digest p1,p2 EcoRI',
+]
+
+[[test_make]]
+id = 're-2-templates-double-digest'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI,HindIII',
+  'RE: template=p2 enzyme=EcoRI,HindIII',
+]
+options = [
+]
+expected = [
+  'stepwise digest p1,p2 EcoRI,HindIII',
+]
+
+[[test_make]]
+id = 're-2-enzymes'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p1 enzyme=HindIII',
+]
+options = [
+]
+expected = [
+  'stepwise digest p1 EcoRI',
+  'stepwise digest p1 HindIII',
+]
+
+
+# Golden gate
+
+[[test_make]]
+id = 'gg-1'
+protocols = [
+  'GG: bb=p1 ins=f1',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1:50:7 f1:50:7 -e BsaI-HFv2',
+]
+
+[[test_make]]
+id = 'gg-1-inserts-2'
+protocols = [
+  'GG: bb=p1 ins=f1,f2',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 -e BsaI-HFv2',
+]
+
+[[test_make]]
+id = 'gg-1-inserts-3'
+protocols = [
+  'GG: bb=p1 ins=f1,f2,f3',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 f3:75nM:7 -e BsaI-HFv2',
+]
+
+[[test_make]]
+id = 'gg-2'
+protocols = [
+  'GG: bb=p1 ins=f1',
+  'GG: bb=p2 ins=f4',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1,p2:50:7 f1,f4:50:7 -e BsaI-HFv2 -n 2 -M',
+]
+
+[[test_make]]
+id = 'gg-2-bb'
+protocols = [
+  'GG: bb=p1 ins=f1',
+  'GG: bb=p2 ins=f1',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1,p2:50:7 f1:50:7 -e BsaI-HFv2 -n 2 -m 1',
+]
+
+[[test_make]]
+id = 'gg-2-ins'
+protocols = [
+  'GG: bb=p1 ins=f1',
+  'GG: bb=p1 ins=f4',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1:50:7 f1,f4:50:7 -e BsaI-HFv2 -n 2 -m bb',
+]
+
+
+# Multiple commands
+
+[[test_make]]
+id = 'make-1-options'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI',
+]
+options = [
+  '-h'
+]
+expected = [
+  'stepwise digest p1 EcoRI -h',
+]
+
+[[test_make]]
+id = 'make-2-options'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI',
+  'IVT: template=f1',
+]
+options = [
+  '-h',
+]
+expected = [
+  'stepwise digest p1 EcoRI -h',
+  'stepwise ivt 1 -h',
+]
+
+[[test_make]]
+id = 'make-2-re-ivt'
+protocols = [
+  'RE: template=p1 enzyme=EcoRI',
+  'IVT: template=f1',
+]
+options = [
+]
+expected = [
+  'stepwise digest p1 EcoRI',
+  'stepwise ivt 1',
+]
+
+[[test_make]]
+id = 'make-2-ivt-re'
+protocols = [
+  'IVT: template=f1',
+  'RE: template=p1 enzyme=EcoRI',
+]
+options = [
+]
+expected = [
+  'stepwise ivt 1',
+  'stepwise digest p1 EcoRI',
+]
+
+

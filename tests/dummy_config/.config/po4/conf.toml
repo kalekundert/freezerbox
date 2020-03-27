@@ -1,0 +1,10 @@
+use = 'db1'
+
+[database.db1]
+type = 'type1'
+option = 'option1'
+
+[database.db2]
+type = 'type2'
+option = 'option2'
+
