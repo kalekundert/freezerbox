@@ -103,6 +103,16 @@ def test_database_iter():
     assert set(db.values()) == values
     assert set(db.items()) == items
 
+def test_database_len():
+    db = Database()
+    assert len(db) == 0
+
+    db['d1'] = DummyConstruct()
+    assert len(db) == 1
+
+    db['d2'] = DummyConstruct()
+    assert len(db) == 2
+
 
 def test_tag():
     tag = Tag('p', 1)

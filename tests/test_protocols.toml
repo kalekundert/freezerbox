@@ -242,10 +242,6 @@ error = "GG: expected enzyme≈'.*', found '!@#\\$'"
 
 
 [[test_idt_from_params_err]]
-params = {}
-error = "IDT: missing required 'seq' parameter"
-
-[[test_idt_from_params_err]]
 params = {seq='not a sequence'}
 error = "IDT: expected seq≈'.*', found 'not a sequence'"
 

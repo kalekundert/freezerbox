@@ -19,6 +19,9 @@ class QueryError(Po4Error):
 class ParseError(QueryError):
     pass
 
+class CheckError(Po4Error):
+    pass
+
 class UsageError(Po4Error):
     pass
 

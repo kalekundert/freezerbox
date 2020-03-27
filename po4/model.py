@@ -9,7 +9,7 @@ from voluptuous import Schema, Invalid
 from pkg_resources import iter_entry_points
 from Bio.SeqUtils import molecular_weight, MeltingTemp
 from .config import load_config
-from .errors import LoadError, QueryError, only_raise
+from .errors import LoadError, QueryError, CheckError, only_raise
 from .utils import *
 
 class Database:
@@ -20,6 +20,9 @@ class Database:
 
     def __iter__(self):
         yield from self._constructs
+
+    def __len__(self):
+        return len(self._constructs)
 
     def __getitem__(self, tag):
         tag = parse_tag(tag)
@@ -56,6 +59,7 @@ class Database:
     def items(self):
         return self._constructs.items()
 
+
 @dataclass(frozen=True)
 class Tag:
     type: str
@@ -80,6 +84,24 @@ class Construct:
         self._length = kwargs.get('length')
         self._conc_str = kwargs.get('conc')
         self._protocol = kwargs.get('protocol')
+
+    def check(self):
+        self._check_seq()
+
+    def _check_seq(self):
+        from Bio import pairwise2
+        from Bio.pairwise2 import format_alignment
+
+        try:
+            primary_seq = self.seq
+            protocol_seq = self.protocol.product_seq
+        except (QueryError, NotImplementedError):
+            pass
+        else:
+            if primary_seq != protocol_seq:
+                alignments = pairwise2.align.globalxx(primary_seq, protocol_seq)
+                message = f"sequence doesn't match protocol\n" + format_alignment(*alignments[0])
+                raise CheckError(message, culprit=self._tag)
 
     def get_db(self):
         if not self._db:

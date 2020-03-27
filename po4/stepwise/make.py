@@ -56,9 +56,9 @@ from po4.errors import UsageError, QueryError
 
 class Make:
 
-    def __init__(self, db, tags, options=None):
+    def __init__(self, db, tags=None, options=None):
         self.db = db
-        self.tags = tags
+        self.tags = tags or []
         self.options = options or []
         self.stepwise_commands = []
 
@@ -87,11 +87,11 @@ class Make:
         for key, group in groupby(constructs, key=by_protocol_type):
             group = list(group)
             make_command = factories.get(key, lambda x:
-                    warn(f"{key!r} protocols are not yet supported"))
+                    warn(f"{key.name!r} protocols are not yet supported"))
             make_command(group)
 
         if not self.stepwise_commands:
-            raise UsageError("no protocols found.")
+            raise UsageError("no protocols found")
 
     def _make_pcr_command(self, constructs, cmd='pcr'):
         protocols = [x.protocol for x in constructs]

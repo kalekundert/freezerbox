@@ -190,6 +190,7 @@ class DigestProtocol(Protocol):
                 QueryError("no enzymes specified.", culprit=self.name),
                 QueryError(f"double-digests not yet supported: {len(self.enzymes)} enzymes specified: {', '.join(repr(x) for x in self.enzymes)}", culprit=self.name),
         )
+        enzyme = re.sub('-HF(v2)?$', '', enzyme)
         try:
             pattern = AllEnzymes.get(enzyme)
         except ValueError:
@@ -313,7 +314,7 @@ class IdtProtocol(Protocol):
         with inform.add_culprit(cls.name):
             return cls(
                     db,
-                    parse_param(params, 'seq', '[ATCGUatcgu]+'),
+                    parse_param(params, 'seq', '[ATCGUatcgu]+', None),
             )
 
     def get_product_seq(self):
