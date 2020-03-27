@@ -56,7 +56,6 @@ def load(config):
 
         for i, row in df.iterrows():
             tag = Tag(cls.tag_prefix, i)
-            debug(tag)
             kwargs = dict(row)
 
             if not kwargs.get('seq'):
