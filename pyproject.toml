@@ -16,7 +16,7 @@ requires = [
   'configurator',
   'docopt',
   'inform',
-  'more_itertools',
+  'more_itertools>=8.0',
   'pandas',
   'setuptools',
   'tabulate',
