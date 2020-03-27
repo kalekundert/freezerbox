@@ -12,7 +12,7 @@ requires = [
   'appdirs',
   'autoprop',
   'autosnapgene',
-  'Bio',
+  'Biopython',
   'configurator',
   'docopt',
   'inform',
