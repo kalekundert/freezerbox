@@ -127,8 +127,8 @@ class Make:
                 join(x.primer_tags[0] for x in protocols),
                 join(x.primer_tags[1] for x in protocols),
                 str(len(protocols)),
-                join(str_sig(x.annealing_temp_C) for x in protocols),
-                str(max(int(x.extension_time_s) for x in protocols)),
+                '-a', join(str_sig(x.annealing_temp_C) for x in protocols),
+                '-x', str(max(int(x.extension_time_s) for x in protocols)),
                 *get_master_mix_flag(),
                 *get_volume_flag(),
         ])

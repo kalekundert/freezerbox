@@ -8,7 +8,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise pcr p1 o1 o2 1 60 30',
+  'stepwise pcr p1 o1 o2 1 -a 60 -x 30',
 ]
 
 [[test_make]]
@@ -19,7 +19,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise pcr p1 o1 o2 1 60 30 -v 50',
+  'stepwise pcr p1 o1 o2 1 -a 60 -x 30 -v 50',
 ]
 
 [[test_make]]
@@ -31,7 +31,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise pcr p1,p2 o1 o2 2 60 30 -m primers',
+  'stepwise pcr p1,p2 o1 o2 2 -a 60 -x 30 -m primers',
 ]
 
 [[test_make]]
@@ -43,7 +43,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise pcr p1 o1,o2 o3 2 60 30 -m dna',
+  'stepwise pcr p1 o1,o2 o3 2 -a 60 -x 30 -m dna',
 ]
 
 [[test_make]]
@@ -55,7 +55,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise pcr p1 o1 o2,o3 2 60 30 -m dna',
+  'stepwise pcr p1 o1 o2,o3 2 -a 60 -x 30 -m dna',
 ]
 
 [[test_make]]
@@ -67,7 +67,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise pcr p1,p2 o1,o3 o2,o4 2 60 30 -M',
+  'stepwise pcr p1,p2 o1,o3 o2,o4 2 -a 60 -x 30 -M',
 ]
 
 
@@ -81,7 +81,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise invpcr p1 o1 o2 1 60 30',
+  'stepwise invpcr p1 o1 o2 1 -a 60 -x 30',
 ]
 
 
