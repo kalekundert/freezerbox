@@ -8,7 +8,7 @@ from test_model import DummyConstruct
 from utils import parametrize_via_toml
 
 @parametrize_via_toml('test_make.toml')
-def test_make(protocols, options, expected):
+def test_make(disable_capture, protocols, options, expected):
     db = Database()
 
     # Create some dummy sequences for the protocols to use.
@@ -28,8 +28,31 @@ def test_make(protocols, options, expected):
         db[tag] = DummyConstruct(protocol=protocol)
 
     make = Make(db, tags, options)
-    make._make_commands()
+    with disable_capture:
+        p = make.protocol
+    
+    for cmd_i, expected_i in zip(p.commands, expected):
+        assert cmd_i == expected_i
 
-    for a, b in zip(make.stepwise_commands, expected):
-        assert shlex.join(a) == b
+# Copied from stepwise
+@pytest.fixture
+def disable_capture(pytestconfig):
+    # Equivalent to `pytest -s`, but temporary.
+    # This is necessary because even `capfd.disabled()` leaves stdin in a state 
+    # that somehow interferes with the redirection we're trying to do.
+
+    class suspend_guard:
+
+        def __init__(self):
+            self.capmanager = pytestconfig.pluginmanager.getplugin('capturemanager')
+
+        def __enter__(self):
+            self.capmanager.suspend_global_capture(in_=True)
+            pass
+
+        def __exit__(self, _1, _2, _3):
+            self.capmanager.resume_global_capture()
+
+    yield suspend_guard()
+
 

@@ -19,7 +19,8 @@ class Protocol:
         self._db = db
 
     def __init_subclass__(cls):
-        Protocol.subclasses[cls.name] = cls
+        if x := getattr(cls, 'name', None):
+            Protocol.subclasses[x] = cls
 
     @classmethod
     def from_text(cls, db, protocol_str):
@@ -252,30 +253,23 @@ class IvtProtocol(Protocol):
 
 
 @autoprop
-class GoldenGateProtocol(Protocol):
-    name = "GG"
+class AssemblyProtocol(Protocol):
 
-    def __init__(self, db, backbone, inserts, enzyme=None):
+    def __init__(self, db, backbone, inserts):
         super().__init__(db)
         self._backbone_tag = backbone
         self._insert_tags = inserts
-        self._enzyme = enzyme
 
     @classmethod
     def from_params(cls, db, params):
         pf = get_tag_pattern(Plasmid, Fragment)
 
         with inform.add_culprit(cls.name):
-            gg = cls(
+            return cls(
                     db,
                     parse_param(params, 'bb', pf),
                     parse_param(params, 'ins', fr'{pf}(?:,{pf})*').split(','),
             )
-            if 'enzyme' in params:
-                gg._enzyme = parse_param(params, 'enzyme', r'[\w\d-]+')
-
-            return gg
-
 
     def get_backbone(self):
         return self.db[self.backbone_tag]
@@ -295,9 +289,30 @@ class GoldenGateProtocol(Protocol):
     def get_insert_seqs(self):
         return [x.seq for x in self.inserts]
 
+@autoprop
+class GoldenGateProtocol(AssemblyProtocol):
+    name = "GG"
+
+    def __init__(self, db, backbone, inserts, enzyme=None):
+        super().__init__(db, backbone, inserts)
+        self._enzyme = enzyme
+
+    @classmethod
+    def from_params(cls, db, params):
+        gg = super().from_params(db, params)
+
+        with inform.add_culprit(cls.name):
+            if 'enzyme' in params:
+                gg._enzyme = parse_param(params, 'enzyme', r'[\w\d-]+')
+
+        return gg
+
     def get_enzyme(self):
         return self._enzyme or 'BsaI-HFv2'
 
+@autoprop
+class GibsonProtocol(AssemblyProtocol):
+    name = "GIB"
 
 @autoprop
 class IdtProtocol(Protocol):

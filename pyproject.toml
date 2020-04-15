@@ -19,6 +19,8 @@ requires = [
   'more_itertools>=8.0',
   'pandas',
   'setuptools',
+  'stepwise',
+  'stepwise_mol_bio',
   'tabulate',
   'toml',
   'tqdm',

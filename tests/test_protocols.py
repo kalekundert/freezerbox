@@ -231,6 +231,16 @@ def test_gg_bb_ins():
     assert gg.insert_seqs == ['CCCC', 'GGGG']
 
 
+def test_gib_from_params():
+    db = Database()
+    gib = GibsonProtocol.from_params(db, dict(
+            bb='p1',
+            ins='f1,f2',
+    ))
+    assert gib.backbone_tag == 'p1'
+    assert gib.insert_tags == ['f1', 'f2']
+
+
 def test_idt_from_params():
     db = Database()
     idt = IdtProtocol.from_params(db, dict(

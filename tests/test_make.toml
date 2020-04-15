@@ -205,7 +205,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 f3:75nM:7 -e BsaI-HFv2',
+  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 f3:75nM -e BsaI-HFv2',
 ]
 
 [[test_make]]
@@ -217,7 +217,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1,p2:50:7 f1,f4:50:7 -e BsaI-HFv2 -n 2 -M',
+  'stepwise golden_gate p1,p2:50:7 f1,f4:50:7 -e BsaI-HFv2 -n 2',
 ]
 
 [[test_make]]
@@ -245,6 +245,20 @@ expected = [
 ]
 
 
+# Gibson
+
+[[test_make]]
+id = 'gib-1'
+protocols = [
+  'GIB: bb=p1 ins=f1',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1:50:7 f1:50:7',
+]
+
+
 # Multiple commands
 
 [[test_make]]
@@ -253,49 +267,49 @@ protocols = [
   'RE: template=p1 enzyme=EcoRI',
 ]
 options = [
-  '-h'
+  '-v', '10'
 ]
 expected = [
-  'stepwise digest p1 EcoRI -h',
+  'stepwise digest p1 EcoRI -v 10',
 ]
 
 [[test_make]]
 id = 'make-2-options'
 protocols = [
   'RE: template=p1 enzyme=EcoRI',
-  'IVT: template=f1',
+  'GIB: bb=p1 ins=f1',
 ]
 options = [
-  '-h',
+  '-v', '10',
 ]
 expected = [
-  'stepwise digest p1 EcoRI -h',
-  'stepwise ivt 1 -h',
+  'stepwise digest p1 EcoRI -v 10',
+  'stepwise gibson p1:50:7 f1:50:7 -v 10',
 ]
 
 [[test_make]]
-id = 'make-2-re-ivt'
+id = 'make-2-re-gib'
 protocols = [
   'RE: template=p1 enzyme=EcoRI',
-  'IVT: template=f1',
+  'GIB: bb=p1 ins=f1',
 ]
 options = [
 ]
 expected = [
   'stepwise digest p1 EcoRI',
-  'stepwise ivt 1',
+  'stepwise gibson p1:50:7 f1:50:7',
 ]
 
 [[test_make]]
-id = 'make-2-ivt-re'
+id = 'make-2-gg-re'
 protocols = [
-  'IVT: template=f1',
+  'GIB: bb=p1 ins=f1',
   'RE: template=p1 enzyme=EcoRI',
 ]
 options = [
 ]
 expected = [
-  'stepwise ivt 1',
+  'stepwise gibson p1:50:7 f1:50:7',
   'stepwise digest p1 EcoRI',
 ]
 

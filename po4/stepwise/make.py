@@ -43,8 +43,9 @@ GG: Golden gate assembly
     enzyme: Type IIS enzyme (default: BsaI)
 """
 
-import sys, re
-import shlex
+import sys, re, shlex
+import stepwise
+import autoprop
 from itertools import groupby
 from subprocess import run
 from statistics import mean
@@ -54,24 +55,16 @@ from po4.model import load_db
 from po4.protocols import *
 from po4.errors import UsageError, QueryError
 
+@autoprop
 class Make:
 
     def __init__(self, db, tags=None, options=None):
         self.db = db
         self.tags = tags or []
         self.options = options or []
-        self.stepwise_commands = []
 
-    def run(self):
-        self._make_commands()
-        stepwise_pipeline = ' | '.join(
-                shlex.join(x)
-                for x in self.stepwise_commands
-        )
-        run(stepwise_pipeline, shell=True)
-
-    def _make_commands(self):
-        self.stepwise_commands = []
+    def get_protocol(self):
+        self._protocol = stepwise.Protocol()
 
         factories = {
                 PcrProtocol:        self._make_pcr_command,
@@ -79,6 +72,7 @@ class Make:
                 DigestProtocol:     self._make_digest_command,
                 IvtProtocol:        self._make_ivt_command,
                 GoldenGateProtocol: self._make_golden_gate_command,
+                GibsonProtocol:     self._make_gibson_command,
         }
 
         constructs = [self.db[x] for x in self.tags]
@@ -90,8 +84,10 @@ class Make:
                     warn(f"{key.name!r} protocols are not yet supported"))
             make_command(group)
 
-        if not self.stepwise_commands:
+        if not self._protocol:
             raise UsageError("no protocols found")
+
+        return self._protocol
 
     def _make_pcr_command(self, constructs, cmd='pcr'):
         protocols = [x.protocol for x in constructs]
@@ -152,16 +148,20 @@ class Make:
                     join(enz),
             ])
 
-    def _make_golden_gate_command(self, constructs):
+    def _make_assembly_command(self, constructs, cmd, flags=()):
         protocols = [x.protocol for x in constructs]
 
         def fragment_from_tags(tags):
-            def get_conc(tag):
+            def get_conc_str(tag):
                 try:
                     conc = self.db[tag].conc_str
                     return re.sub(r'\s*ng/[µu]L$', '', conc)
                 except QueryError:
                     return '50'
+
+            def mean_if_similar(x, too_diff):
+                if min(x) < 0.5 * max(x): raise too_diff
+                return mean(x)
 
             def tabulate(x):
                 from textwrap import indent
@@ -174,22 +174,27 @@ class Make:
             name = join(tags)
 
             concs = {
-                    x: get_conc(x)
+                    x: get_conc_str(x)
                     for x in tags
             }
             conc = one(
                     set(concs.values()),
-                    too_long=UsageError(f"inserts have different concentrations:\n{tabulate(concs)}"),
+                    too_long=UsageError(f"fragments have different concentrations:\n{tabulate(concs)}"),
             )
+
+            # If the concentration happens to be in moles, we don't need to 
+            # worry about the lengths of the fragments.  A bit hacky.
+            if conc.endswith('M'):
+                return f'{name}:{conc}'
 
             lengths = {
                     x: self.db[x].length
                     for x in tags
             }
-            if min(lengths.values()) > 0.5 * max(lengths.values()):
-                length = int(mean(lengths.values()))
-            else:
-                raise UsageError(f"inserts have lengths that differ by more than 50%:\n{tabulate(lengths)}")
+            length = mean_if_similar(
+                    lengths.values(),
+                    too_diff=UsageError(f"fragments have concentrations in ng/µL and lengths that differ by more than 50%:\n{tabulate(lengths)}"),
+            )
 
             return f'{name}:{conc}:{length}'
 
@@ -201,7 +206,7 @@ class Make:
 
         num_inserts = one(
                 {len(x.insert_tags) for x in protocols},
-                too_long=UsageError("All golden gate assemblies must have the same number of inserts"),
+                too_long=UsageError("all assemblies must have the same number of inserts"),
         )
         tag_groups = [
                 [x.backbone_tag for x in protocols]
@@ -220,25 +225,34 @@ class Make:
                 master_mix.append(name)
 
         stepwise_cmd = [
-                'golden_gate',
+                cmd,
                 *fragments,
-                '-e', join(x.enzyme for x in protocols),
+                *flags
         ]
         if (n := len(protocols)) > 1:
             stepwise_cmd += [
                 '-n', str(n),
             ]
-            if not master_mix:
-                stepwise_cmd += ['-M']
-            elif len(master_mix) < len(fragments):
+            if master_mix:
                 stepwise_cmd += ['-m', ','.join(master_mix)]
-
 
         self._add_command(stepwise_cmd)
 
+    def _make_golden_gate_command(self, constructs):
+        self._make_assembly_command(
+                constructs,
+                cmd='golden_gate',
+                flags=['-e', join(x.protocol.enzyme for x in constructs)],
+        )
+
+    def _make_gibson_command(self, constructs):
+        self._make_assembly_command(
+                constructs,
+                cmd='gibson',
+        )
+
     def _add_command(self, cmd):
-        stepwise_cmd = ['stepwise', *cmd, *self.options]
-        self.stepwise_commands.append(stepwise_cmd)
+        self._protocol += stepwise.load([*cmd, *self.options])
 
 def join(items):
     items = list(items)
@@ -269,6 +283,6 @@ if __name__ == '__main__':
     make.options = args['<options>']
 
     try:
-        make.run()
+        print(make.protocol)
     except Error as err:
         err.report()
