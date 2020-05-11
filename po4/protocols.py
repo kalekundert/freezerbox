@@ -3,6 +3,7 @@
 import math
 import autoprop
 import inform
+from statistics import mean
 from more_itertools import one
 from Bio.Restriction import AllEnzymes
 from .model import Plasmid, Fragment, Oligo
@@ -151,6 +152,47 @@ class InversePcrProtocol(PcrProtocol):
     name = "INV"
 
 @autoprop
+class KldProtocol(Protocol):
+    name = "KLD"
+
+    def __init__(self, db, fragment, volume=None, use_dpni=True):
+        super().__init__(db)
+        self._fragment_tag = fragment
+        self._volume_uL = volume
+        self._use_dpni = use_dpni
+
+    @classmethod
+    def from_params(cls, db, params):
+        f = get_tag_pattern(Fragment)
+
+        with inform.add_culprit(cls.name):
+            kld = cls(
+                    db,
+                    parse_param(params, 'fragment', f),
+            )
+            if 'dpni' in params:
+                kld._use_dpni = parse_bool(params['dpni'])
+            if 'volume' in params:
+                kld._volume_uL = parse_volume_uL(params['volume'])
+
+        return kld
+        
+    def get_fragment(self):
+        return self.db[self.fragment_tag]
+
+    def get_fragment_tag(self):
+        return self._fragment_tag
+
+    def get_fragment_seq(self):
+        return self.fragment.seq
+
+    def get_volume_uL(self):
+        return self._volume_uL
+
+    def get_use_dpni(self):
+        return self._use_dpni
+
+@autoprop
 class DigestProtocol(Protocol):
     # Currently only single-digests of plasmids are supported (n terms of 
     # getting the product sequence).  It shouldn't be too hard to add 
@@ -205,6 +247,56 @@ class DigestProtocol(Protocol):
                 QueryError(f"{enzyme!r} cuts {self.template_tag!r} {len(sites)} times", culprit=self.name),
         )
         return seq[site:] + seq[:site]
+
+
+@autoprop
+class AnnealProtocol(Protocol):
+    name = "ANNEAL"
+
+    def __init__(self, db, oligos, volume=None, conc=None, stock=None):
+        super().__init__(db)
+        self._oligo_tags = oligos
+        self._volume_uL = volume
+        self._conc_uM = conc
+        self._stock_uM = stock
+
+    @classmethod
+    def from_params(cls, db, params):
+        o = get_tag_pattern(Oligo)
+
+        with inform.add_culprit(cls.name):
+            anneal = cls(
+                    db,
+                    parse_param(params, 'oligos', fr'({o}),\s*({o})'),
+            )
+            mw = mean(x.mw for x in anneal.oligos)
+
+            if 'volume' in params:
+                anneal._volume_uL = parse_volume_uL(params['volume'])
+            if 'conc' in params:
+                anneal._conc_uM = parse_conc_uM(params['conc'], mw)
+            if 'stock' in params:
+                anneal._stock_uM = parse_conc_uM(params['stock'], mw)
+
+        return anneal
+        
+    def get_oligos(self):
+        return [self.db[x] for x in self.oligo_tags]
+
+    def get_oligo_tags(self):
+        return self._oligo_tags
+
+    def get_oligo_seqs(self):
+        return [x.seq for x in self.oligos]
+
+    def get_volume_uL(self):
+        return self._volume_uL
+
+    def get_conc_uM(self):
+        return self._conc_uM
+
+    def get_stock_uM(self):
+        return self._stock_uM
 
 
 @autoprop
@@ -313,6 +405,7 @@ class GoldenGateProtocol(AssemblyProtocol):
 @autoprop
 class GibsonProtocol(AssemblyProtocol):
     name = "GIB"
+
 
 @autoprop
 class IdtProtocol(Protocol):

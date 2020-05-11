@@ -174,6 +174,71 @@ pattern = 'ab'  # Full match required
 error = "expected a≈'ab', found 'abc'"
 
 
+[[test_parse_bool]]
+bool_str = '1'
+expected = true
+
+[[test_parse_bool]]
+bool_str = 'y'
+expected = true
+
+[[test_parse_bool]]
+bool_str = 'Y'
+expected = true
+
+[[test_parse_bool]]
+bool_str = 'yes'
+expected = true
+
+[[test_parse_bool]]
+bool_str = 'YES'
+expected = true
+
+[[test_parse_bool]]
+bool_str = 'true'
+expected = true
+
+[[test_parse_bool]]
+bool_str = 'True'
+expected = true
+
+[[test_parse_bool]]
+bool_str = '0'
+expected = false
+
+[[test_parse_bool]]
+bool_str = 'n'
+expected = false
+
+[[test_parse_bool]]
+bool_str = 'N'
+expected = false
+
+[[test_parse_bool]]
+bool_str = 'no'
+expected = false
+
+[[test_parse_bool]]
+bool_str = 'NO'
+expected = false
+
+[[test_parse_bool]]
+bool_str = 'false'
+expected = false
+
+[[test_parse_bool]]
+bool_str = 'False'
+expected = false
+
+[[test_parse_bool_err]]
+bool_str = ''
+error = "can't interpret '' as a bool"
+
+[[test_parse_bool_err]]
+bool_str = 'x'
+error = "can't interpret 'x' as a bool"
+
+
 [[test_parse_time_s]]
 time_str = '1s'
 expected = 1

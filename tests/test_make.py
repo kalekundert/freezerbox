@@ -20,6 +20,10 @@ def test_make(disable_capture, protocols, options, expected):
     db['f4'] = Fragment(seq='GATTACA')
     db['f5'] = Fragment(seq='GATTACA', conc='100ng/µL')
     db['f6'] = Fragment(seq='GATTACA', conc='75nM')
+    db['o1'] = Oligo(seq='GATTACA')
+    db['o2'] = Oligo(seq='GATTACA')
+    db['o3'] = Oligo(seq='GATTACA')
+    db['o4'] = Oligo(seq='GATTACA')
 
     tags = []
     for i, protocol_str in enumerate(protocols, 1):

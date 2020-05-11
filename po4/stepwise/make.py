@@ -41,6 +41,10 @@ GG: Golden gate assembly
     bb: backbone plasmid (required)
     ins: comma-separated list of inserts (required)
     enzyme: Type IIS enzyme (default: BsaI)
+
+GIB: Gibson assembly
+    bb: backbone plasmid (required)
+    ins: comma-separated list of inserts (required)
 """
 
 import sys, re, shlex
@@ -69,7 +73,9 @@ class Make:
         factories = {
                 PcrProtocol:        self._make_pcr_command,
                 InversePcrProtocol: self._make_inverse_pcr_command,
+                KldProtocol:        self._make_kld_command,
                 DigestProtocol:     self._make_digest_command,
+                AnnealProtocol:     self._make_anneal_command,
                 IvtProtocol:        self._make_ivt_command,
                 GoldenGateProtocol: self._make_golden_gate_command,
                 GibsonProtocol:     self._make_gibson_command,
@@ -91,13 +97,6 @@ class Make:
 
     def _make_pcr_command(self, constructs, cmd='pcr'):
         protocols = [x.protocol for x in constructs]
-
-        def get_volume_flag():
-            volume_uL = one(
-                    {x.volume_uL for x in protocols},
-                    too_long=UsageError(f"PCR reactions have different scales: {','.join(repr(x.tag) for x in constructs)}"),
-            )
-            return ['-v', str_sig(volume_uL)] if volume_uL else []
 
         def get_master_mix_flag():
             all_reagents = {'dna', 'primers'}
@@ -122,15 +121,30 @@ class Make:
                 join(x.template_tag for x in protocols),
                 join(x.primer_tags[0] for x in protocols),
                 join(x.primer_tags[1] for x in protocols),
-                str(len(protocols)),
                 '-a', join(str_sig(x.annealing_temp_C) for x in protocols),
                 '-x', str(max(int(x.extension_time_s) for x in protocols)),
+                *get_num_rxns_flag(constructs),
                 *get_master_mix_flag(),
-                *get_volume_flag(),
+                *get_volume_flag(constructs),
         ])
 
     def _make_inverse_pcr_command(self, constructs):
         self._make_pcr_command(constructs, cmd='invpcr')
+
+    def _make_kld_command(self, constructs):
+        protocols = [x.protocol for x in constructs]
+
+        def get_dpni_flag():
+            use_dpni = any(x.use_dpni for x in protocols)
+            return [] if use_dpni else ['-D']
+
+        self._add_command([
+                'kld',
+                join(x.fragment_tag for x in protocols),
+                *get_num_rxns_flag(constructs),
+                *get_volume_flag(constructs),
+                *get_dpni_flag(),
+        ])
 
     def _make_ivt_command(self, constructs):
         return self._add_command([
@@ -147,6 +161,44 @@ class Make:
                     join(x.template_tag for x in protocols),
                     join(enz),
             ])
+
+    def _make_anneal_command(self, constructs):
+        protocols = [x.protocol for x in constructs]
+
+        def get_conc_flag():
+            return get_unanimous_flag(
+                    '-c', constructs, lambda x: x.conc_uM,
+                    "reactions have different oligo concentrations",
+            )
+
+        def get_stock_conc_flag():
+            return get_unanimous_flag(
+                    '-C', constructs, lambda x: x.stock_uM,
+                    "reactions have different oligo stock concentrations",
+            )
+
+        def get_master_mix_flag():
+            if len(protocols) == 1:
+                return []
+
+            master_mix = []
+            for i in range(2):
+                unique_oligos = set(x.oligo_tags[i] for x in protocols)
+                if len(unique_oligos) == 1:
+                    master_mix.append(str(i+1))
+
+            return ['-m', ','.join(master_mix)] if master_mix else []
+
+        self._add_command([
+                'anneal',
+                join(x.oligo_tags[0] for x in protocols),
+                join(x.oligo_tags[1] for x in protocols),
+                *get_num_rxns_flag(constructs),
+                *get_volume_flag(constructs),
+                *get_conc_flag(),
+                *get_stock_conc_flag(),
+                *get_master_mix_flag(),
+        ])
 
     def _make_assembly_command(self, constructs, cmd, flags=()):
         protocols = [x.protocol for x in constructs]
@@ -265,9 +317,31 @@ def str_sig(value):
     return str(float(value)).strip('0').rstrip('.')
 
 
+def get_unanimous_value(constructs, value_getter, error):
+    return one(
+            {value_getter(x.protocol) for x in constructs},
+            too_long=UsageError(f"{error}: {','.join(repr(x.tag) for x in constructs)}"),
+    )
+
+def get_unanimous_flag(flag, constructs, value_getter, error):
+    value = get_unanimous_value(constructs, value_getter, error)
+    return [flag, str_sig(value)] if value else []
+
+def get_volume_flag(constructs):
+    return get_unanimous_flag(
+            '-v',
+            constructs,
+            lambda x: x.volume_uL,
+            "reactions have different volumes"
+    )
+
+def get_num_rxns_flag(constructs, default=1):
+    n = len(constructs)
+    return ['-n', str(n)] if n != default else []
+
+
 if __name__ == '__main__':
     import docopt
-    Inform(stream_policy='header')
 
     try: 
         i = sys.argv.index('--')

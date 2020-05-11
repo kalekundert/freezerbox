@@ -80,7 +80,6 @@ primer_rev = 'tctaggactatcaccggagg'  # SR002
 template = 'cctccggtgatagtcctagaAAAAAAAAAAtataacaggctgctgagaccGATTACA'
 product = 'tataacaggctgctgagaccGATTACAcctccggtgatagtcctaga'
 
-
 [[test_pcr_product_err]]
 id = 'pcr-no-fwd-binding-site'
 primer_fwd = 'tataacaggctgctgagacc'  # SR001
@@ -118,6 +117,23 @@ extension_time_s = 30
 [[test_pcr_extension_time]]
 product_len = 1001
 extension_time_s = 60
+
+
+[[test_kld_from_params_err]]
+params = {}
+error = "KLD: missing required 'fragment' parameter"
+
+[[test_kld_from_params_err]]
+params = {fragment='1'}
+error = "KLD: expected fragment≈'.*', found '1'"
+
+[[test_kld_from_params_err]]
+params = {fragment='f1', volume='10'}
+error = "KLD: can't interpret '10' as a volume"
+
+[[test_kld_from_params_err]]
+params = {fragment='f1', dpni='x'}
+error = "KLD: can't interpret 'x' as a bool"
 
 
 [[test_digest_from_params_err]]
@@ -177,6 +193,31 @@ error = "RE: 'HindIII' does not cut 'p1'"
 seq = 'GAATTCGAATTC'
 enzymes = ['unknown enzyme']
 error = "RE: unknown enzyme 'unknown enzyme'"
+
+
+[[test_anneal_from_params_err]]
+params = {}
+error = "ANNEAL: missing required 'oligos' parameter"
+
+[[test_anneal_from_params_err]]
+params = {oligos='1'}
+error = "ANNEAL: expected oligos≈'.*', found '1'"
+
+[[test_anneal_from_params_err]]
+params = {oligos='p1'}
+error = "ANNEAL: expected oligos≈'.*', found 'p1'"
+
+[[test_anneal_from_params_err]]
+params = {oligos='o1,o2', volume='10'}
+error = "ANNEAL: can't interpret '10' as a volume"
+
+[[test_anneal_from_params_err]]
+params = {oligos='o1,o2', conc='10'}
+error = "ANNEAL: can't interpret '10' as a concentration"
+
+[[test_anneal_from_params_err]]
+params = {oligos='o1,o2', stock='10'}
+error = "ANNEAL: can't interpret '10' as a concentration"
 
 
 [[test_ivt_from_params_err]]

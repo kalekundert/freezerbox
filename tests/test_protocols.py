@@ -136,6 +136,23 @@ def test_pcr_volume():
     assert pcr2.volume_uL == 10
 
 
+def test_kld_from_params():
+    db = Database()
+    kld = KldProtocol.from_params(db, dict(
+            fragment='f1',
+            volume='10µL',
+            dpni='n',
+    ))
+    assert kld.fragment_tag == 'f1'
+    assert kld.volume_uL == 10
+    assert not kld.use_dpni
+
+@parametrize_via_toml('test_protocols.toml')
+def test_kld_from_params_err(params, error):
+    with pytest.raises(ParseError, match=error):
+        KldProtocol.from_params(None, params)
+
+
 def test_digest_from_params():
     db = Database()
     digest = DigestProtocol.from_params(db, dict(
@@ -167,6 +184,32 @@ def test_digest_product_err(seq, enzymes, error):
 
     with pytest.raises(QueryError, match=error):
         digest.product_seq
+
+
+def test_anneal_from_params():
+    db = Database()
+    db['o1'] = Oligo(seq='GATTACA')
+    db['o2'] = Oligo(seq='TGTAATC')
+
+    anneal = AnnealProtocol.from_params(db, dict(
+            oligos='o1,o2',
+            volume='10µL',
+            conc='50µM',
+            stock='200µM',
+    ))
+    assert anneal.oligo_tags == ('o1', 'o2')
+    assert anneal.volume_uL == 10
+    assert anneal.conc_uM == 50
+    assert anneal.stock_uM == 200
+
+@parametrize_via_toml('test_protocols.toml')
+def test_anneal_from_params_err(params, error):
+    db = Database()
+    db['o1'] = Oligo(seq='GATTACA')
+    db['o2'] = Oligo(seq='TGTAATC')
+
+    with pytest.raises(ParseError, match=error):
+        AnnealProtocol.from_params(db, params)
 
 
 def test_ivt_from_params():

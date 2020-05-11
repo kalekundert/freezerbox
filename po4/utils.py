@@ -105,6 +105,15 @@ def parse_param(params, key, pattern, default=no_default):
         raise ParseError(f"expected {key}≈{pattern!r}, found {p!r}")
 
 @only_raise(ParseError)
+def parse_bool(bool_str):
+    if bool_str.lower() in ('1', 'y', 'yes', 'true'):
+        return True
+    if bool_str.lower() in ('0', 'n', 'no', 'false'):
+        return False
+
+    raise ParseError(f"can't interpret {bool_str!r} as a bool")
+
+@only_raise(ParseError)
 def parse_time_s(time_str):
     time_units = {
             's':        1,
@@ -169,6 +178,10 @@ def parse_conc_nM(conc_str, mw):
         return float(m.group('conc')) * unit_conversion[m.group('unit')]
     else:
         raise ParseError(f"can't interpret {conc_str!r} as a concentration")
+
+@only_raise(ParseError)
+def parse_conc_uM(conc_str, mw):
+    return parse_conc_nM(conc_str, mw) / 1000
 
 @only_raise(ParseError)
 def parse_conc_ng_uL(conc_str, mw):
