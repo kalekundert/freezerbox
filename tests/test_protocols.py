@@ -136,28 +136,11 @@ def test_pcr_volume():
     assert pcr2.volume_uL == 10
 
 
-def test_kld_from_params():
-    db = Database()
-    kld = KldProtocol.from_params(db, dict(
-            fragment='f1',
-            volume='10µL',
-            dpni='n',
-    ))
-    assert kld.fragment_tag == 'f1'
-    assert kld.volume_uL == 10
-    assert not kld.use_dpni
-
-@parametrize_via_toml('test_protocols.toml')
-def test_kld_from_params_err(params, error):
-    with pytest.raises(ParseError, match=error):
-        KldProtocol.from_params(None, params)
-
-
 def test_digest_from_params():
     db = Database()
     digest = DigestProtocol.from_params(db, dict(
             template='p1',
-            enzyme='BsaI',
+            enzymes='BsaI',
     ))
     assert digest.template_tag == 'p1'
     assert digest.enzymes == ['BsaI']
@@ -168,12 +151,16 @@ def test_digest_from_params_err(params, error):
         DigestProtocol.from_params(None, params)
 
 @parametrize_via_toml('test_protocols.toml')
-def test_digest_product(seq, enzymes, expected):
-    db = Database()
-    db['p1'] = Plasmid(seq=seq)
+def test_digest_product(seq, enzymes, circular, size, products, product):
+    Construct = Plasmid if circular else Fragment
+    tag = f'{Construct.tag_prefix}1'
 
-    digest = DigestProtocol(db, 'p1', enzymes)
-    assert digest.product_seq == DnaSeq(expected)
+    db = Database()
+    db[tag] = Construct(seq=seq)
+
+    digest = DigestProtocol(db, tag, enzymes, size or None)
+    assert digest.product_seqs == [DnaSeq(x) for x in products]
+    assert digest.product_seq == DnaSeq(product)
 
 @parametrize_via_toml('test_protocols.toml')
 def test_digest_product_err(seq, enzymes, error):
@@ -212,6 +199,66 @@ def test_anneal_from_params_err(params, error):
         AnnealProtocol.from_params(db, params)
 
 
+def test_gg_from_params():
+    db = Database()
+    gg = GoldenGateProtocol.from_params(db, dict(
+            bb='p1',
+            ins='f1,f2',
+            enzyme='BbsI',
+            volume='10µL',
+    ))
+    assert gg.backbone_tag == 'p1'
+    assert gg.insert_tags == ['f1', 'f2']
+    assert gg.enzyme == 'BbsI'
+    assert gg.volume_uL == 10
+
+@parametrize_via_toml('test_protocols.toml')
+def test_gg_from_params_err(params, error):
+    with pytest.raises(ParseError, match=error):
+        GoldenGateProtocol.from_params(None, params)
+
+def test_gg_bb_ins():
+    db = Database()
+    db['p1'] = Plasmid(seq='AAAA')
+    db['f1'] = Fragment(seq='CCCC')
+    db['f2'] = Fragment(seq='GGGG')
+
+    gg = GoldenGateProtocol(db, 'p1', ['f1', 'f2'])
+    assert gg.backbone_seq == 'AAAA'
+    assert gg.insert_seqs == ['CCCC', 'GGGG']
+
+
+def test_gib_from_params():
+    db = Database()
+    gib = GibsonProtocol.from_params(db, dict(
+            bb='p1',
+            ins='f1,f2',
+            volume='10µL',
+    ))
+    assert gib.backbone_tag == 'p1'
+    assert gib.insert_tags == ['f1', 'f2']
+    assert gib.volume_uL == 10
+
+
+def test_ligate_from_params():
+    db = Database()
+    lig = LigateProtocol.from_params(db, dict(
+            bb='f1',
+            ins='f2,f3',
+            volume='10µL',
+            kinase='y',
+    ))
+    assert lig.backbone_tag == 'f1'
+    assert lig.insert_tags == ['f2', 'f3']
+    assert lig.volume_uL == 10
+    assert lig.use_kinase == True
+
+@parametrize_via_toml('test_protocols.toml')
+def test_ligate_from_params_err(params, error):
+    with pytest.raises(ParseError, match=error):
+        LigateProtocol.from_params(None, params)
+
+
 def test_ivt_from_params():
     db = Database()
     ivt = IvtProtocol.from_params(db, dict(
@@ -245,43 +292,6 @@ def test_ivt_product_err(template, error):
 
     with pytest.raises(QueryError, match=error):
         ivt.product_seq
-
-
-def test_gg_from_params():
-    db = Database()
-    gg = GoldenGateProtocol.from_params(db, dict(
-            bb='p1',
-            ins='f1,f2',
-            enzyme='BbsI',
-    ))
-    assert gg.backbone_tag == 'p1'
-    assert gg.insert_tags == ['f1', 'f2']
-    assert gg.enzyme == 'BbsI'
-
-@parametrize_via_toml('test_protocols.toml')
-def test_gg_from_params_err(params, error):
-    with pytest.raises(ParseError, match=error):
-        GoldenGateProtocol.from_params(None, params)
-
-def test_gg_bb_ins():
-    db = Database()
-    db['p1'] = Plasmid(seq='AAAA')
-    db['f1'] = Fragment(seq='CCCC')
-    db['f2'] = Fragment(seq='GGGG')
-
-    gg = GoldenGateProtocol(db, 'p1', ['f1', 'f2'])
-    assert gg.backbone_seq == 'AAAA'
-    assert gg.insert_seqs == ['CCCC', 'GGGG']
-
-
-def test_gib_from_params():
-    db = Database()
-    gib = GibsonProtocol.from_params(db, dict(
-            bb='p1',
-            ins='f1,f2',
-    ))
-    assert gib.backbone_tag == 'p1'
-    assert gib.insert_tags == ['f1', 'f2']
 
 
 def test_idt_from_params():

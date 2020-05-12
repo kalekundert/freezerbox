@@ -85,110 +85,12 @@ expected = [
 ]
 
 
-# KLD
-
-[[test_make]]
-id = 'kld-1'
-protocols = [
-  'KLD: fragment=f1',
-]
-options = [
-]
-expected = [
-  'stepwise kld f1',
-]
-
-[[test_make]]
-id = 'kld-2'
-protocols = [
-  'KLD: fragment=f1 volume=10µL',
-]
-options = [
-]
-expected = [
-  'stepwise kld f1 -v 10',
-]
-
-[[test_make]]
-id = 'kld-3'
-protocols = [
-  'KLD: fragment=f1 dpni=no',
-]
-options = [
-]
-expected = [
-  'stepwise kld f1 -D',
-]
-
-[[test_make]]
-id = 'kld-4'
-protocols = [
-  'KLD: fragment=f1',
-  'KLD: fragment=f2',
-]
-options = [
-]
-expected = [
-  'stepwise kld f1,f2 -n 2',
-]
-
-[[test_make]]
-id = 'kld-5'
-protocols = [
-  'KLD: fragment=f1',
-  'KLD: fragment=f2 dpni=no',
-]
-options = [
-]
-expected = [
-  'stepwise kld f1,f2 -n 2',
-]
-
-[[test_make]]
-id = 'kld-6'
-protocols = [
-  'KLD: fragment=f1 dpni=no',
-  'KLD: fragment=f2 dpni=no',
-]
-options = [
-]
-expected = [
-  'stepwise kld f1,f2 -n 2 -D',
-]
-
-
-# In vitro transcription
-
-[[test_make]]
-id = 'ivt-1'
-protocols = [
-  'IVT: template=f1',
-]
-options = [
-]
-expected = [
-  'stepwise ivt 1',
-]
-
-[[test_make]]
-id = 'ivt-2'
-protocols = [
-  'IVT: template=f1',
-  'IVT: template=f2',
-]
-options = [
-]
-expected = [
-  'stepwise ivt 2',
-]
-
-
 # Restriction digest
 
 [[test_make]]
-id = 're-1'
+id = 're'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p1 enzymes=EcoRI',
 ]
 options = [
 ]
@@ -197,9 +99,9 @@ expected = [
 ]
 
 [[test_make]]
-id = 're-1-double-digest'
+id = 're'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI,HindIII',
+  'RE: template=p1 enzymes=EcoRI,HindIII',
 ]
 options = [
 ]
@@ -208,10 +110,10 @@ expected = [
 ]
 
 [[test_make]]
-id = 're-2-templates'
+id = 're'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI',
-  'RE: template=p2 enzyme=EcoRI',
+  'RE: template=p1 enzymes=EcoRI',
+  'RE: template=p2 enzymes=EcoRI',
 ]
 options = [
 ]
@@ -220,10 +122,10 @@ expected = [
 ]
 
 [[test_make]]
-id = 're-2-templates-double-digest'
+id = 're'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI,HindIII',
-  'RE: template=p2 enzyme=EcoRI,HindIII',
+  'RE: template=p1 enzymes=EcoRI,HindIII',
+  'RE: template=p2 enzymes=EcoRI,HindIII',
 ]
 options = [
 ]
@@ -232,10 +134,10 @@ expected = [
 ]
 
 [[test_make]]
-id = 're-2-enzymes'
+id = 're'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI',
-  'RE: template=p1 enzyme=HindIII',
+  'RE: template=p1 enzymes=EcoRI',
+  'RE: template=p1 enzymes=HindIII',
 ]
 options = [
 ]
@@ -367,40 +269,40 @@ expected = [
 # Golden gate
 
 [[test_make]]
-id = 'gg-1'
+id = 'gg'
 protocols = [
   'GG: bb=p1 ins=f1',
 ]
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1:50:7 f1:50:7 -e BsaI-HFv2',
+  'stepwise golden_gate p1:50:7 f1:50:7',
 ]
 
 [[test_make]]
-id = 'gg-1-inserts-2'
+id = 'gg'
 protocols = [
   'GG: bb=p1 ins=f1,f2',
 ]
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 -e BsaI-HFv2',
+  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7',
 ]
 
 [[test_make]]
-id = 'gg-1-inserts-3'
+id = 'gg'
 protocols = [
   'GG: bb=p1 ins=f1,f2,f3',
 ]
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 f3:75nM -e BsaI-HFv2',
+  'stepwise golden_gate p1:50:7 f1:50:7 f2:100:7 f3:75nM',
 ]
 
 [[test_make]]
-id = 'gg-2'
+id = 'gg'
 protocols = [
   'GG: bb=p1 ins=f1',
   'GG: bb=p2 ins=f4',
@@ -408,11 +310,11 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1,p2:50:7 f1,f4:50:7 -e BsaI-HFv2 -n 2',
+  'stepwise golden_gate p1,p2:50:7 f1,f4:50:7 -n 2',
 ]
 
 [[test_make]]
-id = 'gg-2-bb'
+id = 'gg'
 protocols = [
   'GG: bb=p1 ins=f1',
   'GG: bb=p2 ins=f1',
@@ -420,11 +322,11 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1,p2:50:7 f1:50:7 -e BsaI-HFv2 -n 2 -m 1',
+  'stepwise golden_gate p1,p2:50:7 f1:50:7 -n 2 -m 1',
 ]
 
 [[test_make]]
-id = 'gg-2-ins'
+id = 'gg'
 protocols = [
   'GG: bb=p1 ins=f1',
   'GG: bb=p1 ins=f4',
@@ -432,14 +334,25 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise golden_gate p1:50:7 f1,f4:50:7 -e BsaI-HFv2 -n 2 -m bb',
+  'stepwise golden_gate p1:50:7 f1,f4:50:7 -n 2 -m bb',
+]
+
+[[test_make]]
+id = 'gg'
+protocols = [
+  'GG: bb=p1 ins=f1 enzyme=BbsI',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1:50:7 f1:50:7 -e BbsI'
 ]
 
 
 # Gibson
 
 [[test_make]]
-id = 'gib-1'
+id = 'gib'
 protocols = [
   'GIB: bb=p1 ins=f1',
 ]
@@ -449,13 +362,191 @@ expected = [
   'stepwise gibson p1:50:7 f1:50:7',
 ]
 
+[[test_make]]
+id = 'gib'
+protocols = [
+  'GIB: bb=p1 ins=f1,f2',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1:50:7 f1:50:7 f2:100:7',
+]
+
+[[test_make]]
+id = 'gib'
+protocols = [
+  'GIB: bb=p1 ins=f1,f2,f3',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1:50:7 f1:50:7 f2:100:7 f3:75nM',
+]
+
+[[test_make]]
+id = 'gib'
+protocols = [
+  'GIB: bb=p1 ins=f1',
+  'GIB: bb=p2 ins=f4',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1,p2:50:7 f1,f4:50:7 -n 2',
+]
+
+[[test_make]]
+id = 'gib'
+protocols = [
+  'GIB: bb=p1 ins=f1',
+  'GIB: bb=p2 ins=f1',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1,p2:50:7 f1:50:7 -n 2 -m 1',
+]
+
+[[test_make]]
+id = 'gib'
+protocols = [
+  'GIB: bb=p1 ins=f1',
+  'GIB: bb=p1 ins=f4',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1:50:7 f1,f4:50:7 -n 2 -m bb',
+]
+
+
+# Ligate
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1:50:7 f2:100:7',
+]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2,f3',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1:50:7 f2:100:7 f3:75nM',
+]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2,f3,f4',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1:50:7 f2:100:7 f3:75nM f4:50:7',
+]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2',
+  'LIG: bb=f4 ins=f5',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1,f4:50:7 f2,f5:100:7 -n 2',
+]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2',
+  'LIG: bb=f4 ins=f2',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1,f4:50:7 f2:100:7 -n 2 -m 1',
+]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2',
+  'LIG: bb=f1 ins=f5',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1:50:7 f2,f5:100:7 -n 2 -m bb',
+]
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2 kinase=y',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1:50:7 f2:100:7 -k'
+]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2 kinase=y',
+  'LIG: bb=f4 ins=f5 kinase=n',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1,f4:50:7 f2,f5:100:7 -k -n 2',
+]
+
+
+# In vitro transcription
+
+[[test_make]]
+id = 'ivt-1'
+protocols = [
+  'IVT: template=f1',
+]
+options = [
+]
+expected = [
+  'stepwise ivt 1',
+]
+
+[[test_make]]
+id = 'ivt-2'
+protocols = [
+  'IVT: template=f1',
+  'IVT: template=f2',
+]
+options = [
+]
+expected = [
+  'stepwise ivt 2',
+]
+
 
 # Multiple commands
 
 [[test_make]]
-id = 'make-1-options'
+id = 'multiple'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p1 enzymes=EcoRI',
 ]
 options = [
   '-v', '10'
@@ -465,9 +556,9 @@ expected = [
 ]
 
 [[test_make]]
-id = 'make-2-options'
+id = 'multiple'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p1 enzymes=EcoRI',
   'GIB: bb=p1 ins=f1',
 ]
 options = [
@@ -479,9 +570,9 @@ expected = [
 ]
 
 [[test_make]]
-id = 'make-2-re-gib'
+id = 'multiple'
 protocols = [
-  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p1 enzymes=EcoRI',
   'GIB: bb=p1 ins=f1',
 ]
 options = [
@@ -492,10 +583,10 @@ expected = [
 ]
 
 [[test_make]]
-id = 'make-2-gg-re'
+id = 'multiple'
 protocols = [
   'GIB: bb=p1 ins=f1',
-  'RE: template=p1 enzyme=EcoRI',
+  'RE: template=p1 enzymes=EcoRI',
 ]
 options = [
 ]

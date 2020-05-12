@@ -119,23 +119,6 @@ product_len = 1001
 extension_time_s = 60
 
 
-[[test_kld_from_params_err]]
-params = {}
-error = "KLD: missing required 'fragment' parameter"
-
-[[test_kld_from_params_err]]
-params = {fragment='1'}
-error = "KLD: expected fragment≈'.*', found '1'"
-
-[[test_kld_from_params_err]]
-params = {fragment='f1', volume='10'}
-error = "KLD: can't interpret '10' as a volume"
-
-[[test_kld_from_params_err]]
-params = {fragment='f1', dpni='x'}
-error = "KLD: can't interpret 'x' as a bool"
-
-
 [[test_digest_from_params_err]]
 params = {}
 error = "RE: missing required 'template' parameter"
@@ -146,43 +129,113 @@ error = "RE: missing required 'template' parameter"
 
 [[test_digest_from_params_err]]
 params = {template='p1'}
-error = "RE: missing required 'enzyme' parameter"
+error = "RE: missing required 'enzymes' parameter"
 
 [[test_digest_from_params_err]]
-params = {template='1', enzyme='BsaI'}
+params = {template='1', enzymes='BsaI'}
 error = "RE: expected template≈'.*', found '1'"
 
 [[test_digest_from_params_err]]
-params = {template='f1', enzyme='BsaI'}
+params = {template='f1', enzymes='BsaI'}
 error = "RE: expected template≈'.*', found 'f1'"
 
 [[test_digest_from_params_err]]
-params = {template='o1', enzyme='BsaI'}
+params = {template='o1', enzymes='BsaI'}
 error = "RE: expected template≈'.*', found 'o1'"
 
 [[test_digest_from_params_err]]
-params = {template='p1', enzyme='!@#$'}
-error = "RE: expected enzyme≈'.*', found '!@#\\$'"
+params = {template='p1', enzymes='!@#$'}
+error = "RE: expected enzymes≈'.*', found '!@#\\$'"
 
 [[test_digest_product]]
+id = 'digest-product'
 seq = 'GAATTCAAGCTT'
 enzymes = ['EcoRI']
-expected = 'AATTCAAGCTTG'
+circular = true
+size = false
+products = ['AATTCAAGCTTG']
+product = 'AATTCAAGCTTG'
 
 [[test_digest_product]]
+id = 'digest-product'
 seq = 'GAATTCAAGCTT'
 enzymes = ['HindIII']
-expected = 'AGCTTGAATTCA'
+circular = true
+size = false
+products = ['AGCTTGAATTCA']
+product = 'AGCTTGAATTCA'
 
-[[test_digest_product_err]]
-seq = 'GAATTCGAATTC'
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCAAGCTT'
+enzymes = ['HindIII']
+circular = false
+size = false
+products = ['GAATTCA', 'AGCTT']
+product = 'GAATTCA'
+
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCAAGCTT'
+enzymes = ['HindIII']
+circular = false
+size = 7
+products = ['GAATTCA', 'AGCTT']
+product = 'GAATTCA'
+
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCAAGCTT'
+enzymes = ['HindIII']
+circular = false
+size = 5
+products = ['GAATTCA', 'AGCTT']
+product = 'AGCTT'
+
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCaAAGCTT'
 enzymes = ['EcoRI', 'HindIII']
-error = "RE: double-digests not yet supported: 2 enzymes specified: 'EcoRI', 'HindIII'"
+circular = true
+size = false
+products = ['AATTCaA', 'AGCTTG']
+product = 'AATTCaA'
 
-[[test_digest_product_err]]
-seq = 'GAATTCGAATTC'
-enzymes = ['EcoRI']
-error = "RE: 'EcoRI' cuts 'p1' 2 times"
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCaAAGCTT'
+enzymes = ['EcoRI', 'HindIII']
+circular = true
+size = 6
+products = ['AATTCaA', 'AGCTTG']
+product = 'AGCTTG'
+
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCaAAGCTT'
+enzymes = ['EcoRI', 'HindIII']
+circular = false
+size = false
+products = ['G', 'AATTCaA', 'AGCTT']
+product = 'AATTCaA'
+
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCaAAGCTT'
+enzymes = ['EcoRI', 'HindIII']
+circular = false
+size = 1
+products = ['G', 'AATTCaA', 'AGCTT']
+product = 'G'
+
+[[test_digest_product]]
+id = 'digest-product'
+seq = 'GAATTCaAAGCTT'
+enzymes = ['EcoRI', 'HindIII']
+circular = false
+size = 5
+products = ['G', 'AATTCaA', 'AGCTT']
+product = 'AGCTT'
 
 [[test_digest_product_err]]
 seq = 'GAATTCGAATTC'
@@ -191,8 +244,13 @@ error = "RE: 'HindIII' does not cut 'p1'"
 
 [[test_digest_product_err]]
 seq = 'GAATTCGAATTC'
+enzymes = ['HindIII', 'BsaI']
+error = "RE: 'HindIII','BsaI' do not cut 'p1'"
+
+[[test_digest_product_err]]
+seq = 'GAATTCGAATTC'
 enzymes = ['unknown enzyme']
-error = "RE: unknown enzyme 'unknown enzyme'"
+error = "RE: unknown enzyme\\(s\\): 'unknown enzyme'"
 
 
 [[test_anneal_from_params_err]]
@@ -218,27 +276,6 @@ error = "ANNEAL: can't interpret '10' as a concentration"
 [[test_anneal_from_params_err]]
 params = {oligos='o1,o2', stock='10'}
 error = "ANNEAL: can't interpret '10' as a concentration"
-
-
-[[test_ivt_from_params_err]]
-params = {}
-error = "IVT: missing required 'template' parameter"
-
-[[test_ivt_from_params_err]]
-params = {template='1'}
-error = "IVT: expected template≈'.*', found '1'"
-
-[[test_ivt_from_params_err]]
-params = {template='o1'}
-error = "IVT: expected template≈'.*', found 'o1'"
-
-[[test_ivt_product]]
-template = 'taatacgactcactataGATTACA'
-expected = 'GAUUACA'
-
-[[test_ivt_product_err]]
-template = 'GATTACA'
-error = "IVT: 'f1' does not contain a T7 promoter"
 
 
 [[test_gg_from_params_err]]
@@ -280,6 +317,48 @@ error = "GG: expected ins≈'.*', found 'f1,o2'"
 [[test_gg_from_params_err]]
 params = {bb='p1', ins='f1,f2', enzyme='!@#$'}
 error = "GG: expected enzyme≈'.*', found '!@#\\$'"
+
+
+[[test_ligate_from_params_err]]
+params = {}
+error = "LIG: missing required 'bb' parameter"
+
+[[test_ligate_from_params_err]]
+params = {bb='f1'}
+error = "LIG: missing required 'ins' parameter"
+
+[[test_ligate_from_params_err]]
+params = {bb='p1', ins='f2'}
+error = "LIG: expected bb≈'.*', found 'p1'"
+
+[[test_ligate_from_params_err]]
+params = {bb='f1', ins='p2'}
+error = "LIG: expected ins≈'.*', found 'p2'"
+
+[[test_ligate_from_params_err]]
+params = {bb='f1', ins='f2', kinase='x'}
+error = "LIG: can't interpret 'x' as a bool"
+
+
+[[test_ivt_from_params_err]]
+params = {}
+error = "IVT: missing required 'template' parameter"
+
+[[test_ivt_from_params_err]]
+params = {template='1'}
+error = "IVT: expected template≈'.*', found '1'"
+
+[[test_ivt_from_params_err]]
+params = {template='o1'}
+error = "IVT: expected template≈'.*', found 'o1'"
+
+[[test_ivt_product]]
+template = 'taatacgactcactataGATTACA'
+expected = 'GAUUACA'
+
+[[test_ivt_product_err]]
+template = 'GATTACA'
+error = "IVT: 'f1' does not contain a T7 promoter"
 
 
 [[test_idt_from_params_err]]

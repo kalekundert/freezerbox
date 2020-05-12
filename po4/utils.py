@@ -137,7 +137,7 @@ def parse_time_s(time_str):
     if m := re.fullmatch(time_pattern_2, time_str):
         return 60 * int(m.group('min')) + int(m.group('sec'))
 
-    raise ParseError(f"can't interpret {time_str!r} as a time")
+    raise ParseError(f"can't interpret {time_str!r} as a time, did you forget a unit?")
 
 @only_raise(ParseError)
 def parse_temp_C(temp_str):
@@ -146,7 +146,7 @@ def parse_temp_C(temp_str):
     if m := re.fullmatch(temp_pattern, temp_str):
         return int(m.group('temp'))
 
-    raise ParseError(f"can't interpret {temp_str!r} as a temperature")
+    raise ParseError(f"can't interpret {temp_str!r} as a temperature, did you forget a unit?")
 
 @only_raise(ParseError)
 def parse_volume_uL(vol_str):
@@ -161,7 +161,7 @@ def parse_volume_uL(vol_str):
     if m := re.fullmatch(vol_pattern, vol_str):
         return float(m.group('vol')) * si_prefixes[m.group('si_prefix')]
 
-    raise ParseError(f"can't interpret {vol_str!r} as a volume")
+    raise ParseError(f"can't interpret {vol_str!r} as a volume, did you forget a unit?")
 
 @only_raise(ParseError)
 def parse_conc_nM(conc_str, mw):
@@ -177,7 +177,7 @@ def parse_conc_nM(conc_str, mw):
     if m := re.match(conc_pattern, conc_str):
         return float(m.group('conc')) * unit_conversion[m.group('unit')]
     else:
-        raise ParseError(f"can't interpret {conc_str!r} as a concentration")
+        raise ParseError(f"can't interpret {conc_str!r} as a concentration, did you forget a unit?")
 
 @only_raise(ParseError)
 def parse_conc_uM(conc_str, mw):
@@ -197,6 +197,24 @@ def parse_conc_ng_uL(conc_str, mw):
     if m := re.match(conc_pattern, conc_str):
         return float(m.group('conc')) * unit_conversion[m.group('unit')]
     else:
-        raise ParseError(f"can't interpret {conc_str!r} as a concentration")
+        raise ParseError(f"can't interpret {conc_str!r} as a concentration, did you forget a unit?")
 
+@only_raise(ParseError)
+def parse_size_bp(size_str):
+    bp_parsers = {
+            'bp': (
+                fr'(?P<size>\d+)\s*bp',
+                int,
+            ),
+            'kb': (
+                fr'(?P<size>\d+.?\d*)\s*kb',
+                lambda x: int(float(x) * 1000),
+            ),
+    }
+
+    for pattern, size_from_str in bp_parsers:
+        if m := re.fullmatch(pattern, size_str):
+            return size_from_str(m.group('size'))
+
+    raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
 

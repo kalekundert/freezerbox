@@ -496,3 +496,40 @@ conc_str = '4'
 mw = 1e6
 error = "can't interpret '4' as a concentration"
 
+
+[[test_parse_size_bp]]
+temp_str = '100bp'
+expected = 100
+
+[[test_parse_size_bp]]
+temp_str = '100 bp'
+expected = 100
+
+[[test_parse_size_bp]]
+temp_str = '1kb'
+expected = 1000
+
+[[test_parse_size_bp]]
+temp_str = '1 kb'
+expected = 1000
+
+[[test_parse_size_bp]]
+temp_str = '1.5kb'
+expected = 1500
+
+[[test_parse_size_bp]]
+temp_str = '1.5 kb'
+expected = 1500
+
+[[test_parse_size_bp_err]]
+temp_str = ''
+error = "can't interpret '' as a size"
+
+[[test_parse_size_bp_err]]
+temp_str = '100'
+error = "can't interpret '100' as a size"
+
+[[test_parse_size_bp_err]]
+temp_str = '1.5 bp'
+error = "can't interpret '1.5 bp' as a size"
+

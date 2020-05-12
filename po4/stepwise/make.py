@@ -53,6 +53,7 @@ import autoprop
 from itertools import groupby
 from subprocess import run
 from statistics import mean
+from numbers import Real
 from more_itertools import one
 from inform import Inform, Error, warn
 from po4.model import load_db
@@ -73,12 +74,12 @@ class Make:
         factories = {
                 PcrProtocol:        self._make_pcr_command,
                 InversePcrProtocol: self._make_inverse_pcr_command,
-                KldProtocol:        self._make_kld_command,
                 DigestProtocol:     self._make_digest_command,
                 AnnealProtocol:     self._make_anneal_command,
-                IvtProtocol:        self._make_ivt_command,
                 GoldenGateProtocol: self._make_golden_gate_command,
                 GibsonProtocol:     self._make_gibson_command,
+                LigateProtocol:     self._make_ligate_command,
+                IvtProtocol:        self._make_ivt_command,
         }
 
         constructs = [self.db[x] for x in self.tags]
@@ -130,21 +131,6 @@ class Make:
 
     def _make_inverse_pcr_command(self, constructs):
         self._make_pcr_command(constructs, cmd='invpcr')
-
-    def _make_kld_command(self, constructs):
-        protocols = [x.protocol for x in constructs]
-
-        def get_dpni_flag():
-            use_dpni = any(x.use_dpni for x in protocols)
-            return [] if use_dpni else ['-D']
-
-        self._add_command([
-                'kld',
-                join(x.fragment_tag for x in protocols),
-                *get_num_rxns_flag(constructs),
-                *get_volume_flag(constructs),
-                *get_dpni_flag(),
-        ])
 
     def _make_ivt_command(self, constructs):
         return self._add_command([
@@ -294,13 +280,30 @@ class Make:
         self._make_assembly_command(
                 constructs,
                 cmd='golden_gate',
-                flags=['-e', join(x.protocol.enzyme for x in constructs)],
+                flags=[
+                    *get_unanimous_flag('-e', constructs, lambda x: x.enzyme, "assemblies use different enzymes"),
+                ],
         )
 
     def _make_gibson_command(self, constructs):
         self._make_assembly_command(
                 constructs,
                 cmd='gibson',
+        )
+
+    def _make_ligate_command(self, constructs):
+        protocols = [x.protocol for x in constructs]
+
+        def get_kinase_flag():
+            use_kinase = any(x.use_kinase for x in protocols)
+            return ['-k'] if use_kinase else []
+
+        self._make_assembly_command(
+                constructs,
+                cmd='ligate',
+                flags=[
+                    *get_kinase_flag(),
+                ],
         )
 
     def _add_command(self, cmd):
@@ -325,7 +328,8 @@ def get_unanimous_value(constructs, value_getter, error):
 
 def get_unanimous_flag(flag, constructs, value_getter, error):
     value = get_unanimous_value(constructs, value_getter, error)
-    return [flag, str_sig(value)] if value else []
+    value_str = str_sig(value) if isinstance(value, Real) else str(value)
+    return [flag, value_str] if value else []
 
 def get_volume_flag(constructs):
     return get_unanimous_flag(

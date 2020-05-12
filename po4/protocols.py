@@ -3,9 +3,9 @@
 import math
 import autoprop
 import inform
+from inform import plural
 from statistics import mean
 from more_itertools import one
-from Bio.Restriction import AllEnzymes
 from .model import Plasmid, Fragment, Oligo
 from .errors import ParseError, QueryError
 from .utils import *
@@ -152,57 +152,14 @@ class InversePcrProtocol(PcrProtocol):
     name = "INV"
 
 @autoprop
-class KldProtocol(Protocol):
-    name = "KLD"
-
-    def __init__(self, db, fragment, volume=None, use_dpni=True):
-        super().__init__(db)
-        self._fragment_tag = fragment
-        self._volume_uL = volume
-        self._use_dpni = use_dpni
-
-    @classmethod
-    def from_params(cls, db, params):
-        f = get_tag_pattern(Fragment)
-
-        with inform.add_culprit(cls.name):
-            kld = cls(
-                    db,
-                    parse_param(params, 'fragment', f),
-            )
-            if 'dpni' in params:
-                kld._use_dpni = parse_bool(params['dpni'])
-            if 'volume' in params:
-                kld._volume_uL = parse_volume_uL(params['volume'])
-
-        return kld
-        
-    def get_fragment(self):
-        return self.db[self.fragment_tag]
-
-    def get_fragment_tag(self):
-        return self._fragment_tag
-
-    def get_fragment_seq(self):
-        return self.fragment.seq
-
-    def get_volume_uL(self):
-        return self._volume_uL
-
-    def get_use_dpni(self):
-        return self._use_dpni
-
-@autoprop
 class DigestProtocol(Protocol):
-    # Currently only single-digests of plasmids are supported (n terms of 
-    # getting the product sequence).  It shouldn't be too hard to add 
-    # support for double-digests when I run into a need for that.
     name = "RE"
 
-    def __init__(self, db, template, enzymes):
+    def __init__(self, db, template, enzymes, size=None):
         super().__init__(db)
         self._template_tag = template
         self._enzymes = enzymes
+        self._product_size = size
 
     @classmethod
     def from_params(cls, db, params):
@@ -212,8 +169,10 @@ class DigestProtocol(Protocol):
             return cls(
                     db,
                     parse_param(params, 'template', p),
-                    parse_param(params, 'enzyme', r'[\w\d,-]+').split(','),
+                    parse_param(params, 'enzymes', r'[\w\d,-]+').split(','),
             )
+            if 'size' in params:
+                kld._product_size = parse_size_bp(params['size'])
 
     def get_template(self):
         return self.db[self._template_tag]
@@ -227,26 +186,49 @@ class DigestProtocol(Protocol):
     def get_enzymes(self):
         return self._enzymes
 
-    def get_product_seq(self):
-        enzyme = one(
-                self.enzymes,
-                QueryError("no enzymes specified.", culprit=self.name),
-                QueryError(f"double-digests not yet supported: {len(self.enzymes)} enzymes specified: {', '.join(repr(x) for x in self.enzymes)}", culprit=self.name),
-        )
-        enzyme = re.sub('-HF(v2)?$', '', enzyme)
+    def get_product_seqs(self):
+        from more_itertools import pairwise, flatten
+        from Bio.Restriction import RestrictionBatch
+
+        if not self.enzymes:
+            raise QueryError("no enzymes specified.", culprit=self.name)
+
+        enzymes_str = ','.join(repr(x) for x in self.enzymes)
+        enzymes = [
+                re.sub('-HF(v2)?$', '', x)
+                for x in self.enzymes
+        ]
+
         try:
-            pattern = AllEnzymes.get(enzyme)
+            batch = RestrictionBatch(enzymes)
         except ValueError:
-            raise QueryError(f"unknown enzyme '{enzyme}'", culprit=self.name) from None
+            raise QueryError(f"unknown enzyme(s): {enzymes_str}", culprit=self.name) from None
 
         seq = self.template_seq
-        sites = pattern.search(seq)
-        site = -1 + one(
-                sites,
-                QueryError(f"{enzyme!r} does not cut {self.template_tag!r}", culprit=self.name),
-                QueryError(f"{enzyme!r} cuts {self.template_tag!r} {len(sites)} times", culprit=self.name),
-        )
-        return seq[site:] + seq[:site]
+        sites = [x-1 for x in flatten(batch.search(seq).values())]
+
+        if not sites:
+            raise QueryError(f"{enzymes_str} {plural(enzymes):/does/do} not cut {self.template_tag!r}", culprit=self.name)
+
+        sites += [0, len(seq)] if self.template.is_linear else []
+        sites = sorted(sites)
+
+        if len(sites) == 1:
+            site, = sites
+
+        seqs = []
+        for i,j in pairwise(sorted(sites)):
+            seqs.append(seq[i:j])
+
+        if self.template.is_circular:
+            wrap_around = seq[sites[-1]:] + seq[:sites[0]]
+            seqs.append(wrap_around)
+
+        return seqs
+
+    def get_product_seq(self):
+        target_size = self._product_size or len(self.template_seq)
+        return min(self.product_seqs, key=lambda x: abs(target_size - len(x)))
 
 
 @autoprop
@@ -280,6 +262,13 @@ class AnnealProtocol(Protocol):
 
         return anneal
         
+    def get_product_seq(self):
+        # This assumes that the two oligos are perfectly complementary, which 
+        # may not be the case (e.g. there might be overhangs on either side).  
+        # But there's no way to represent overhangs in PO₄ anyways, and this 
+        # approximation should be close enough for most purposes.
+        return self.oligo_seqs[0]
+
     def get_oligos(self):
         return [self.db[x] for x in self.oligo_tags]
 
@@ -297,6 +286,102 @@ class AnnealProtocol(Protocol):
 
     def get_stock_uM(self):
         return self._stock_uM
+
+
+@autoprop
+class AssemblyProtocol(Protocol):
+    allowed_tags = get_tag_pattern(Plasmid, Fragment)
+
+    def __init__(self, db, backbone, inserts, volume=None):
+        super().__init__(db)
+        self._backbone_tag = backbone
+        self._insert_tags = inserts
+        self._volume_uL = volume
+
+    @classmethod
+    def from_params(cls, db, params):
+        x = cls.allowed_tags
+
+        with inform.add_culprit(cls.name):
+            self = cls(
+                    db,
+                    parse_param(params, 'bb', x),
+                    parse_param(params, 'ins', fr'{x}(?:,{x})*').split(','),
+            )
+            if 'volume' in params:
+                self._volume_uL = parse_volume_uL(params['volume'])
+
+            return self
+
+    def get_backbone(self):
+        return self.db[self.backbone_tag]
+
+    def get_backbone_tag(self):
+        return self._backbone_tag
+
+    def get_backbone_seq(self):
+        return self.backbone.seq
+
+    def get_inserts(self):
+        return [self.db[x] for x in self._insert_tags]
+
+    def get_insert_tags(self):
+        return self._insert_tags
+
+    def get_insert_seqs(self):
+        return [x.seq for x in self.inserts]
+
+    def get_volume_uL(self):
+        return self._volume_uL
+
+
+@autoprop
+class GoldenGateProtocol(AssemblyProtocol):
+    name = "GG"
+
+    def __init__(self, db, backbone, inserts, volume=None, enzyme=None):
+        super().__init__(db, backbone, inserts, volume)
+        self._enzyme = enzyme
+
+    @classmethod
+    def from_params(cls, db, params):
+        gg = super().from_params(db, params)
+
+        with inform.add_culprit(cls.name):
+            if 'enzyme' in params:
+                gg._enzyme = parse_param(params, 'enzyme', r'[\w\d-]+')
+
+        return gg
+
+    def get_enzyme(self):
+        return self._enzyme or None
+
+@autoprop
+class GibsonProtocol(AssemblyProtocol):
+    name = "GIB"
+
+
+@autoprop
+class LigateProtocol(AssemblyProtocol):
+    name = "LIG"
+    allowed_tags = get_tag_pattern(Fragment)
+
+    def __init__(self, db, backbone, inserts, volume=None, use_kinase=False):
+        super().__init__(db, backbone, inserts, volume)
+        self._use_kinase = use_kinase
+
+    @classmethod
+    def from_params(cls, db, params):
+        kld = super().from_params(db, params)
+
+        with inform.add_culprit(cls.name):
+            if 'kinase' in params:
+                kld._use_kinase = parse_bool(params['kinase'])
+
+        return kld
+        
+    def get_use_kinase(self):
+        return self._use_kinase
 
 
 @autoprop
@@ -342,69 +427,6 @@ class IvtProtocol(Protocol):
             raise QueryError(f"{self.template_tag!r} does not contain a T7 promoter ({t7_promoter!r}).", culprit=self.name)
 
         return DnaSeq(seq[j:]).transcribe()
-
-
-@autoprop
-class AssemblyProtocol(Protocol):
-
-    def __init__(self, db, backbone, inserts):
-        super().__init__(db)
-        self._backbone_tag = backbone
-        self._insert_tags = inserts
-
-    @classmethod
-    def from_params(cls, db, params):
-        pf = get_tag_pattern(Plasmid, Fragment)
-
-        with inform.add_culprit(cls.name):
-            return cls(
-                    db,
-                    parse_param(params, 'bb', pf),
-                    parse_param(params, 'ins', fr'{pf}(?:,{pf})*').split(','),
-            )
-
-    def get_backbone(self):
-        return self.db[self.backbone_tag]
-
-    def get_backbone_tag(self):
-        return self._backbone_tag
-
-    def get_backbone_seq(self):
-        return self.backbone.seq
-
-    def get_inserts(self):
-        return [self.db[x] for x in self._insert_tags]
-
-    def get_insert_tags(self):
-        return self._insert_tags
-
-    def get_insert_seqs(self):
-        return [x.seq for x in self.inserts]
-
-@autoprop
-class GoldenGateProtocol(AssemblyProtocol):
-    name = "GG"
-
-    def __init__(self, db, backbone, inserts, enzyme=None):
-        super().__init__(db, backbone, inserts)
-        self._enzyme = enzyme
-
-    @classmethod
-    def from_params(cls, db, params):
-        gg = super().from_params(db, params)
-
-        with inform.add_culprit(cls.name):
-            if 'enzyme' in params:
-                gg._enzyme = parse_param(params, 'enzyme', r'[\w\d-]+')
-
-        return gg
-
-    def get_enzyme(self):
-        return self._enzyme or 'BsaI-HFv2'
-
-@autoprop
-class GibsonProtocol(AssemblyProtocol):
-    name = "GIB"
 
 
 @autoprop
