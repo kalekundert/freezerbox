@@ -141,9 +141,11 @@ def test_digest_from_params():
     digest = DigestProtocol.from_params(db, dict(
             template='p1',
             enzymes='BsaI',
+            size='1kb',
     ))
     assert digest.template_tag == 'p1'
     assert digest.enzymes == ['BsaI']
+    assert digest._product_size == 1000
 
 @parametrize_via_toml('test_protocols.toml')
 def test_digest_from_params_err(params, error):

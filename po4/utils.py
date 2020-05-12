@@ -201,16 +201,15 @@ def parse_conc_ng_uL(conc_str, mw):
 
 @only_raise(ParseError)
 def parse_size_bp(size_str):
-    bp_parsers = {
-            'bp': (
+    bp_parsers = [
+            (
                 fr'(?P<size>\d+)\s*bp',
                 int,
-            ),
-            'kb': (
+            ), (
                 fr'(?P<size>\d+.?\d*)\s*kb',
                 lambda x: int(float(x) * 1000),
             ),
-    }
+    ]
 
     for pattern, size_from_str in bp_parsers:
         if m := re.fullmatch(pattern, size_str):

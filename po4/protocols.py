@@ -166,13 +166,15 @@ class DigestProtocol(Protocol):
         p = get_tag_pattern(Plasmid)
 
         with inform.add_culprit(cls.name):
-            return cls(
+            self = cls(
                     db,
                     parse_param(params, 'template', p),
                     parse_param(params, 'enzymes', r'[\w\d,-]+').split(','),
             )
             if 'size' in params:
-                kld._product_size = parse_size_bp(params['size'])
+                self._product_size = parse_size_bp(params['size'])
+
+            return self
 
     def get_template(self):
         return self.db[self._template_tag]

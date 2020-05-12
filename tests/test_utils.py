@@ -117,3 +117,12 @@ def test_parse_conc_err(conc_str, mw, error):
         parse_conc_nM(conc_str, mw)
     with pytest.raises(ParseError, match=error):
         parse_conc_ng_uL(conc_str, mw)
+@parametrize_via_toml('test_utils.toml')
+def test_parse_size_bp(size_str, expected):
+    assert parse_size_bp(size_str) == expected
+
+@parametrize_via_toml('test_utils.toml')
+def test_parse_size_bp_err(size_str, error):
+    with pytest.raises(ParseError, match=error):
+        parse_size_bp(size_str)
+
