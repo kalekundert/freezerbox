@@ -257,22 +257,25 @@ class Make:
                 for x in tag_groups
         ]
 
-        master_mix = []
-        for name, tags in zip(fragment_names(), tag_groups):
-            if len(set(tags)) == 1:
-                master_mix.append(name)
+        def get_master_mix_flag():
+            master_mix = []
+            for name, tags in zip(fragment_names(), tag_groups):
+                if len(set(tags)) == 1:
+                    master_mix.append(name)
+
+            if master_mix and len(protocols) > 1:
+                return ['-m', ','.join(master_mix)]
+            else:
+                return []
 
         stepwise_cmd = [
                 cmd,
                 *fragments,
+                *get_num_rxns_flag(constructs),
+                *get_volume_flag(constructs),
+                *get_master_mix_flag(),
                 *flags
         ]
-        if (n := len(protocols)) > 1:
-            stepwise_cmd += [
-                '-n', str(n),
-            ]
-            if master_mix:
-                stepwise_cmd += ['-m', ','.join(master_mix)]
 
         self._add_command(stepwise_cmd)
 

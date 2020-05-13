@@ -340,6 +340,17 @@ expected = [
 [[test_make]]
 id = 'gg'
 protocols = [
+  'GG: bb=p1 ins=f1 volume=10µL',
+]
+options = [
+]
+expected = [
+  'stepwise golden_gate p1:50:7 f1:50:7 -v 10'
+]
+
+[[test_make]]
+id = 'gg'
+protocols = [
   'GG: bb=p1 ins=f1 enzyme=BbsI',
 ]
 options = [
@@ -420,6 +431,17 @@ expected = [
   'stepwise gibson p1:50:7 f1,f4:50:7 -n 2 -m bb',
 ]
 
+[[test_make]]
+id = 'gib'
+protocols = [
+  'GIB: bb=p1 ins=f1 volume=10µL',
+]
+options = [
+]
+expected = [
+  'stepwise gibson p1:50:7 f1:50:7 -v 10',
+]
+
 
 # Ligate
 
@@ -491,6 +513,18 @@ options = [
 expected = [
   'stepwise ligate f1:50:7 f2,f5:100:7 -n 2 -m bb',
 ]
+
+[[test_make]]
+id = 'lig'
+protocols = [
+  'LIG: bb=f1 ins=f2 volume=10µL',
+]
+options = [
+]
+expected = [
+  'stepwise ligate f1:50:7 f2:100:7 -v 10'
+]
+
 [[test_make]]
 id = 'lig'
 protocols = [
@@ -511,7 +545,7 @@ protocols = [
 options = [
 ]
 expected = [
-  'stepwise ligate f1,f4:50:7 f2,f5:100:7 -k -n 2',
+  'stepwise ligate f1,f4:50:7 f2,f5:100:7 -n 2 -k',
 ]
 
 
