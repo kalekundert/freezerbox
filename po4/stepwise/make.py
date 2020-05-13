@@ -117,7 +117,7 @@ class Make:
 
             return ['-m', ','.join(master_mix)]
 
-        self._add_command([
+        self._add_command(constructs, [
                 cmd,
                 join(x.template_tag for x in protocols),
                 join(x.primer_tags[0] for x in protocols),
@@ -133,18 +133,17 @@ class Make:
         self._make_pcr_command(constructs, cmd='invpcr')
 
     def _make_ivt_command(self, constructs):
-        return self._add_command([
+        return self._add_command(constructs, [
                 'ivt',
                 str(len(constructs)),
         ])
 
     def _make_digest_command(self, constructs):
-        protocols = [x.protocol for x in constructs]
-
-        for enz, group in groupby(protocols, key=lambda x: x.enzymes):
-            self._add_command([
+        for enz, group in groupby(constructs, key=lambda x: x.protocol.enzymes):
+            group = list(group)
+            self._add_command(group, [
                     'digest',
-                    join(x.template_tag for x in protocols),
+                    join(x.protocol.template_tag for x in group),
                     join(enz),
             ])
 
@@ -175,7 +174,7 @@ class Make:
 
             return ['-m', ','.join(master_mix)] if master_mix else []
 
-        self._add_command([
+        self._add_command(constructs, [
                 'anneal',
                 join(x.oligo_tags[0] for x in protocols),
                 join(x.oligo_tags[1] for x in protocols),
@@ -277,7 +276,7 @@ class Make:
                 *flags
         ]
 
-        self._add_command(stepwise_cmd)
+        self._add_command(constructs, stepwise_cmd)
 
     def _make_golden_gate_command(self, constructs):
         self._make_assembly_command(
@@ -309,8 +308,17 @@ class Make:
                 ],
         )
 
-    def _add_command(self, cmd):
+    def _add_command(self, constructs, cmd):
+        assert constructs
+        assert cmd
+
         self._protocol += stepwise.load([*cmd, *self.options])
+
+        label = f"Label the {plural(constructs):product/s}:"
+        tags = ','.join(str(x.tag) for x in constructs)
+        step = f'{label} {tags}'
+
+        self._protocol += step if len(step) < 49 else f'{label}\n{tags}'
 
 def join(items):
     items = list(items)
@@ -323,17 +331,6 @@ def str_sig(value):
     return str(float(value)).strip('0').rstrip('.')
 
 
-def get_unanimous_value(constructs, value_getter, error):
-    return one(
-            {value_getter(x.protocol) for x in constructs},
-            too_long=UsageError(f"{error}: {','.join(repr(x.tag) for x in constructs)}"),
-    )
-
-def get_unanimous_flag(flag, constructs, value_getter, error):
-    value = get_unanimous_value(constructs, value_getter, error)
-    value_str = str_sig(value) if isinstance(value, Real) else str(value)
-    return [flag, value_str] if value else []
-
 def get_volume_flag(constructs):
     return get_unanimous_flag(
             '-v',
@@ -345,6 +342,17 @@ def get_volume_flag(constructs):
 def get_num_rxns_flag(constructs, default=1):
     n = len(constructs)
     return ['-n', str(n)] if n != default else []
+
+def get_unanimous_flag(flag, constructs, value_getter, error):
+    value = get_unanimous_value(constructs, value_getter, error)
+    value_str = str_sig(value) if isinstance(value, Real) else str(value)
+    return [flag, value_str] if value else []
+
+def get_unanimous_value(constructs, value_getter, error):
+    return one(
+            {value_getter(x.protocol) for x in constructs},
+            too_long=UsageError(f"{error}: {','.join(repr(x.tag) for x in constructs)}"),
+    )
 
 
 if __name__ == '__main__':
