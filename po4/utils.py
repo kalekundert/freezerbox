@@ -55,13 +55,14 @@ def parse_tag(tag_str):
         raise ParseError(f"expected a tag (e.g. 'p100'), not {tag_str!r}")
 
 @only_raise(ParseError)
-def parse_params(params_str):
+def parse_params(params_str, *, sep=r'\s', on_duplicate=None, on_unmatched=None):
     params = {}
-    param_pattern = r'''\s*
+    param_pattern = fr'''\s*
             (?P<key>\w+)=(
-              (?P<value>[^"']\S*)|
+              (?P<value>[^"'][^{sep}]*)|
               (?P<quote>["'])(?P<value_quoted>.*?)(?P=quote)
-            )(\s+|$)
+            )
+            ({sep}|$)
     '''
 
     unmatched = set(range(len(params_str)))
@@ -71,24 +72,30 @@ def parse_params(params_str):
         value = m.group('value') or m.group('value_quoted')
 
         if key in params:
-            raise ParseError(f"duplicate key {key!r} in {params_str!r}")
+            if on_duplicate:
+                on_duplicate(params, key, value)
+            else:
+                raise ParseError(f"duplicate key {key!r} in {params_str!r}")
 
         params[key] = value
         unmatched -= set(range(m.start(), m.end()))
 
     if unmatched:
-        groups = split_when(
-                sorted(unmatched), 
-                lambda a, b: b != a + 1
-        )
-        substrs = ', '.join(
-                repr(params_str[x[0]:x[-1]+1])
-                for x in groups
-        )
-        if substrs == repr(params_str):
-            raise ParseError(f"can't parse {params_str!r}")
+        if on_unmatched:
+            on_unmatched(params_str, unmatched)
         else:
-            raise ParseError(f"can't parse {params_str!r}: didn't expect {substrs}")
+            groups = split_when(
+                    sorted(unmatched), 
+                    lambda a, b: b != a + 1
+            )
+            substrs = ', '.join(
+                    repr(params_str[x[0]:x[-1]+1])
+                    for x in groups
+            )
+            if substrs == repr(params_str):
+                raise ParseError(f"can't parse {params_str!r}")
+            else:
+                raise ParseError(f"can't parse {params_str!r}: didn't expect {substrs}")
 
     return params
 
