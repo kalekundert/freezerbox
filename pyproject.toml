@@ -15,7 +15,7 @@ requires = [
   'Biopython',
   'configurator',
   'docopt',
-  'inform',
+  'inform>=1.21',
   'more_itertools>=8.0',
   'pandas',
   'setuptools',
