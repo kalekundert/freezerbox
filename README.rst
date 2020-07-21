@@ -8,14 +8,15 @@ PhosphateDB
 .. image:: https://img.shields.io/pypi/pyversions/po4.svg
    :target: https://pypi.python.org/pypi/po4
 
-.. image:: https://img.shields.io/readthedocs/phosphatedb.svg
-   :target: https://phosphatedb.readthedocs.io/en/latest/?badge=latest
+..
+  .. image:: https://img.shields.io/readthedocs/phosphatedb.svg
+     :target: https://phosphatedb.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/travis/kalekundert/phosphatedb.svg
-   :target: https://travis-ci.org/kalekundert/phosphatedb
+.. image:: https://img.shields.io/github/workflow/status/kalekundert/phosphatedb/Test%20and%20release/master
+   :target: https://github.com/kalekundert/phosphatedb/actions
 
 .. image:: https://img.shields.io/coveralls/kalekundert/phosphatedb.svg
-   :target: https://coveralls.io/github/kalekundert/phosphatedb
+   :target: https://coveralls.io/github/kalekundert/phosphatedb?branch=master
 
 PhosphateDB (or PO₄ for short) is a tool for keeping track of DNA constructs 
 such as plasmids, gene fragments, and oligos.  It emphasizes keeping track of 
