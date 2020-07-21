@@ -133,9 +133,16 @@ class Make:
         self._make_pcr_command(constructs, cmd='invpcr')
 
     def _make_ivt_command(self, constructs):
+        protocols = [x.protocol for x in constructs]
+        
+        def get_short_flag():
+            transcript_lens = (len(x.product_seq) for x in protocols)
+            return ['-s'] if all(x <= 300 for x in transcript_lens) else []
+
         return self._add_command(constructs, [
                 'ivt',
-                str(len(constructs)),
+                *(x.template_tag for x in protocols),
+                *get_short_flag(),
         ])
 
     def _make_digest_command(self, constructs):

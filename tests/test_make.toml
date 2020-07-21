@@ -552,26 +552,37 @@ expected = [
 # In vitro transcription
 
 [[test_make]]
-id = 'ivt-1'
+id = 'ivt'
 protocols = [
-  'IVT: template=f1',
+  'IVT: template=f7',
 ]
 options = [
 ]
 expected = [
-  'stepwise ivt 1',
+  'stepwise ivt f7 -s',
 ]
 
 [[test_make]]
-id = 'ivt-2'
+id = 'ivt'
 protocols = [
-  'IVT: template=f1',
-  'IVT: template=f2',
+  'IVT: template=f8',
 ]
 options = [
 ]
 expected = [
-  'stepwise ivt 2',
+  'stepwise ivt f8',
+]
+
+[[test_make]]
+id = 'ivt'
+protocols = [
+  'IVT: template=f7',
+  'IVT: template=f8',
+]
+options = [
+]
+expected = [
+  'stepwise ivt f7 f8',
 ]
 
 

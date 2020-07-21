@@ -10,6 +10,7 @@ from utils import parametrize_via_toml
 @parametrize_via_toml('test_make.toml')
 def test_make(disable_capture, protocols, options, expected):
     db = Database()
+    t7 = 'TAATACGACTCACTATA'
 
     # Create some dummy sequences for the protocols to use.
     db['p1'] = Plasmid(seq='GATTACA')
@@ -20,6 +21,8 @@ def test_make(disable_capture, protocols, options, expected):
     db['f4'] = Fragment(seq='GATTACA')
     db['f5'] = Fragment(seq='GATTACA', conc='100ng/µL')
     db['f6'] = Fragment(seq='GATTACA', conc='75nM')
+    db['f7'] = Fragment(seq=t7+300*'G')
+    db['f8'] = Fragment(seq=t7+301*'G')
     db['o1'] = Oligo(seq='GATTACA')
     db['o2'] = Oligo(seq='GATTACA')
     db['o3'] = Oligo(seq='GATTACA')
