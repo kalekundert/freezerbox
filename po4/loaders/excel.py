@@ -13,7 +13,7 @@ schema = {
         Required('dir'): All(str, Coerce(Path)),
         'columns': {str: Any(
             'seq', 'protocol', 'name', 'alt_names', 'date', 'desc', 
-            'length', 'conc', 
+            'length', 'conc', 'mw',
         )},
 }
 default_config = {
@@ -26,6 +26,7 @@ default_config = {
             'Description': 'desc',
             'Length': 'length',
             'Conc': 'conc',
+            'MW': 'mw',
         }
 }
 

@@ -83,7 +83,9 @@ class Construct:
         self._desc = kwargs.get('desc')
         self._length = kwargs.get('length')
         self._conc_str = kwargs.get('conc')
+        self._mw = kwargs.get('mw')
         self._protocol = kwargs.get('protocol')
+        self._kwargs = kwargs
 
     def check(self):
         self._check_seq()
@@ -166,6 +168,9 @@ class Construct:
         return self._protocol
 
     def get_mw(self):
+        if self._mw:
+            return self._mw
+
         from Bio.SeqUtils import molecular_weight
         mw = molecular_weight(
                 seq=self.seq,

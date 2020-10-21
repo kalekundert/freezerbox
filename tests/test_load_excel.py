@@ -70,6 +70,14 @@ def test_o7(db):
     assert db['o7'].seq == 'AGGTCTCAGGAGCTATTTGTATAGTTCATCCATGCC'
     assert db['o7'].length == 36
 
+def test_o8(db):
+    assert db['o8'].name == 'o8_Puro_DBCO'
+    # Complicated sequence for which length and MW cannot be automatically 
+    # calculated.
+    assert db['o8'].seq == 'XAAAAAAAAAAAAAAAAAAXXXXXCCX'
+    assert db['o8'].length == 27
+    assert db['o8'].mw == 9168
+
 
 def test_f2(db):
     assert db['f2'].desc == "mRuby"
