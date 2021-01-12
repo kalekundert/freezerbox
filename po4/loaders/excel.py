@@ -4,6 +4,7 @@ import pandas as pd
 import autosnapgene as snap
 from pathlib import Path
 from voluptuous import Required, All, Any, Coerce
+from warnings import catch_warnings, filterwarnings
 from ..model import Database, Tag, Plasmid, Fragment, Oligo
 from ..protocols import Protocol
 from ..utils import *
@@ -50,7 +51,14 @@ def load(config):
     db = Database(str(root))
 
     for cls, path in db_xlsx.items():
-        df = pd.read_excel(path)
+        with catch_warnings():
+            filterwarnings(
+                    'ignore',
+                    category=UserWarning,
+                    message="Workbook contains no default style, apply openpyxl's default",
+            )
+            df = pd.read_excel(path)
+
         df = df.set_index(df.index + 2)
         df = df.rename(columns=config['columns'])
         df = df.where(pd.notnull(df), None)
