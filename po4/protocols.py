@@ -59,13 +59,13 @@ class PcrProtocol(Protocol):
 
     @classmethod
     def from_params(cls, db, params):
-        pf = get_tag_pattern(Plasmid, Fragment)
+        pfo = get_tag_pattern()
         o = get_tag_pattern(Oligo)
 
         with inform.add_culprit(cls.name):
             pcr = cls(
                     db,
-                    parse_param(params, 'template', pf),
+                    parse_param(params, 'template', pfo),
                     parse_param(params, 'primers', fr'({o}),\s*({o})'),
             )
 
