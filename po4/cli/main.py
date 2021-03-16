@@ -14,7 +14,7 @@ Commands:
     which:  List the available databases.
 
 Options:
-    -a --attrs <list>      [default: seq]
+    -a --attrs <list>      [default: length,mw]
         A comma-separated list of attributes to display.
 
 Arguments:
@@ -35,7 +35,7 @@ def main():
     args = docopt.docopt(__doc__)
 
     if args['query']:
-        seq(args['<tags>'], args['--attrs'].split(','))
+        query(args['<tags>'], args['--attrs'].split(','))
 
     if args['check']:
         check(args['<db>'])
@@ -43,7 +43,7 @@ def main():
     if args['which']:
         which()
 
-def seq(tags, attrs):
+def query(tags, attrs):
     db = load_db()
 
     print('\t'.join(['tag', *attrs]))
