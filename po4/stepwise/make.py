@@ -139,10 +139,18 @@ class Make:
             transcript_lens = (len(x.product_seq) for x in protocols)
             return ['-s'] if all(x <= 300 for x in transcript_lens) else []
 
+        def get_stock_conc_flag():
+            return get_unanimous_flag(
+                    '-d', constructs, lambda x: x.template.conc_ng_uL,
+                    "reactions have different oligo stock concentrations",
+            )
+
         return self._add_command(constructs, [
                 'ivt',
                 *(x.template_tag for x in protocols),
                 *get_short_flag(),
+                *get_stock_conc_flag(),
+                '-C',
         ])
 
     def _make_digest_command(self, constructs):
@@ -379,6 +387,6 @@ if __name__ == '__main__':
     make.options = args['<options>']
 
     try:
-        print(make.protocol)
+        make.protocol.print()
     except Error as err:
         err.report()
