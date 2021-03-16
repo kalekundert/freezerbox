@@ -148,10 +148,10 @@ def parse_time_s(time_str):
 
 @only_raise(ParseError)
 def parse_temp_C(temp_str):
-    temp_pattern = fr'(?P<temp>\d+)\s*°?C'
+    temp_pattern = fr'(?P<temp>[0-9.]+)\s*°?C'
 
     if m := re.fullmatch(temp_pattern, temp_str):
-        return int(m.group('temp'))
+        return float(m.group('temp'))
 
     raise ParseError(f"can't interpret {temp_str!r} as a temperature, did you forget a unit?")
 
@@ -223,4 +223,9 @@ def parse_size_bp(size_str):
             return size_from_str(m.group('size'))
 
     raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
+
+def unanimous(values):
+    from itertools import groupby
+    from more_itertools import one
+    return one((x[0] for x in groupby(values)))
 
