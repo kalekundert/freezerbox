@@ -8,6 +8,7 @@ from configurator import Config
 from voluptuous import Schema, Invalid
 from pkg_resources import iter_entry_points
 from Bio.SeqUtils import molecular_weight, MeltingTemp
+from Bio.Alphabet import DNAAlphabet, RNAAlphabet
 from .config import load_config
 from .errors import LoadError, QueryError, CheckError, only_raise
 from .utils import *
@@ -198,6 +199,14 @@ class Construct:
 
     def get_conc_ng_uL(self):
         return parse_conc_ng_uL(self.conc_str, self.mw)
+
+    @property
+    def is_dna(self):
+        return isinstance(self.seq.alphabet, DNAAlphabet)
+
+    @property
+    def is_rna(self):
+        return isinstance(self.seq.alphabet, RNAAlphabet)
 
     @property
     def is_double_stranded(self):
