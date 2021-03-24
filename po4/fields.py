@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+
+from .errors import ParseError
+from parsy import ParseError as ParsyError, generate, regex, string
+from contextlib import contextmanager
+
+class Fields:
+
+    def __init__(self, indexed, named):
+        self.by_index = indexed
+        self.by_name = named
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return target.by_name[key]
+
+        if isinstance(key, int):
+            return target.by_index[key]
+
+        raise KeyError(key)
+
+def parse_fields_list(fields_str):
+    with _reformat_errors():
+        return fields_list.parse(fields_str)
+        
+def parse_fields(fields_str):
+    with _reformat_errors():
+        return fields.parse(fields_str)
+
+@generate
+def fields_list():
+    sep = regex(r'\s*;\s+')
+    parsed = yield fields.sep_by(sep)
+    return parsed
+
+@generate
+def fields():
+    by_index = []
+    by_name = {}
+    space = regex(r'\s+')
+
+    @generate
+    def field():
+        # Always try matching named fields before indexed fields.  This is 
+        # necessary the parser for an indexed field will match the first half 
+        # of a named field but stop at the '='.  The next parser will then fail 
+        # when it tries to continue from there.
+        if by_name:
+            yield named_field
+        else:
+            yield named_field | indexed_field
+
+    @generate
+    def named_field():
+        k, v = yield key_value
+        by_name[k] = v
+
+    @generate
+    def indexed_field():
+        v = yield word
+        by_index.append(v)
+    
+    yield field.sep_by(space, min=1)
+    return Fields(by_index, by_name)
+
+@generate
+def key_value():
+    key = yield word
+    yield string('=')
+    value = yield word
+    return key, value
+
+@generate
+def word():
+    quote_char = yield regex('[\'"]').optional()
+
+    if quote_char is None:
+        return regex(r'\w+')
+
+    else:
+        escape = regex(fr'\\[\\{quote_char}]').map(lambda x: x[-1])
+        value_char = escape | regex(fr'[^\\{quote_char}]+')
+        word = yield value_char.many().concat()
+        yield string(quote_char)
+        return word
+
+@contextmanager
+def _reformat_errors():
+    try:
+        yield
+
+    except ParsyError as e1:
+        e2 = ParseError(
+                stream=e1.stream,
+                index=e1.index,
+                expected=e1.expected,
+        )
+
+        def format_stream(e):
+            return f"parsing:  {e.stream!r}"
+
+        def format_expected(e):
+            expected = ' or '.join(
+                    sorted(map(str, e.expected)),
+            )
+            return f"expected:  {e.index * ' '}^ {expected}"
+
+        e2.brief = "can't parse fields"
+        e2.info += format_stream
+        e2.blame += format_expected
+
+        raise e2 from e1
+

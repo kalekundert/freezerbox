@@ -1,0 +1,307 @@
+test_word:
+  -
+    given: a
+    expected: a
+  -
+    given: 1
+    expected: 1
+  -
+    given: _
+    expected: _
+  -
+    given: ""
+    expected:
+  -
+    given: "a"
+    expected: a
+  -
+    given: "a b"
+    expected: a b
+  -
+    given: "'"
+    expected: '
+  -
+    given: "\""
+    expected: "
+  -
+    given: "\\"
+    expected: \
+
+test_word_err:
+  -
+    given:
+  -
+    given: a b
+  -
+    given: "
+  -
+    given: "a
+  -
+    given: a"
+  -
+    given: "a'
+  -
+    given: 'a"
+  -
+    given: "\a"
+
+test_key_value:
+  -
+    given: a=b
+    expected:
+      key: a
+      value: b
+  -
+    given: "a b"="c d"
+    expected:
+      key: a b
+      value: c d
+
+test_key_value_err:
+  -
+    given: a = b
+  -
+    given: a= b
+  -
+    given: a =b
+
+test_fields:
+  -
+    given: a
+    expected:
+      by_index:
+        - a
+      by_name:
+  -
+    given: a b=c
+    expected:
+      by_index:
+        - a
+      by_name:
+        b: c
+  -
+    given: a b=c d=e
+    expected:
+      by_index:
+        - a
+      by_name:
+        b: c
+        d: e
+  -
+    given: a b
+    expected:
+      by_index:
+        - a
+        - b
+      by_name:
+  -
+    given: a b c=d
+    expected:
+      by_index:
+        - a
+        - b
+      by_name:
+        c: d
+  -
+    given: a b c=d e=f
+    expected:
+      by_index:
+        - a
+        - b
+      by_name:
+        c: d
+        e: f
+  -
+    given: a=b
+    expected:
+      by_index:
+      by_name:
+        a: b
+  -
+    given: a=b c=d
+    expected:
+      by_index:
+      by_name:
+        a: b
+        c: d
+  -
+    given: a  b
+    expected:
+      by_index:
+        - a
+        - b
+      by_name:
+  -
+    given: "a b"
+    expected:
+      by_index:
+        - a b
+      by_name:
+  -
+    given: "a=b"
+    expected:
+      by_index:
+        - a=b
+      by_name:
+
+test_fields_err:
+  -
+    given:
+    messages:
+      - can't parse fields
+      - parsing:  ''
+      - expected:  ^ ['"] or \w+
+  -
+    given: a=b c
+    messages:
+      - can't parse fields
+      - parsing:  'a=b c'
+      - expected:       ^ =
+  -
+    given: a b=c d
+    messages:
+      - can't parse fields
+      - parsing:  'a b=c d'
+      - expected:         ^ =
+
+test_fields_list:
+  -
+    given:
+    expected:
+  -
+    given: a
+    expected:
+      -
+        by_index:
+          - a
+        by_name:
+  -
+    given: a; b
+    expected:
+      -
+        by_index:
+          - a
+        by_name:
+      -
+        by_index:
+          - b
+        by_name:
+  -
+    given: a; b=c
+    expected:
+      -
+        by_index:
+          - a
+        by_name:
+      -
+        by_index:
+        by_name:
+          b: c
+  -
+    given: a; b; c
+    expected:
+      -
+        by_index:
+          - a
+        by_name:
+      -
+        by_index:
+          - b
+        by_name:
+      -
+        by_index:
+          - c
+        by_name:
+  -
+    given: a=b
+    expected:
+      -
+        by_index:
+        by_name:
+          a: b
+  -
+    given: a=b; c
+    expected:
+      -
+        by_index:
+        by_name:
+          a: b
+      -
+        by_index:
+          - c
+        by_name:
+  -
+    given: a=b; c=d
+    expected:
+      -
+        by_index:
+        by_name:
+          a: b
+      -
+        by_index:
+        by_name:
+          c: d
+  -
+    given: a=b; c=d; e=f
+    expected:
+      -
+        by_index:
+        by_name:
+          a: b
+      -
+        by_index:
+        by_name:
+          c: d
+      -
+        by_index:
+        by_name:
+          e: f
+  -
+    given: a ; b
+    expected:
+      -
+        by_index:
+          - a
+        by_name:
+      -
+        by_index:
+          - b
+        by_name:
+  -
+    given: "a;b"
+    expected:
+      -
+        by_index:
+          - a;b
+        by_name:
+  -
+    given: "a;b"; "c;d"
+    expected:
+      -
+        by_index:
+          - a;b
+        by_name:
+      -
+        by_index:
+          - c;d
+        by_name:
+
+test_fields_list_err:
+  -
+    given: ;
+    messages:
+      - can't parse fields
+      - parsing:  ';'
+      - expected:  ^ EOF or ['"] or \w+
+  -
+    given: a;
+    messages:
+      - can't parse fields
+      - parsing:  'a;'
+      - expected:   ^ = or EOF or \s*;\s+ or \s+
+  -
+    given: ;a
+    messages:
+      - can't parse fields
+      - parsing:  ';a'
+      - expected:  ^ EOF or ['"] or \w+

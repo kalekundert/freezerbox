@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 
 import functools
-from inform import Error, get_culprit
+from tidyexc import Error
 
 class Po4Error(Error):
-
-    def __init__(self, *args, **kwargs):
-        if 'culprit' not in kwargs:
-            kwargs['culprit'] = get_culprit()
-        super().__init__(*args, **kwargs)
+    pass
 
 class LoadError(Po4Error):
     pass

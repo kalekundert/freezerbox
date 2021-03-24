@@ -19,6 +19,7 @@ requires = [
   'inform>=1.21',
   'more_itertools>=8.0',
   'pandas',
+  'parsy',
   'setuptools',
   'stepwise',
   'stepwise_mol_bio',
