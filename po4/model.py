@@ -69,6 +69,7 @@ class Tag:
     def __str__(self):
         return f'{self.type}{self.id}'
 
+
 @autoprop
 class Construct:
     tag_prefix = None
@@ -290,6 +291,28 @@ class Oligo(Construct):
     def is_phosphorylated(self):
         # Right now, PO4 has no support for modified oligos at all.  
         return False
+
+
+class Target:
+    """
+    Represents the information stored in the PO₄ database concerning one step 
+    of the synthesis or cleanup of a single construct.  Specifically, this 
+    includes:
+
+    - a `Construct` object representing the desired product.
+    - a `Fields` object containing any relevant protocol parameters.
+    """
+
+    def __init__(self, product, fields):
+        self.product = product
+        self.fields = fields
+
+    def __getitem__(self, key):
+        # This function makes it possible to use simple string keys with 
+        # `Po4TargetConfig`.  Function keys can still be used to access the 
+        # product object, if necessary.
+        return self.fields[key]
+
 
 @only_raise(LoadError)
 def load_db(use=None, config=None):
