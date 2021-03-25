@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import po4
 import pytest
 import parametrize_from_file
 
@@ -76,4 +77,19 @@ def test_fields_list_err(given, messages):
 
     for message in messages:
         assert message in str(err.value)
+
+def test_fields_getitem():
+    fields = po4.Fields(['a', 'b'], {'c': 3, 'd': 4})
+
+    assert fields[0] == 'a'
+    assert fields[1] == 'b'
+
+    with pytest.raises(KeyError):
+        fields[2]
+
+    assert fields['c'] == 3
+    assert fields['d'] == 4
+
+    with pytest.raises(KeyError):
+        fields['e']
 

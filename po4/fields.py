@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+A simple format for extracting fields from a string.
+"""
+
 from .errors import ParseError
 from parsy import ParseError as ParsyError, generate, regex, string
 from contextlib import contextmanager
@@ -12,10 +16,13 @@ class Fields:
 
     def __getitem__(self, key):
         if isinstance(key, str):
-            return target.by_name[key]
+                return self.by_name[key]
 
         if isinstance(key, int):
-            return target.by_index[key]
+            try:
+                return self.by_index[key]
+            except IndexError:
+                raise KeyError(key)
 
         raise KeyError(key)
 
