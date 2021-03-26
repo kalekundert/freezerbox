@@ -1,0 +1,313 @@
+test_group_by:
+  -
+    id: merge-n
+    grouper: po4.merge(list)
+    items: []
+    expected:
+  -
+    id: merge-n
+    grouper: po4.merge(list)
+    items: [1]
+    expected:
+      -
+        value: [1]
+        items: [1]
+  -
+    id: merge-n
+    grouper: po4.merge(list)
+    items: 1, 2
+    expected:
+      -
+        value: [1, 2]
+        items: [1, 2]
+  -
+    id: merge-agg
+    grouper: po4.merge(min)
+    items: 1, 2
+    expected:
+      -
+        value: 1
+        items: [1, 2]
+  -
+    id: merge-agg
+    grouper: po4.merge(max)
+    items: 1, 2
+    expected:
+      -
+        value: 2
+        items: [1, 2]
+  -
+    id: merge-key
+    grouper: po4.merge(list)
+    key: lambda x: x.upper()
+    items: 'a', 'b'
+    expected:
+      -
+        value: ['A', 'B']
+        items: ['a', 'b']
+
+  -
+    id: cluster
+    grouper: po4.group_by_cluster(max_diff=2)
+    items: []
+    expected:
+  -
+    id: cluster
+    grouper: po4.group_by_cluster(max_diff=2)
+    items: [1]
+    expected:
+      -
+        value: 1
+        items: [1]
+  -
+    id: cluster
+    grouper: po4.group_by_cluster(max_diff=2)
+    items: 1, 2
+    expected:
+      -
+        value: approx(1.5)
+        items: [1, 2]
+  -
+    id: cluster
+    grouper: po4.group_by_cluster(max_diff=2)
+    items: 1, 3
+    expected:
+      -
+        value: 1
+        items: [1]
+      -
+        value: 3
+        items: [3]
+  -
+    id: cluster
+    grouper: po4.group_by_cluster(max_diff=2)
+    items: 1, 2, 3, 4
+    expected:
+      -
+        value: approx(1.5)
+        items: [1, 2]
+      -
+        value: approx(3.5)
+        items: [3, 4]
+  -
+    id: cluster-agg
+    grouper: po4.group_by_cluster(max_diff=2, aggregate=min)
+    items: 1, 2, 3, 4
+    expected:
+      -
+        value: 1
+        items: [1, 2]
+      -
+        value: 3
+        items: [3, 4]
+  -
+    id: cluster-key
+    grouper: po4.group_by_cluster(max_diff=2)
+    items: 'a', 'b', 'c', 'd'
+    key: lambda x: ord(x) - ord('a')
+    expected:
+      -
+        value: approx(0.5)
+        items: ['a', 'b']
+      -
+        value: approx(2.5)
+        items: ['c', 'd']
+
+  -
+    id: identity
+    grouper: po4.group_by_identity
+    items: []
+    expected:
+  -
+    id: identity
+    grouper: po4.group_by_identity
+    items: [1]
+    expected:
+      -
+        value: 1
+        items: [1]
+  -
+    id: identity
+    grouper: po4.group_by_identity
+    items: [1, 2]
+    expected:
+      -
+        value: 1
+        items: [1]
+      -
+        value: 2
+        items: [2]
+  -
+    id: identity
+    grouper: po4.group_by_identity
+    items: [1, 2, 1, 2]
+    expected:
+      -
+        value: 1
+        items: [1, 1]
+      -
+        value: 2
+        items: [2, 2]
+  -
+    id: identity-key
+    grouper: po4.group_by_identity
+    items: ['a', 'b', 'A', 'B']
+    key: lambda x: x.upper()
+    expected:
+      -
+        value: 'A'
+        items: ['a', 'A']
+      -
+        value: 'B'
+        items: ['b', 'B']
+
+test_iter_combos:
+  -
+    id: empty
+    items:
+    groupers:
+    expected:
+  -
+    id: empty
+    items:
+      - DummyItem()
+    groupers:
+    expected:
+      -
+        attrs:
+        items:
+          - DummyItem()
+  -
+    id: empty
+    items:
+    groupers:
+      a: po4.merge(list)
+    expected:
+
+  -
+    id: groups
+    items:
+      - DummyItem(a=1)
+    groupers:
+      a: po4.group_by_identity
+    expected:
+      -
+        attrs:
+          a: 1
+        items:
+          - DummyItem(a=1)
+  -
+    id: groups
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    groupers:
+      a: po4.group_by_identity
+    expected:
+      -
+        attrs:
+          a: 1
+        items:
+          - DummyItem(a=1)
+      -
+        attrs:
+          a: 2
+        items:
+          - DummyItem(a=2)
+  -
+    id: groups
+    items:
+      - DummyItem(a=1, b=1)
+      - DummyItem(a=1, b=2)
+    groupers:
+      a: po4.group_by_identity
+    expected:
+      -
+        attrs:
+          a: 1
+        items:
+          - DummyItem(a=1, b=1)
+          - DummyItem(a=1, b=2)
+  -
+    id: groups-merge
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    groupers:
+      a: po4.merge(list)
+    expected:
+      -
+        attrs:
+          a: [1, 2]
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
+  -
+    id: groups-cluster
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+      - DummyItem(a=3)
+      - DummyItem(a=4)
+    groupers:
+      a: po4.group_by_cluster(max_diff=2)
+    expected:
+      -
+        attrs:
+          a: approx(1.5)
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
+      -
+        attrs:
+          a: approx(3.5)
+        items:
+          - DummyItem(a=3)
+          - DummyItem(a=4)
+
+  -
+    id: attrs
+    items:
+      - DummyItem(a=1, b=1)
+      - DummyItem(a=1, b=2)
+    groupers:
+      a: po4.group_by_identity
+      b: po4.group_by_identity
+    expected:
+      -
+        attrs:
+          a: 1
+          b: 1
+        items:
+          - DummyItem(a=1, b=1)
+      -
+        attrs:
+          a: 1
+          b: 2
+        items:
+          - DummyItem(a=1, b=2)
+  -
+    id: attrs
+    items:
+      - DummyItem(a=1, b=1, c=1)
+      - DummyItem(a=1, b=2, c=2)
+      - DummyItem(a=1, b=1, c=3)
+      - DummyItem(a=1, b=2, c=4)
+    groupers:
+      a: po4.group_by_identity
+      b: po4.group_by_identity
+    expected:
+      -
+        attrs:
+          a: 1
+          b: 1
+        items:
+          - DummyItem(a=1, b=1, c=1)
+          - DummyItem(a=1, b=1, c=3)
+      -
+        attrs:
+          a: 1
+          b: 2
+        items:
+          - DummyItem(a=1, b=2, c=2)
+          - DummyItem(a=1, b=2, c=4)
