@@ -1,50 +1,51 @@
 test_group_by:
   -
-    id: merge-n
-    grouper: po4.merge(list)
+    id: identity
+    grouper: po4.group_by_identity
     items: []
     expected:
   -
-    id: merge-n
-    grouper: po4.merge(list)
+    id: identity
+    grouper: po4.group_by_identity
     items: [1]
     expected:
       -
-        value: [1]
+        value: 1
         items: [1]
   -
-    id: merge-n
-    grouper: po4.merge(list)
-    items: 1, 2
-    expected:
-      -
-        value: [1, 2]
-        items: [1, 2]
-  -
-    id: merge-agg
-    grouper: po4.merge(min)
-    items: 1, 2
+    id: identity
+    grouper: po4.group_by_identity
+    items: [1, 2]
     expected:
       -
         value: 1
-        items: [1, 2]
-  -
-    id: merge-agg
-    grouper: po4.merge(max)
-    items: 1, 2
-    expected:
+        items: [1]
       -
         value: 2
-        items: [1, 2]
+        items: [2]
   -
-    id: merge-key
-    grouper: po4.merge(list)
-    key: lambda x: x.upper()
-    items: 'a', 'b'
+    id: identity
+    grouper: po4.group_by_identity
+    items: [1, 2, 1, 2]
     expected:
       -
-        value: ['A', 'B']
-        items: ['a', 'b']
+        value: 1
+        items: [1, 1]
+      -
+        value: 2
+        items: [2, 2]
+  -
+    id: identity-key
+    grouper: po4.group_by_identity
+    items: ['a', 'b', 'A', 'B']
+    key: lambda x: x.upper()
+    expected:
+      -
+        value: 'A'
+        items: ['a', 'A']
+      -
+        value: 'B'
+        items: ['b', 'B']
 
   -
     id: cluster
@@ -113,65 +114,19 @@ test_group_by:
         value: approx(2.5)
         items: ['c', 'd']
 
-  -
-    id: identity
-    grouper: po4.group_by_identity
-    items: []
-    expected:
-  -
-    id: identity
-    grouper: po4.group_by_identity
-    items: [1]
-    expected:
-      -
-        value: 1
-        items: [1]
-  -
-    id: identity
-    grouper: po4.group_by_identity
-    items: [1, 2]
-    expected:
-      -
-        value: 1
-        items: [1]
-      -
-        value: 2
-        items: [2]
-  -
-    id: identity
-    grouper: po4.group_by_identity
-    items: [1, 2, 1, 2]
-    expected:
-      -
-        value: 1
-        items: [1, 1]
-      -
-        value: 2
-        items: [2, 2]
-  -
-    id: identity-key
-    grouper: po4.group_by_identity
-    items: ['a', 'b', 'A', 'B']
-    key: lambda x: x.upper()
-    expected:
-      -
-        value: 'A'
-        items: ['a', 'A']
-      -
-        value: 'B'
-        items: ['b', 'B']
-
 test_iter_combos:
   -
     id: empty
     items:
-    groupers:
+    group_by:
+    merge_by:
     expected:
   -
     id: empty
     items:
       - DummyItem()
-    groupers:
+    group_by:
+    merge_by:
     expected:
       -
         attrs:
@@ -180,16 +135,25 @@ test_iter_combos:
   -
     id: empty
     items:
-    groupers:
-      a: po4.merge(list)
+    group_by:
+      a: po4.group_by_identity
+    merge_by:
+    expected:
+  -
+    id: empty
+    items:
+    group_by:
+    merge_by:
+      a: list
     expected:
 
   -
-    id: groups
+    id: group
     items:
       - DummyItem(a=1)
-    groupers:
+    group_by:
       a: po4.group_by_identity
+    merge_by:
     expected:
       -
         attrs:
@@ -197,12 +161,13 @@ test_iter_combos:
         items:
           - DummyItem(a=1)
   -
-    id: groups
+    id: group
     items:
       - DummyItem(a=1)
       - DummyItem(a=2)
-    groupers:
+    group_by:
       a: po4.group_by_identity
+    merge_by:
     expected:
       -
         attrs:
@@ -215,12 +180,13 @@ test_iter_combos:
         items:
           - DummyItem(a=2)
   -
-    id: groups
+    id: group
     items:
       - DummyItem(a=1, b=1)
       - DummyItem(a=1, b=2)
-    groupers:
+    group_by:
       a: po4.group_by_identity
+    merge_by:
     expected:
       -
         attrs:
@@ -229,28 +195,15 @@ test_iter_combos:
           - DummyItem(a=1, b=1)
           - DummyItem(a=1, b=2)
   -
-    id: groups-merge
-    items:
-      - DummyItem(a=1)
-      - DummyItem(a=2)
-    groupers:
-      a: po4.merge(list)
-    expected:
-      -
-        attrs:
-          a: [1, 2]
-        items:
-          - DummyItem(a=1)
-          - DummyItem(a=2)
-  -
-    id: groups-cluster
+    id: group-cluster
     items:
       - DummyItem(a=1)
       - DummyItem(a=2)
       - DummyItem(a=3)
       - DummyItem(a=4)
-    groupers:
+    group_by:
       a: po4.group_by_cluster(max_diff=2)
+    merge_by:
     expected:
       -
         attrs:
@@ -266,13 +219,100 @@ test_iter_combos:
           - DummyItem(a=4)
 
   -
+    id: merge-1
+    items:
+      - DummyItem(a=1)
+    group_by:
+    merge_by:
+      a: list
+    expected:
+      -
+        attrs:
+          a: [1]
+        items:
+          - DummyItem(a=1)
+  -
+    id: merge-2
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    group_by:
+    merge_by:
+      a: list
+    expected:
+      -
+        attrs:
+          a: [1, 2]
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
+  -
+    id: merge-func
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    group_by:
+    merge_by:
+      a: min
+    expected:
+      -
+        attrs:
+          a: 1
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
+  -
+    id: merge-func
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    group_by:
+    merge_by:
+      a: max
+    expected:
+      -
+        attrs:
+          a: 2
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
+
+  -
+    id: group-merge
+    items:
+      - DummyItem(a=1, b=1)
+      - DummyItem(a=2, b=2)
+      - DummyItem(a=3, b=1)
+      - DummyItem(a=4, b=2)
+    group_by:
+      b: po4.group_by_identity
+    merge_by:
+      a: list
+    expected:
+      -
+        attrs:
+          a: [1, 3]
+          b: 1
+        items:
+          - DummyItem(a=1, b=1)
+          - DummyItem(a=3, b=1)
+      -
+        attrs:
+          a: [2, 4]
+          b: 2
+        items:
+          - DummyItem(a=2, b=2)
+          - DummyItem(a=4, b=2)
+
+  -
     id: attrs
     items:
       - DummyItem(a=1, b=1)
       - DummyItem(a=1, b=2)
-    groupers:
+    group_by:
       a: po4.group_by_identity
       b: po4.group_by_identity
+    merge_by:
     expected:
       -
         attrs:
@@ -293,9 +333,10 @@ test_iter_combos:
       - DummyItem(a=1, b=2, c=2)
       - DummyItem(a=1, b=1, c=3)
       - DummyItem(a=1, b=2, c=4)
-    groupers:
+    group_by:
       a: po4.group_by_identity
       b: po4.group_by_identity
+    merge_by:
     expected:
       -
         attrs:

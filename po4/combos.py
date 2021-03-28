@@ -11,39 +11,52 @@ from operator import attrgetter
 
 # Items will be maker instances
 
-def iter_combo_makers(cls, solo_makers, groupers):
+def iter_combo_makers(cls, solo_makers, *, group_by={}, merge_by={}):
     # This function assumes that makers are `appcli.App` instances.  That's not 
     # great, but I think the effort to generalize this would not be worth it 
     # for now.
-    for attrs in iter_combos(solo_makers, groupers):
-        obj = cls.from_params()
+    combos = iter_combos(
+            solo_makers,
+            group_by=broup_by,
+            merge_by=merge_by,
+    )
+    for attrs, items in combos:
+        combo_maker = cls.from_params()
         for k, v in attrs.items():
-            setattr(obj, k, v)
-        yield obj
+            setattr(combo_maker, k, v)
+        yield combo_maker
 
-def iter_combos(items, groupers):
-    yield from _iter_combos(items, groupers, {})
+def iter_combos(items, *, group_by={}, merge_by={}):
 
-def _iter_combos(items, groupers, attrs):
-    if not items:
-        return
-    if not groupers:
-        yield attrs, items
-        return
+    def do_iter_combos(items, group_by, attrs):
+        if not items:
+            return
 
-    x = list(groupers.items())
-    head, tail = x[0], x[1:]
+        if not group_by:
+            items = list(items)
 
-    attr, grouper = head
-    remaining_groupers = dict(tail)
-    key = attrgetter(attr)
+            for attr, merge in merge_by.items():
+                values = map(attrgetter(attr), items)
+                attrs[attr] = merge(values)
 
-    for group_value, group_items in grouper(items, key=key):
-        yield from _iter_combos(
-                group_items,
-                remaining_groupers,
-                {**attrs, attr: group_value},
-        )
+            yield attrs, items
+            return
+
+        x = list(group_by.items())
+        head, tail = x[0], x[1:]
+
+        attr, grouper = head
+        group_by_tail = dict(tail)
+        key = attrgetter(attr)
+
+        for group_value, group_items in grouper(items, key=key):
+            yield from do_iter_combos(
+                    group_items,
+                    group_by_tail,
+                    {**attrs, attr: group_value},
+            )
+
+    yield from do_iter_combos(items, group_by, {})
 
 class group_by_cluster:
 
@@ -101,15 +114,3 @@ class group_by_cluster:
 def group_by_identity(items, key=lambda x: x):
     yield from groupby(sorted(items, key=key), key=key)
     
-class merge:
-
-    def __init__(self, aggregate):
-        self.aggregate = aggregate
-
-    def __call__(self, items, key=lambda x: x):
-        if items:
-            value = self.aggregate(map(key, items))
-            yield value, items
-
-
-

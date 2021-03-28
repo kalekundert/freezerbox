@@ -43,17 +43,22 @@ def test_group_by(grouper, items, key, expected):
 @parametrize_from_file(
         schema=Schema({
             'items': Or([eval_with(DummyItem=DummyItem)], empty_list),
-            'groupers': Or({str: eval_po4}, empty_dict),
+            'group_by': Or({str: eval_po4}, empty_dict),
+            'merge_by': Or({str: eval_po4}, empty_dict),
             'expected': Or([{
                 'attrs': Or({str: eval_pytest}, empty_dict),
                 'items': [eval_with(DummyItem=DummyItem)],
             }], empty_list),
         }),
 )
-def test_iter_combos(items, groupers, expected):
+def test_iter_combos(items, group_by, merge_by, expected):
     actual = [
-            (d, list(it))
-            for d, it in po4.iter_combos(items, groupers)
+            (attrs, list(items))
+            for attrs, items in po4.iter_combos(
+                items,
+                group_by=group_by,
+                merge_by=merge_by,
+            )
     ]
     expected = [
             (x['attrs'], list(x['items']))
