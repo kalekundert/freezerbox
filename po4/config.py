@@ -8,6 +8,9 @@ from configurator import Config
 from functools import lru_cache
 from more_itertools import always_iterable
 
+from .utils import parse_tag
+from .errors import QueryError, ParseError
+
 @lru_cache
 def load_config():
     config = Config()
@@ -42,11 +45,32 @@ class Po4Config:
             self.db = None
 
         def __getitem__(self, key):
+            # First: See if the object has a database attribute.  If it does, 
+            # it costs nothing to access it, and it will allow us to include 
+            # the path to the database in error messages if any subsequent 
+            # steps fail.
+
             if not self.db:
                 try:
                     self.db = self.config.db_getter(self.obj)
                 except AttributeError:
                     pass
+
+            # Second: Parse the tags before loading the database.  Loading the 
+            # database is expensive, and if the tags won't be in the database 
+            # anyways, there's no reason to waste the time.
+            
+            tags = self.config.tag_getter(self.obj)
+
+            try:
+                tags = [
+                        parse_tag(x)
+                        for x in always_iterable(tags)
+                ]
+            except ParseError as err:
+                raise KeyError from err
+
+            # Third: Load the database.
 
             if not self.db and self.config.autoload_db:
                 from .model import load_db
@@ -55,20 +79,17 @@ class Po4Config:
             if not self.db:
                 raise KeyError("no PO₄ database found")
 
-            debug(self.config.autoload_db, self.db)
-
-            tags = self.config.tag_getter(self.obj)
+            # Fourth: Lookup values.
 
             try:
                 values = [
                         getattr(self.db[x], key)
-                        for x in always_iterable(tags)
+                        for x in tags
                 ]
 
             except (QueryError, AttributeError) as err:
                 raise KeyError from err
 
-            debug(self.config.pick)
             return self.config.pick(values)
 
         def get_location(self):

@@ -78,6 +78,54 @@ def test_po4_config_tags_2():
     assert layer.values['name'] == ['1', '2']
     assert layer.location == 'a'
 
+def test_po4_config_tags_not_found():
+    db = po4.Database(name='a')
+    db['d1'] = DummyConstruct(name='1')
+
+    obj = DummyObj()
+    config = Po4Config()
+    layer = one(config.load(obj))
+
+    obj.po4_db = db
+    obj.tag = 'd2'
+
+    with pytest.raises(KeyError):
+        layer.values['name']
+
+    assert layer.location == 'a'
+
+def test_po4_config_tags_not_parseable():
+    db = po4.Database(name='a')
+    db['d1'] = DummyConstruct(name='1')
+
+    obj = DummyObj()
+    config = Po4Config()
+    layer = one(config.load(obj))
+
+    obj.po4_db = db
+    obj.tag = 'not-a-tag'
+
+    with pytest.raises(KeyError):
+        layer.values['name']
+
+    assert layer.location == 'a'
+
+def test_po4_config_key_not_found():
+    db = po4.Database(name='a')
+    db['d1'] = DummyConstruct(name='1')
+
+    obj = DummyObj()
+    config = Po4Config()
+    layer = one(config.load(obj))
+
+    obj.po4_db = db
+    obj.tag = 'd1'
+
+    with pytest.raises(KeyError):
+        layer.values['not-a-key']
+
+    assert layer.location == 'a'
+
 def test_po4_config_pick():
     db = po4.Database(name='a')
     db['d1'] = DummyConstruct(name='1')
@@ -111,6 +159,8 @@ def test_po4_config_db_not_found():
     obj = DummyObj()
     config = Po4Config(autoload_db=False)
     layer = one(config.load(obj))
+
+    obj.tag = 'd1'
 
     with pytest.raises(KeyError, match="no PO₄ database found"):
         layer.values['name']
