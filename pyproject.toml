@@ -62,6 +62,9 @@ docs = [
 'Continuous Integration' = 'https://github.com/kalekundert/phosphatedb/actions'
 'Test Coverage' = 'https://coveralls.io/github/kalekundert/phosphatedb'
 
+[tool.pccc]
+types = ["chore", "docs", "feat", "fix", "refactor", "style", "test"]
+
 [tool.semantic_release]
 version_variable = 'po4/__init__.py:__version__'
 build_command = 'python -m pip install flit && flit build'
