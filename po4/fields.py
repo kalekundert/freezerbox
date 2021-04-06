@@ -14,9 +14,18 @@ class Fields:
         self.by_index = indexed
         self.by_name = named
 
+    def __contains__(self, key):
+        if isinstance(key, str):
+            return key in self.by_name
+
+        if isinstance(key, int):
+            return key < len(self.by_index)
+
+        return False
+
     def __getitem__(self, key):
         if isinstance(key, str):
-                return self.by_name[key]
+            return self.by_name[key]
 
         if isinstance(key, int):
             try:

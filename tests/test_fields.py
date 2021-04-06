@@ -93,3 +93,27 @@ def test_fields_getitem():
     with pytest.raises(KeyError):
         fields['e']
 
+def test_fields_contains():
+    f1 = po4.Fields([], {})
+
+    assert 0 not in f1
+    assert 'a' not in f1
+
+    f2 = po4.Fields(['a'], {'b': 2})
+    assert 0 in f2
+    assert 1 not in f2
+    assert 2 not in f2
+    assert 'a' not in f2
+    assert 'b' in f2
+
+    f3 = po4.Fields(['a', 'b'], {'c': 3, 'd': 4})
+
+    assert 0 in f3
+    assert 1 in f3
+    assert 3 not in f3
+    assert 4 not in f3
+    assert 'a' not in f3
+    assert 'b' not in f3
+    assert 'c' in f3
+    assert 'd' in f3
+
