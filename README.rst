@@ -1,41 +1,43 @@
-***********
-PhosphateDB
-***********
+**********
+FreezerBox
+**********
 
-.. image:: https://img.shields.io/pypi/v/po4.svg
-   :target: https://pypi.python.org/pypi/po4
+.. image:: https://img.shields.io/pypi/v/freezerbox.svg
+   :alt: Last release
+   :target: https://pypi.python.org/pypi/freezerbox
 
-.. image:: https://img.shields.io/pypi/pyversions/po4.svg
-   :target: https://pypi.python.org/pypi/po4
+.. image:: https://img.shields.io/pypi/pyversions/freezerbox.svg
+   :alt: Python version
+   :target: https://pypi.python.org/pypi/freezerbox
 
-..
-  .. image:: https://img.shields.io/readthedocs/phosphatedb.svg
-     :target: https://phosphatedb.readthedocs.io/en/latest/?badge=latest
+.. image:: https://img.shields.io/readthedocs/freezerbox.svg
+   :alt: Documentation
+   :target: https://freezerbox.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/github/workflow/status/kalekundert/phosphatedb/Test%20and%20release/master
-   :target: https://github.com/kalekundert/phosphatedb/actions
+.. image:: https://img.shields.io/github/workflow/status/kalekundert/freezerbox/Test%20and%20release/master
+   :alt: Test status
+   :target: https://github.com/kalekundert/freezerbox/actions
 
-.. image:: https://img.shields.io/coveralls/kalekundert/phosphatedb.svg
-   :target: https://coveralls.io/github/kalekundert/phosphatedb?branch=master
+.. image:: https://img.shields.io/coveralls/kalekundert/freezerbox.svg
+   :alt: Test coverage
+   :target: https://coveralls.io/github/kalekundert/freezerbox?branch=master
 
-PhosphateDB (or PO₄ for short) is a tool for keeping track of DNA constructs 
-such as plasmids, gene fragments, and oligos.  It emphasizes keeping track of 
-*how* each construct was made, and aims to be compatible with existing 
-plasmid-management systems.
+.. image:: https://img.shields.io/github/last-commit/kalekundert/freezerbox?logo=github
+   :alt: GitHub last commit
+   :target: https://github.com/kalekundert/freezerbox
 
-The name "PhosphateDB" is based on the fact that DNA molecules are held 
-together by a phosphate backbone, and that the synthesis of new DNA is greatly 
-facilitated by the chemical properties of phosphate.  Similarly, this database 
-system aspires to robustly "hold together" DNA sequences in such a way that new 
-sequences can easily be added and shared.
+FreezerBox is a tool for keeping track of biochemistry lab reagents such as 
+plasmids, oligos, proteins, buffers, etc.  It emphasizes keeping track of *how* 
+each construct was made, and aims to be compatible with existing 
+reagent-management systems.
 
 Example
 =======
 - Your want a tool to better manage your plasmids, but you don't want to spend 
   a bunch of time re-entering the information for your existing plasmids, which 
-  is stored in a big Excel spreadsheet.  After installing PO₄, you quickly  
-  configure it to recognize the column headers in your spreadsheet.  Nothing 
-  about your existing spreadsheet needs to change.
+  is stored in a big Excel spreadsheet.  After installing FreezerBox, you 
+  quickly  configure it to recognize the column headers in your spreadsheet.  
+  Nothing about your existing spreadsheet needs to change.
 
 - You just designed primers to clone a new plasmid.  You enter both the primers 
   and the plasmid into your spreadsheet.  While it's fresh in your head, you 
@@ -48,12 +50,12 @@ Example
   using the plasmid "p2" as a template and the oligos "o1" and "o2" as primers.
 
 - You just received the primers you designed last week, but you don't remember 
-  exactly how you were planning to use them.  You use PO₄---in conjunction with 
-  `stepwise <https://github.com/kalekundert/stepwise>`__---to generate an 
-  protocol specifying all the relevant details: volumes, concentrations, 
-  construct names, etc.  If you are making several constructs, the protocol 
-  will even group similar constructs and create master mixes of common reagents 
-  when possible::
+  exactly how you were planning to use them.  You use FreezerBox---in 
+  conjunction with `stepwise <https://github.com/kalekundert/stepwise>`__---to 
+  generate an protocol specifying all the relevant details: volumes, 
+  concentrations, construct names, etc.  If you are making several constructs, 
+  the protocol will even group similar constructs and create master mixes of 
+  common reagents when possible::
 
       $ stepwise make p3
       March 27, 2020
@@ -114,9 +116,9 @@ Example
 
 Installation
 ============
-Install PO₄ using ``pip``::
+Install FreezerBox using ``pip``::
 
-    $ pip install po4
+    $ pip install freezerbox
 
 Usage
 =====

@@ -3,12 +3,12 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [tool.flit.metadata]
-module = "po4"
+module = "freezerbox"
 author = "Kale Kundert"
 author-email = "kale@thekunderts.net"
-home-page = 'https://github.com/kalekundert/po4'
+home-page = 'https://github.com/kalekundert/freezerbox'
 description-file = 'README.rst'
-requires-python = "~=3.8"
+requires-python = "~=3.6"
 requires = [
   'appdirs',
   'autoprop',
@@ -35,36 +35,45 @@ classifiers = [
 ]
 
 [tool.flit.scripts]
-po4 = "po4.cli.main:main"
+freezerbox = "freezerbox.cli.main:main"
 
-[tool.flit.entrypoints."po4.databases"]
-excel = "po4.loaders.excel"
+[tool.flit.entrypoints."freezerbox.databases"]
+excel = "freezerbox.loaders.excel"
 
 [tool.flit.entrypoints."stepwise.protocols"]
-protocols = "po4.stepwise:Plugin"
+protocols = "freezerbox.stepwise:Plugin"
 
 [tool.flit.metadata.requires-extra]
-tests = [
+test = [
   'pytest',
   'pytest-cov',
   'coveralls',
 ]
-docs = [
+doc = [
   'sphinx',
   'sphinx_rtd_theme',
   'autoclasstoc',
 ]
 
 [tool.flit.metadata.urls]
-'Documentation' = 'https://phosphatedb.readthedocs.io/en/latest/'
-'Version Control' = 'https://github.com/kalekundert/phosphatedb'
-'Bug Tracker' = 'https://github.com/kalekundert/phosphatedb/issues'
-'Continuous Integration' = 'https://github.com/kalekundert/phosphatedb/actions'
-'Test Coverage' = 'https://coveralls.io/github/kalekundert/phosphatedb'
+'Documentation' = 'https://freezerbox.readthedocs.io/en/latest/'
+'Version Control' = 'https://github.com/kalekundert/freezerbox'
+'Bug Tracker' = 'https://github.com/kalekundert/freezerbox/issues'
+'Continuous Integration' = 'https://github.com/kalekundert/freezerbox/actions'
+'Test Coverage' = 'https://coveralls.io/github/kalekundert/freezerbox'
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-glob='*.rst'"
+doctest_optionflags = 'NORMALIZE_WHITESPACE'
+filterwarnings = [
+  'ignore::DeprecationWarning:xlrd.xlsx',
+]
 
 [tool.pccc]
 types = ["chore", "docs", "feat", "fix", "refactor", "style", "test"]
+ignore_generated_commits = true
+generated_commits = ['^Merge']
 
 [tool.semantic_release]
-version_variable = 'po4/__init__.py:__version__'
+version_variable = 'freezerbox/__init__.py:__version__'
 build_command = 'python -m pip install flit && flit build'
