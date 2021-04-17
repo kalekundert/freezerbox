@@ -305,3 +305,63 @@ test_fields_list_err:
       - can't parse fields
       - parsing:  ';a'
       - expected:  ^ EOF or ['"] or \w+
+
+test_fields_repr:
+  -
+    expr: Fields([], {})
+  -
+    expr: Fields(['a'], {})
+  -
+    expr: Fields([], {'a': 'b'})
+  -
+    expr: Fields(['a'], {'b': 'c'})
+
+test_fields_str:
+  -
+    given: Fields([], {})
+    expected:
+  -
+    given: Fields(['a'], {})
+    expected: a
+  -
+    given: Fields(['a', 'b'], {})
+    expected: a b
+  -
+    given: Fields([], {'a': 'b'})
+    expected: a=b
+  -
+    given: Fields([], {'a': 'b', 'c': 'd'})
+    expected: a=b c=d
+  -
+    given: Fields(['a'], {'b': 'c'})
+    expected: a b=c
+  -
+    given: Fields(['"'], {})
+    expected: '"'
+  -
+    given: Fields(["'"], {})
+    expected: '\''
+  -
+    given: Fields([], {'a': '"'})
+    expected: a='"'
+  -
+    given: Fields([], {'a': "'"})
+    expected: a='\''
+
+test_quote_word:
+  -
+    given:
+    expected: ''
+  -
+    given: a
+    expected: a
+  -
+    given: "
+    expected: '"'
+  -
+    given: '
+    expected: '\''
+  -
+    given: \
+    expected: '\\'
+

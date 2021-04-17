@@ -14,6 +14,14 @@ class Fields:
         self.by_index = indexed
         self.by_name = named
 
+    def __repr__(self):
+        return f'Fields({self.by_index!r}, {self.by_name!r})'
+
+    def __str__(self):
+        index_strs = map(_quote_word, self.by_index)
+        name_strs = (f'{k}={_quote_word(v)}' for k, v in self.by_name.items())
+        return ' '.join((*index_strs, *name_strs))
+
     def __contains__(self, key):
         if isinstance(key, str):
             return key in self.by_name
@@ -91,7 +99,7 @@ def word():
     quote_char = yield regex('[\'"]').optional()
 
     if quote_char is None:
-        return regex(r'\w+')
+        return unquoted_word
 
     else:
         escape = regex(fr'\\[\\{quote_char}]').map(lambda x: x[-1])
@@ -99,6 +107,8 @@ def word():
         word = yield value_char.many().concat()
         yield string(quote_char)
         return word
+
+unquoted_word = regex(r'\w+')
 
 @contextmanager
 def _reformat_errors():
@@ -126,4 +136,14 @@ def _reformat_errors():
         e2.blame += format_expected
 
         raise e2 from e1
+
+def _quote_word(x):
+    x = str(x)
+    try:
+        unquoted_word.parse(x)
+    except ParsyError:
+        x = x.replace('\\', '\\\\').replace("'", r"\'")
+        return f"'{x}'"
+    else:
+        return x
 

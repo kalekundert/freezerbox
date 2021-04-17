@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
-import po4
+import freezerbox
 import pytest
 import parametrize_from_file
 
-from po4.fields import word, key_value, parse_fields, parse_fields_list
-from po4.errors import ParseError
+from freezerbox.fields import \
+        Fields, word, key_value, parse_fields, parse_fields_list, _quote_word
+from freezerbox.errors import ParseError
 from parsy import ParseError as ParsyError
-from voluptuous import Schema, And, Or, Optional
+from schema_helpers import *
 
-empty_list = And('', lambda x: [])
-empty_dict = And('', lambda x: {})
 fields_dict = Or(
         {
-            'by_index': Or([str], empty_list),
-            'by_name': Or({str: str}, empty_dict),
+            'by_index': empty_ok([str]),
+            'by_name': empty_ok({str: str}),
         },
         empty_dict,
 )
 fields_dict_list = Or([fields_dict], empty_list)
+
 
 @parametrize_from_file
 def test_word(given, expected):
@@ -78,8 +78,18 @@ def test_fields_list_err(given, messages):
     for message in messages:
         assert message in str(err.value)
 
+@parametrize_from_file
+def test_fields_repr(expr):
+    fields = eval_freezerbox(expr)
+    assert repr(fields) == expr
+
+@parametrize_from_file
+def test_fields_str(given, expected):
+    fields = eval_freezerbox(given)
+    assert str(fields) == expected
+
 def test_fields_getitem():
-    fields = po4.Fields(['a', 'b'], {'c': 3, 'd': 4})
+    fields = Fields(['a', 'b'], {'c': 3, 'd': 4})
 
     assert fields[0] == 'a'
     assert fields[1] == 'b'
@@ -94,19 +104,19 @@ def test_fields_getitem():
         fields['e']
 
 def test_fields_contains():
-    f1 = po4.Fields([], {})
+    f1 = Fields([], {})
 
     assert 0 not in f1
     assert 'a' not in f1
 
-    f2 = po4.Fields(['a'], {'b': 2})
+    f2 = Fields(['a'], {'b': 2})
     assert 0 in f2
     assert 1 not in f2
     assert 2 not in f2
     assert 'a' not in f2
     assert 'b' in f2
 
-    f3 = po4.Fields(['a', 'b'], {'c': 3, 'd': 4})
+    f3 = Fields(['a', 'b'], {'c': 3, 'd': 4})
 
     assert 0 in f3
     assert 1 in f3
@@ -117,3 +127,6 @@ def test_fields_contains():
     assert 'c' in f3
     assert 'd' in f3
 
+@parametrize_from_file
+def test_quote_word(given, expected):
+    assert _quote_word(given) == expected
