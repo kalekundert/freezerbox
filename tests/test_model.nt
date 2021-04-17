@@ -1,0 +1,377 @@
+test_reagent_name:
+  -
+    kwargs:
+    expected: ''
+
+  -
+    kwargs:
+      name: 'Dummy'
+    expected: 'Dummy'
+
+test_reagent_alt_names:
+  -
+    kwargs:
+    expected: []
+
+  -
+    kwargs:
+      alt_names: ['Dummy']
+    expected: ['Dummy']
+
+test_reagent_date:
+  -
+    kwargs:
+    expected: None
+  -
+    kwargs:
+      date: '2020-03-25'
+    expected: '2020-03-25'
+
+test_reagent_desc:
+  -
+    kwargs:
+    expected: ''
+  -
+    kwargs:
+      desc: 'Dummy'
+    expected: 'Dummy'
+
+test_molecule_seq:
+  -
+    id: seq
+    kwargs:
+      seq: 'AAAA'
+    expected: 'AAAA'
+  -
+    id: seq
+    kwargs:
+      seq: lambda: 'AAAA'
+    expected: 'AAAA'
+  -
+    id: maker
+    kwargs:
+      synthesis: Fields(['m'], {'seq': 'CCCC'})
+    expected: 'CCCC'
+  -
+    id: seq-maker
+    kwargs:
+      seq: 'AAAA'
+      synthesis: Fields(['m'], {'seq': 'CCCC'})
+    expected: 'AAAA'
+  -
+    id: seq-maker
+    kwargs:
+      seq: lambda: 'AAAA'
+      synthesis: Fields(['m'], {'seq': 'CCCC'})
+    expected: 'AAAA'
+  -
+    id: err
+    kwargs:
+    error:
+      type: QueryError
+      message: no sequence specified
+  -
+    id: err
+    kwargs:
+      synthesis: Fields(['m'], {})
+    error:
+      type: QueryError
+      message: no sequence specified
+
+test_molecule_length:
+  -
+    kwargs:
+      length: 20
+    expected: 20
+  -
+    kwargs:
+      length: 20
+      seq: 'AAAA'
+    expected: 20
+  -
+    kwargs:
+      seq: 'AAAA'
+    expected: 4
+  -
+    kwargs:
+    error:
+      type: QueryError
+      message: no sequence specified
+
+test_molecule_conc:
+  -
+    id: conc-nM
+    kwargs:
+      mw: 1e5
+      conc: Quantity(1000, 'nM')
+    expected:
+      - Quantity(1000, 'nM')
+      - Quantity(1, 'µM')
+      - Quantity(100, 'ng/µL')
+  -
+    id: conc-nM-no-mw
+    kwargs:
+      conc: Quantity(1000, 'nM')
+    expected:
+      - Quantity(1000, 'nM')
+      - Quantity(1, 'µM')
+  -
+    id: conc-nguL
+    kwargs:
+      mw: 1e5
+      conc: Quantity(1000, 'ng/µL')
+    expected:
+      - Quantity(1000, 'ng/µL')
+      - Quantity(1, 'mg/mL')
+      - Quantity(10, 'µM')
+  -
+    id: conc-nguL-no-mw
+    kwargs:
+      conc: Quantity(1000, 'ng/µL')
+    expected:
+      - Quantity(1000, 'ng/µL')
+      - Quantity(1, 'mg/mL')
+  -
+    id: synthesis
+    kwargs:
+      mw: 1e5
+      synthesis: Fields(['m'], {'conc': '1000 nM'})
+    expected:
+      - Quantity(1000, 'nM')
+      - Quantity(1, 'µM')
+      - Quantity(100, 'ng/µL')
+  -
+    id: redundant
+    kwargs:
+      mw: 1e5
+      conc: Quantity(1000, 'nM')
+      synthesis: Fields(['m'], {'conc': '500 nM'})
+    expected:
+      - Quantity(1000, 'nM')
+      - Quantity(1, 'µM')
+      - Quantity(100, 'ng/µL')
+  -
+    id: err
+    kwargs:
+    error:
+      type: QueryError
+      message: d1: no concentration specified
+  -
+    id: err
+    kwargs:
+      synthesis: Fields(['m'], {})
+    error:
+      type: QueryError
+      message: d1: no concentration specified
+
+test_nucleic_acid_molecule:
+  -
+    id: default
+    kwargs:
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: default
+    kwargs:
+      synthesis: Fields(['m'], {})
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: molecule
+    kwargs:
+      molecule: 'dna'
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: molecule
+    kwargs:
+      molecule: 'DNA'
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: molecule
+    kwargs:
+      molecule: 'ssdna'
+    expected:
+      molecule: 'DNA'
+      strandedness: 1
+  -
+    id: molecule
+    kwargs:
+      molecule: 'ssDNA'
+    expected:
+      molecule: 'DNA'
+      strandedness: 1
+  -
+    id: molecule
+    kwargs:
+      molecule: 'dsDNA'
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: molecule
+    kwargs:
+      molecule: 'dsdna'
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: molecule
+    kwargs:
+      molecule: 'rna'
+    expected:
+      molecule: 'RNA'
+      strandedness: 1
+  -
+    id: molecule
+    kwargs:
+      molecule: 'RNA'
+    expected:
+      molecule: 'RNA'
+      strandedness: 1
+  -
+    id: molecule
+    kwargs:
+      molecule: 'ssrna'
+    expected:
+      molecule: 'RNA'
+      strandedness: 1
+  -
+    id: molecule
+    kwargs:
+      molecule: 'ssRNA'
+    expected:
+      molecule: 'RNA'
+      strandedness: 1
+  -
+    id: molecule
+    kwargs:
+      molecule: 'dsrna'
+    expected:
+      molecule: 'RNA'
+      strandedness: 2
+  -
+    id: molecule
+    kwargs:
+      molecule: 'dsRNA'
+    expected:
+      molecule: 'RNA'
+      strandedness: 2
+  -
+    id: synthesis
+    kwargs:
+      synthesis: Fields(['m'], {'molecule': 'dna'})
+    expected:
+      molecule: 'DNA'
+      strandedness: 2
+  -
+    id: synthesis
+    kwargs:
+      synthesis: Fields(['m'], {'molecule': 'rna'})
+    expected:
+      molecule: 'RNA'
+      strandedness: 1
+  -
+    id: redundant
+    kwargs:
+      molecule: 'rna'
+      synthesis: Fields(['m'], {'molecule': 'dna'})
+    expected:
+      molecule: 'RNA'
+      strandedness: 1
+  -
+    id: err
+    kwargs:
+      molecule: 'xyz'
+    error:
+      type: QueryError
+      message:
+        - unknown molecule type: 'xyz'
+        - expected: 'dna', 'ssdna', 'dsdna', 'rna', 'ssrna', 'dsrna'
+  -
+    id: err
+    kwargs:
+      synthesis: Fields(['m'], {'molecule': 'xyz'})
+    error:
+      type: QueryError
+      message:
+        - unknown molecule type: 'xyz'
+        - expected: 'dna', 'ssdna', 'dsdna', 'rna', 'ssrna', 'dsrna'
+
+test_nucleic_acid_circular:
+  -
+    kwargs:
+    expected: False
+  -
+    kwargs:
+      circular: True
+    expected: True
+  -
+    kwargs:
+      circular: False
+    expected: False
+  -
+    kwargs:
+      synthesis: Fields(['m'], {'circular': True})
+    expected: True
+  -
+    kwargs:
+      synthesis: Fields(['m'], {'circular': False})
+    expected: False
+  -
+    kwargs:
+      circular: True
+      synthesis: Fields(['m'], {'circular': False})
+    expected: True
+  -
+    kwargs:
+      circular: False
+      synthesis: Fields(['m'], {'circular': True})
+    expected: False
+
+test_oligo_tm:
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+    expected: 60
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer'
+    expected: 60
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer tm63'
+    expected: 63
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer Tm63'
+    expected: 63
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer TM63'
+    expected: 63
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer_tm63'
+    expected: 63
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer-tm63'
+    expected: 63
+  -
+    kwargs:
+      seq: 'GGTTATTGTCTCATGAGCGG'
+      name: 'primer tm=63'
+    expected: 63
+

@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 
 import autoprop
-from more_itertools import one
+import entrypoints
+from more_itertools import one, only
 from dataclasses import dataclass
 from collections import namedtuple
 from configurator import Config
-from voluptuous import Schema, Invalid
-from pkg_resources import iter_entry_points
+from voluptuous import Schema
+from inform import plural
 from Bio.SeqUtils import molecular_weight, MeltingTemp
-from Bio.Alphabet import DNAAlphabet, RNAAlphabet
 from .config import load_config
 from .errors import LoadError, QueryError, CheckError, only_raise
 from .utils import *
+
+DB_PLUGINS = entrypoints.get_group_named('po4.databases')
+MAKER_PLUGINS = entrypoints.get_group_named('po4.make')
+INTERMEDIATE_SUBCLASSES = {}
 
 class Database:
 
@@ -35,9 +39,15 @@ class Database:
     def __setitem__(self, tag, construct):
         tag = parse_tag(tag)
         if tag in self._constructs:
-            raise LoadError(f"already in database, cannot be replaced", culprit=tag)
+            raise LoadError("already in database, cannot be replaced", culprit=tag)
         if tag.type != construct.tag_prefix:
-            raise LoadError(f"{construct} cannot have tag '{tag}': expected {construct.tag_prefix!r} prefix")
+            err = LoadError(
+                    tag=tag,
+                    construct=construct,
+            )
+            err.brief = "{construct} cannot have tag '{tag}'"
+            err.blame += "expected {construct.tag_prefix!r} prefix"
+            raise err
 
         self._constructs[tag] = construct
         construct._db = self
@@ -47,6 +57,7 @@ class Database:
         construct = self._constructs.pop(parse_tag(tag))
         construct._db = None
         construct._tag = None
+        autoprop.clear_cache(construct)
 
     def __contains__(self, construct):
         return construct._tag in self._constructs
@@ -70,27 +81,260 @@ class Tag:
         return f'{self.type}{self.id}'
 
 
-@autoprop
-class Construct:
+@autoprop.immutable
+class Reagent:
     tag_prefix = None
 
     def __init__(self, **kwargs):
         self._db = None
         self._tag = None
+        self._attrs = kwargs
+        self._intermediates = {}
 
-        self._seq = kwargs.get('seq')
-        self._name = kwargs.get('name')
-        self._alt_names = kwargs.get('alt_names', [])
-        self._date = kwargs.get('date')
-        self._desc = kwargs.get('desc')
-        self._length = kwargs.get('length')
-        self._conc_str = kwargs.get('conc')
-        self._mw = kwargs.get('mw')
-        self._protocol = kwargs.get('protocol')
-        self._kwargs = kwargs
+    def check(self):
+        pass
+
+    def make_intermediate(self, step):
+        if step in self._intermediates:
+            return self._intermediates[step]
+
+        if step > len(self.cleanup_args):
+            err = QueryError(
+                    culprit=self,
+                    step=step,
+                    synthesis_args=self.synthesis_args,
+                    cleanup_args=self.cleanup_args,
+            )
+            err.brief = "intermediate {step} doesn't exist"
+            err.info += lambda e: '\n'.join([
+                "intermediates:", *([
+                    f'{i}: {x}' 
+                    for i, x in enumerate([e.synthesis_args] + e.cleanup_args)
+                ]),
+            ])
+            raise err
+
+        parent = self.parent
+        bases = IntermediateMixin, parent.__class__
+
+        try:
+            cls = INTERMEDIATE_SUBCLASSES[bases]
+        except KeyError:
+            name = self.__class__.__name__ + 'Intermediate'
+            cls = INTERMEDIATE_SUBCLASSES[bases] = type(name, bases, {})
+
+        intermediate = cls()
+
+        # Note that this is a shallow copy, so changes to any mutable 
+        # attributes will be reflected in the intermediate.  That said, 
+        # constructs are supposed to be fully immutable, so this should never 
+        # matter in practice.
+
+        intermediate.__dict__ = self.__dict__.copy()
+
+        # Set new attributes after overriding `__dict__`:
+
+        intermediate._step = step
+        intermediate._parent = parent
+
+        # Any property of the construct (e.g. concentration, volume, etc.) 
+        # could be affected by cleanup steps that come after this intermediate, 
+        # so any cached property values need to be discarded.  Properties that 
+        # aren't affected by cleanup steps (e.g. seq) can manually implement 
+        # caching if desired.
+
+        autoprop.clear_cache(intermediate)
+
+        self._intermediates[step] = intermediate
+        return intermediate
+
+    def get_db(self):
+        if not self._db:
+            raise QueryError("not attached to a database", culprit=self)
+        return self._db
+
+    def get_tag(self):
+        if not self._tag:
+            raise QueryError("not attached to a database", culprit=self)
+        return self._tag
+
+    def get_parent(self):
+        return self
+
+    def get_name(self):
+        return self._attrs.get('name', '')
+
+    def get_alt_names(self):
+        return self._attrs.get('alt_names', [])
+
+    def get_date(self):
+        return self._attrs.get('date')
+
+    def get_desc(self):
+        return self._attrs.get('desc', '')
+
+    def get_maker_attr(self, attr, default=no_default):
+        try:
+            makers = [self.synthesis_maker, *self.cleanup_makers]
+        except QueryError:
+            pass
+        else:
+            for maker in reversed(makers):
+                try:
+                    return getattr(maker, attr)
+                except AttributeError:
+                    continue
+
+        if default is not no_default:
+            return default
+        else:
+            raise QueryError(attr)
+
+    def get_synthesis_attr(self, attr, default=no_default):
+        try:
+            maker = self.synthesis_maker
+        except QueryError:
+            pass
+        else:
+            try:
+                return getattr(maker, attr)
+            except AttributeError:
+                pass
+
+        if default is not no_default:
+            return default
+        else:
+            raise QueryError(attr)
+
+    def get_synthesis_maker(self):
+        return self.make_intermediate(0).maker
+
+    def get_synthesis_args(self):
+        try:
+            synthesis = self._attrs['synthesis']
+        except KeyError:
+            raise QueryError("no synthesis specified", culprit=self) from None
+
+        # Allow `self._synthesis` to be a callable, so that the synthesis 
+        # arguments don't have to be loaded until they are actually needed.  
+        # This lets the database load faster, and avoids generating errors 
+        # relating to synthesis steps that the user doesn't actively care 
+        # about.
+        if callable(synthesis):
+            return synthesis()
+
+        return synthesis
+
+    def get_cleanup_makers(self):
+        return [
+                self.make_intermediate(i + 1).maker
+                for i in range(len(self.cleanup_args))
+        ]
+
+    def get_cleanup_args(self):
+        # Require that 
+        try:
+            self._attrs['synthesis']
+        except KeyError:
+            raise QueryError("no synthesis specified", culprit=self) from None
+
+        cleanups = self._attrs.get('cleanups', [])
+
+        # Allow `self._cleanups` to be a callable, so that the cleanup 
+        # arguments don't have to be loaded until they are actually needed.  
+        # See `get_synthesis()` for more info.
+
+        if callable(cleanups):
+            return cleanups()
+
+        return cleanups
+
+@autoprop.immutable
+class Buffer(Reagent):
+    tag_prefix = 'b'
+
+
+@autoprop.immutable
+class Molecule(Reagent):
+    default_molecule = None
+
+    def __init__(self, **attrs):
+        super().__init__(**attrs)
+        self._seq = None
 
     def check(self):
         self._check_seq()
+
+    def get_seq(self):
+        # Explicitly cache this property, rather than relying on the caching 
+        # provided by autoprop.  We go out of our way to do this because (i) 
+        # the sequence is especially expensive to look up and (ii) we know that 
+        # it won't be affected by the cleanup steps.
+
+        if self._seq:
+            return self._seq
+
+        seq = self._attrs.get('seq')
+
+        # Allow the retrieval of the sequence to be deferred, e.g. so unused 
+        # sequences never have to be read from disc.
+        if callable(seq):
+            seq = seq()
+
+        # If we have instructions for how to make this molecule, try getting
+        # the sequence from that.
+        if not seq:
+            seq = only(
+                    self.get_synthesis_attr('product_seqs', []),
+                    too_long=QueryError("protocol has multiple sequences", culprit=self),
+            )
+
+        if not seq:
+            raise QueryError("no sequence specified", culprit=self)
+
+        self._seq = seq
+        return seq
+
+    def get_length(self):
+        return self._attrs.get('length') or len(self.seq)
+
+    def get_mw(self):
+        mw = self._attrs.get('mw')
+
+        if not mw:
+            mw = self._calc_mw()
+
+        return mw
+
+    def get_conc(self, unit=None):
+        conc = self._attrs.get('conc')
+
+        if conc is None:
+            conc = self.get_maker_attr('product_conc', None)
+
+        if conc is None:
+            raise QueryError("no concentration specified", culprit=self)
+
+        if not unit or unit == conc.unit:
+            return conc
+        else:
+            try:
+                mw = self.mw
+            except QueryError:
+                mw = None
+
+            return convert_conc_unit(conc, mw, unit)
+
+    def get_conc_nM(self):
+        return self.get_conc('nM').value
+
+    def get_conc_uM(self):
+        return self.get_conc('uM').value
+
+    def get_conc_ng_uL(self):
+        return self.get_conc('ng/uL').value
+    def get_conc_mg_mL(self):
+        return self.get_conc('mg/mL').value
 
     def _check_seq(self):
         from Bio import pairwise2
@@ -98,120 +342,64 @@ class Construct:
 
         try:
             primary_seq = self.seq
-            protocol_seq = self.protocol.product_seq
-        except (QueryError, NotImplementedError):
+            protocol_seq = one(self.get_synthesis_attr('product_seqs'))
+        except (QueryError, ValueError):
             pass
         else:
             if primary_seq != protocol_seq:
                 alignments = pairwise2.align.globalxx(primary_seq, protocol_seq)
-                message = f"sequence doesn't match protocol\n" + format_alignment(*alignments[0])
-                raise CheckError(message, culprit=self._tag)
+                err = CheckError(culprit=self, alignments=alignments)
+                err.brief = "sequence doesn't match construction"
+                err.info = lambda e: format_alignment(e.alignments[0])
+                raise err
 
-    def get_db(self):
-        if not self._db:
-            raise QueryError("not attached to a database", culprit=self._tag)
-        return self._db
+    def _calc_mw(self):
+        raise NotImplementedError
 
-    def get_tag(self):
-        if not self._tag:
-            raise QueryError("not attached to a database", culprit=self._tag)
-        return self._tag
 
-    def get_seq(self):
-        # Allow the retrieval of the sequence to be deferred, e.g. so unused 
-        # sequences never have to be read from disc.
-        if callable(self._seq):
-            self._seq = self._seq()
+@autoprop.immutable
+class Protein(Molecule):
+    tag_prefix = 'r'
 
-        # If we have instructions for how to make the construct, try getting
-        # the sequence from that.
-        if not self._seq and self._protocol:
-            self._seq = self.protocol.product_seq
+    def get_isoelectric_point(self):
+        from Bio.SeqUtils.ProtParam import ProteinAnalysis
+        analysis = ProteinAnalysis(self.seq)
+        return analysis.isoelectric_point()
 
-        if not self._seq:
-            raise QueryError("no sequence specified", culprit=self._tag)
-
-        # Always return a `Bio.Seq` object.
-        if isinstance(self._seq, str):
-            self._seq = DnaSeq(self._seq)
-
-        return self._seq
-
-    def get_length(self):
-        if self._length:
-            return self._length
-        else:
-            return len(self.seq)
-
-    def get_name(self):
-        return self._name
-
-    def get_alt_names(self):
-        return self._alt_names
-
-    def get_date(self):
-        return self._date
-
-    def get_desc(self):
-        return self._desc
-
-    def get_protocol(self):
-        if not self._protocol:
-            raise QueryError("no protocol specified", culprit=self._tag)
-
-        # Allow `self._protocol` to be a callable that returns a protocol, so 
-        # that the protocol doesn't have to be loaded until it is actually 
-        # needed.  This means lets the database load faster, and avoids 
-        # generating errors relating to protocols that the user doesn't 
-        # actively care about.
-        if callable(self._protocol):
-            self._protocol = self._protocol()
-
-        return self._protocol
-
-    def get_mw(self):
-        if self._mw:
-            return self._mw
-
+    def _calc_mw(self):
         from Bio.SeqUtils import molecular_weight
-        mw = molecular_weight(
+        return molecular_weight(
                 seq=self.seq,
-                double_stranded=self.is_double_stranded,
-                circular=self.is_circular,
+                seq_type='protein',
         )
 
-        # For some reason Biopython just assumes 5' phosphorylation, so we need 
-        # to correct for that here.
-        hpo3 = 1.008 + 30.974 + 3*15.999
-        if not self.is_phosphorylated:
-            strands = 2 if self.is_double_stranded else 1
-            ends = 0 if self.is_circular else strands
-            mw -= hpo3 * ends
 
-        return mw
+@autoprop.immutable
+class NucleicAcid(Molecule):
+    # "f" for "fragment", i.e. non-plasmid/non-oligo DNA constructs.
+    tag_prefix = 'f'
+    default_molecule = 'DNA'
+    default_strandedness = None
 
-    def get_conc_str(self):
-        if not self._conc_str:
-            raise QueryError("no concentration specified", culprit=self._tag)
-        return self._conc_str
+    def __init__(self, **attrs):
+        super().__init__(**attrs)
+        self._molecule = None
+        self._strandedness = None
 
-    def get_conc_nM(self):
-        return parse_conc_nM(self.conc_str, self.mw)
+    def get_molecule(self):
+        if not self._molecule:
+            self._parse_stranded_molecule()
 
-    def get_conc_ng_uL(self):
-        return parse_conc_ng_uL(self.conc_str, self.mw)
-
-    @property
-    def is_dna(self):
-        return isinstance(self.seq.alphabet, DNAAlphabet)
-
-    @property
-    def is_rna(self):
-        return isinstance(self.seq.alphabet, RNAAlphabet)
+        assert self._molecule
+        return self._molecule
 
     @property
     def is_double_stranded(self):
-        raise NotImplementedError
+        if not self._strandedness:
+            self._parse_stranded_molecule()
+
+        assert self._strandedness
+        return self._strandedness == 2
 
     @property
     def is_single_stranded(self):
@@ -219,20 +407,103 @@ class Construct:
 
     @property
     def is_circular(self):
-        raise NotImplementedError
+        circular = self._attrs.get('circular')
+
+        if circular is None:
+            circular = self.get_synthesis_attr('is_product_circular', False)
+
+        if circular is None:
+            circular = False
+
+        return circular
 
     @property
     def is_linear(self):
         return not self.is_circular
 
-    def is_phosphorylated(self):
-        raise NotImplementedError
+    @property
+    def is_phosphorylated_5(self):
+        # This attribute is only used when calculating molecular weight.  In 
+        # the future, I want to support IDT-style sequence strings, so I could 
+        # figure this out by looking for "/5Phos/" or "/3Phos/".  In the 
+        # meantime, I'll just assume nothing is phosphorylated.
+        return self.get_synthesis_attr('is_product_phosphorylated_5', False)
+
+    @property
+    def is_phosphorylated_3(self):
+        return self.get_synthesis_attr('is_product_phosphorylated_3', False)
+
+    def _parse_stranded_molecule(self):
+        """
+        Parse the molecule type (e.g. suitable input for Biopython functions) 
+        and strandedness from a molecule string.  
+        """
+
+        # Find a molecule string:
+
+        molecule = self._attrs.get('molecule')
+
+        if not molecule:
+            molecule = self.get_synthesis_attr('product_molecule', None)
+
+        if not molecule:
+            molecule = self.default_molecule
+
+        if not molecule:
+            raise QueryError("no molecule specified")
+
+        stranded_molecules = {
+                'dna':   (0, 'DNA'),
+                'ssdna': (1, 'DNA'),
+                'dsdna': (2, 'DNA'),
+                'rna':   (0, 'RNA'),
+                'ssrna': (1, 'RNA'),
+                'dsrna': (2, 'RNA'),
+        }
+        try:
+            strandedness, molecule = stranded_molecules[molecule.lower()]
+        except KeyError:
+            err = QueryError(culprit=self, molecule=molecule)
+            err.brief = "unknown molecule type: {molecule!r}"
+            err.info += f"expected: {', '.join(map(repr, stranded_molecules))}"
+            raise err
+
+        if not strandedness:
+            strandedness = self.default_strandedness
+
+        if not strandedness:
+            strandedness = {'DNA': 2, 'RNA': 1}[molecule]
+
+        self._molecule = molecule
+        self._strandedness = strandedness
+
+    def _calc_mw(self):
+        from Bio.SeqUtils import molecular_weight
+        mw = molecular_weight(
+                seq=self.seq,
+                seq_type=self.molecule,
+                double_stranded=self.is_double_stranded,
+                circular=self.is_circular,
+        )
+
+        # For some reason Biopython just assumes 5' phosphorylation, so we need 
+        # to correct for that here.
+        if not self.is_phosphorylated_5:
+            num_strands = 2 if self.is_double_stranded else 1
+            num_ends = 0 if self.is_circular else num_strands
+            hpo3 = 1.008 + 30.974 + 3*15.999
+            mw -= hpo3 * num_ends
+
+        return mw
 
 
-@autoprop
-class Plasmid(Construct):
+@autoprop.immutable
+class Plasmid(NucleicAcid):
     tag_prefix = 'p'
 
+    def get_molecule(self):
+        return 'DNA'
+
     @property
     def is_double_stranded(self):
         return True
@@ -241,26 +512,10 @@ class Plasmid(Construct):
     def is_circular(self):
         return True
 
-@autoprop
-class Fragment(Construct):
-    tag_prefix = 'f'
-
-    @property
-    def is_double_stranded(self):
-        return self.protocol.is_product_double_stranded
-
-    @property
-    def is_circular(self):
-        return False
-
-    @property
-    def is_phosphorylated(self):
-        return self.protocol.is_product_phosphorylated
-
-
-@autoprop
-class Oligo(Construct):
+@autoprop.immutable
+class Oligo(NucleicAcid):
     tag_prefix = 'o'
+    default_strandedness = 1
 
     def get_melting_temp(self):
         from Bio.SeqUtils import MeltingTemp
@@ -279,40 +534,108 @@ class Oligo(Construct):
     def get_tm(self):
         return self.melting_temp
 
-    @property
-    def is_double_stranded(self):
-        return False
+
+
+class MakerInterface:
+    # Maker classes are not required to actually inherit from this class, but 
+    # they are expected to implement this interface.
+
+    # Note that I don't use autoprop on this class, because I don't want 
+    # getters to be part of the interface.
 
     @property
-    def is_circular(self):
-        return False
+    def product_tags(self):
+        raise AttributeError
 
     @property
-    def is_phosphorylated(self):
-        # Right now, PO4 has no support for modified oligos at all.  
-        return False
+    def product_seqs(self):
+        raise AttributeError
+
+    @property
+    def product_molecule(self):
+        raise AttributeError
+
+    @property
+    def product_conc(self):
+        """
+        Return a `Quantity` with one of the following units:
+        - "nM"
+        - "uM"
+        - "µM"
+        - "ng/uL"
+        - "ng/µL"
+        """
+        raise AttributeError
+
+    @property
+    def product_volume(self):
+        """
+        Return a `Quantity` with units of "uL" or "µL".
+        """
+        raise AttributeError
+
+    @property
+    def is_product_circular(self):
+        raise AttributeError
+
+    @property
+    def is_product_phosphorylated_5(self):
+        raise AttributeError
+
+    @property
+    def is_product_phosphorylated_3(self):
+        raise AttributeError
+
+    @property
+    def protocol(self):
+        raise AttributeError
+
+    @property
+    def protocol_duration(self):
+        raise AttributeError
+
+    @property
+    def dependencies(self):
+        raise AttributeError
 
 
-class Target:
-    """
-    Represents the information stored in the PO₄ database concerning one step 
-    of the synthesis or cleanup of a single construct.  Specifically, this 
-    includes:
+@autoprop.immutable
+class IntermediateMixin:
+    # Mixin class; must appear before Reagent in MRO, e.g.:
+    #
+    # class IntermediatePlasmid(IntermediateMixin, Plasmid):
+    #     pass
 
-    - a `Construct` object representing the desired product.
-    - a `Fields` object containing any relevant protocol parameters.
-    """
+    def get_step(self):
+        # `self._step` is set by `Reagent.make_intermediate()`.
+        return self._step
 
-    def __init__(self, product, fields):
-        self.product = product
-        self.fields = fields
+    def get_parent(self):
+        return self._parent
 
-    def __getitem__(self, key):
-        # This function makes it possible to use simple string keys with 
-        # `Po4TargetConfig`.  Function keys can still be used to access the 
-        # product object, if necessary.
-        return self.fields[key]
+    def get_precursor(self):
+        if self.step == 0:
+            raise QueryError(f"can't get precursor of first intermediate", culprit=self)
 
+        return self.make_intermediate(self.step - 1)
+
+    def get_maker(self):
+        try:
+            key = self.maker_args[0]
+        except IndexError:
+            raise QueryError("no protocol specified", culprit=self)
+
+        factory = load_maker_factory(key)
+        return one(factory([self]))
+
+    def get_maker_args(self):
+        if self.step == 0:
+            return self.synthesis_args
+        else:
+            return self.cleanup_args[-1]
+
+    def get_cleanup_args(self):
+        return super().cleanup_args[:self.step]
 
 @only_raise(LoadError)
 def load_db(use=None, config=None):
@@ -338,12 +661,7 @@ def load_db(use=None, config=None):
     except KeyError as err:
         raise LoadError(f"no 'type' specified for database {use!r}") from None
 
-    plugin = one(
-            iter_entry_points('po4.databases', type_use),
-            too_short=LoadError(f"no {type_use!r} database plugin found."),
-            too_long=LoadError(f"multiple {type_use!r} database plugins found."),
-    )
-    plugin = plugin.load()
+    plugin = DB_PLUGINS[type_use].load()
 
     if defaults := getattr(plugin, 'default_config'):
         config_use = (Config(defaults) + config_use).data
@@ -353,4 +671,7 @@ def load_db(use=None, config=None):
         config_use = schema(config_use)
 
     return plugin.load(config_use)
+
+def load_maker_factory(key):
+    return MAKER_PLUGINS[key].make
 

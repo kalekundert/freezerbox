@@ -30,9 +30,12 @@ def load_config():
         dir = dir.parent
 
     return config.data
-    
-class Po4Config:
-    db_getter = lambda obj: obj.po4_db
+
+PRODUCT = object()
+PRECURSOR = object()
+
+class ReagentConfig:
+    db_getter = lambda obj: obj.db
     tag_getter = lambda obj: obj.tag
     autoload_db = True
     pick = list
@@ -77,7 +80,7 @@ class Po4Config:
                 self.db = load_db()
 
             if not self.db:
-                raise KeyError("no PO₄ database found")
+                raise KeyError("no freezerbox database found")
 
             # Fourth: Lookup values.
 
@@ -115,23 +118,43 @@ class Po4Config:
         )
 
 
-class Po4TargetConfig:
-    db_getter = lambda obj: obj.po4_db
-    target_getter = lambda obj: obj.po4_target
+class MakerArgsConfig:
+    product_getter = lambda obj: obj.product
 
-    def __init__(self, db_getter=None, target_getter=None):
+    class QueryHelper:
+
+        def __init__(self, config, obj):
+            self.config = config
+            self.obj = obj
+
+        def __getitem__(self, key):
+            product = self.config.product_getter(self.obj)
+
+            if key is PRODUCT:
+                return product
+
+            if key is PRECURSOR:
+                return product.precursor
+
+            return product.maker_args[key]
+
+        def get_location(self):
+            product = self.config.product_getter(self.obj)
+            return product.db.name
+
+
+    def __init__(self, db_getter=None, product_getter=None):
         cls = self.__class__
 
-        # Access the getters through the class.  If accessed via the instance, 
-        # they would become bound and would require a self argument. 
+        # Access the getter through the class.  If accessed via the instance, 
+        # it would become bound and would require a self argument. 
 
-        self.db_getter = db_getter or cls.db_getter
-        self.target_getter = target_getter or cls.target_getter
+        self.product_getter = product_getter or cls.product_getter
 
     def load(self, obj):
-        # The database object is only needed for error reporting.
+        helper = self.QueryHelper(self, obj)
         yield appcli.Layer(
-                values=lambda: self.target_getter(obj),
-                location=lambda: self.db_getter(obj).name,
+                values=helper,
+                location=helper.get_location,
         )
 

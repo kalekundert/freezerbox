@@ -1,100 +1,138 @@
 #!/usr/bin/env python3
 
+import freezerbox
 import pytest
 import datetime
 import autoprop
-from po4 import QueryError, DnaSeq, Protocol
-from po4.model import *
+from freezerbox import Fields, QueryError
+from freezerbox.model import *
 from utils import *
-from test_protocols import DummyProtocol
+from schema_helpers import *
 
-class DummyConstruct(Construct):
-    tag_prefix = 'd'
+class MockReagent(Reagent):
+    tag_prefix = 'x'
 
-    @property
-    def is_double_stranded(self):
-        return True
+class MockMolecule(Molecule):
+    tag_prefix = 'x'
 
-    @property
-    def is_circular(self):
-        return False
+    def _calc_mw(self):
+        raise QueryError
+
+class MockNucleicAcid(NucleicAcid):
+    tag_prefix = 'x'
+
+class MockMaker:
+
+    @classmethod
+    def make(cls, intermediates):
+        yield from (MockMaker(x) for x in intermediates)
+
+    def __init__(self, product):
+        args = product.maker_args
+
+        self.products = [product]
+
+        if 'seq' in args:
+            self.product_seqs = [args['seq']]
+
+        if 'molecule' in args:
+            self.product_molecule = args['molecule']
+
+        if 'conc' in args:
+            self.product_conc = Quantity.from_string(args['conc'])
+
+        if 'circular' in args:
+            self.is_product_circular = args['circular']
+
+@pytest.fixture(autouse=True)
+def monkeypatch_maker_plugins(monkeypatch):
+    monkeypatch.setattr(freezerbox.model, 'MAKER_PLUGINS', {
+        'm': MockMaker,
+    })
+
+kwargs_schema = lambda expected=eval: Schema({
+    Optional('kwargs', {}): empty_ok({str: eval_freezerbox}),
+    **error_or(**{
+        'expected': expected,
+    }),
+})
 
 def test_database_getitem_setitem():
     db = Database()
 
-    d0 = DummyConstruct()
-    with pytest.raises(QueryError, match='not attached'): d0.db
-    with pytest.raises(QueryError, match='not attached'): d0.tag
-    with pytest.raises(QueryError, match="d0: not found in database"): db['d0']
+    x0 = MockReagent()
+    with pytest.raises(QueryError, match='not attached'): x0.db
+    with pytest.raises(QueryError, match='not attached'): x0.tag
+    with pytest.raises(QueryError, match="x0: not found in database"): db['x0']
 
-    db['d1'] = d1 = DummyConstruct()
-    db['d02'] = d2 = DummyConstruct()
-    db['d', 3] = d3 = DummyConstruct()
-    db[Tag('d', 4)] = d4 = DummyConstruct()
+    db['x1'] = x1 = MockReagent()
+    db['x02'] = x2 = MockReagent()
+    db['x', 3] = x3 = MockReagent()
+    db[Tag('x', 4)] = x4 = MockReagent()
 
-    with pytest.raises(LoadError, match="d1: already in database, cannot be replaced"):
-        db['d1'] = DummyConstruct()
-    with pytest.raises(LoadError, match="<.*DummyConstruct.*> cannot have tag 'p1': expected 'd' prefix"):
-        db['p1'] = DummyConstruct()
+    with pytest.raises(LoadError, match="x1: already in database, cannot be replaced"):
+        db['x1'] = MockReagent()
+    with pytest.raises(LoadError, match="<.*MockReagent.*> cannot have tag 'p1'\n. expected 'x' prefix"):
+        db['p1'] = MockReagent()
 
-    assert d1.db is db
-    assert d2.db is db
-    assert d3.db is db
-    assert d4.db is db
+    assert x1.db is db
+    assert x2.db is db
+    assert x3.db is db
+    assert x4.db is db
 
-    assert d1.tag == Tag('d', 1)
-    assert d2.tag == Tag('d', 2)
-    assert d3.tag == Tag('d', 3)
-    assert d4.tag == Tag('d', 4)
+    assert x1.tag == Tag('x', 1)
+    assert x2.tag == Tag('x', 2)
+    assert x3.tag == Tag('x', 3)
+    assert x4.tag == Tag('x', 4)
 
-    assert db['d1'] is d1
-    assert db['d01'] is d1
-    assert db['d', 1] is d1
-    assert db[Tag('d', 1)] is d1
+    assert db['x1'] is x1
+    assert db['x01'] is x1
+    assert db['x', 1] is x1
+    assert db[Tag('x', 1)] is x1
 
-    assert db['d2'] is d2
-    assert db['d02'] is d2
-    assert db['d', 2] is d2
-    assert db[Tag('d', 2)] is d2
+    assert db['x2'] is x2
+    assert db['x02'] is x2
+    assert db['x', 2] is x2
+    assert db[Tag('x', 2)] is x2
 
-    assert db['d3'] is d3
-    assert db['d03'] is d3
-    assert db['d', 3] is d3
-    assert db[Tag('d', 3)] is d3
+    assert db['x3'] is x3
+    assert db['x03'] is x3
+    assert db['x', 3] is x3
+    assert db[Tag('x', 3)] is x3
 
-    assert db['d4'] is d4
-    assert db['d04'] is d4
-    assert db['d', 4] is d4
-    assert db[Tag('d', 4)] is d4
+    assert db['x4'] is x4
+    assert db['x04'] is x4
+    assert db['x', 4] is x4
+    assert db[Tag('x', 4)] is x4
 
 def test_database_delitem():
     db = Database()
-    db['d1'] = d1 = DummyConstruct()
+    db['x1'] = x1 = MockReagent()
 
-    assert d1 in db
-    assert d1.db is db
-    assert d1.tag == Tag('d', 1)
+    assert x1 in db
+    assert x1.db is db
+    assert x1.tag == Tag('x', 1)
 
-    del db['d1']
+    del db['x1']
 
-    assert d1 not in db
-    with pytest.raises(QueryError, match='not attached'): d1.db
-    with pytest.raises(QueryError, match='not attached'): d1.tag
+    assert x1 not in db
+    with pytest.raises(QueryError, match='not attached'): x1.db
+    with pytest.raises(QueryError, match='not attached'): x1.tag
 
 def test_database_contains():
     db = Database()
-    d1 = DummyConstruct()
-    assert d1 not in db
+    x1 = MockReagent()
+    assert x1 not in db
 
-    db['d1'] = d1
-    assert d1 in db
+    db['x1'] = x1
+    assert x1 in db
 
 def test_database_iter():
     db = Database()
-    db['d1'] = d1 = DummyConstruct()
-    db['d2'] = d2 = DummyConstruct()
+    db['x1'] = x1 = MockReagent()
+    db['x2'] = x2 = MockReagent()
 
-    values = {d1, d2}
+    values = {x1, x2}
     keys = {x.tag for x in values}
     items = {(x.tag, x) for x in values}
 
@@ -107,10 +145,10 @@ def test_database_len():
     db = Database()
     assert len(db) == 0
 
-    db['d1'] = DummyConstruct()
+    db['x1'] = MockReagent()
     assert len(db) == 1
 
-    db['d2'] = DummyConstruct()
+    db['x2'] = MockReagent()
     assert len(db) == 2
 
 
@@ -122,78 +160,237 @@ def test_tag():
     assert str(tag) == 'p1'
 
 
-@parametrize_via_toml('test_model.toml')
-def test_construct_seq(given_seq, protocol_seq, expected):
-    kwargs = {}
+@parametrize_from_file(schema=kwargs_schema())
+def test_reagent_name(kwargs, expected, error):
+    x1 = MockReagent(**kwargs)
+    with error:
+        assert x1.name == expected
 
-    if given_seq != False:
-        seq = given_seq['seq']
-        kwargs['seq'] = (lambda: seq) if given_seq['defer'] else seq
-    if protocol_seq != False:
-        kwargs['protocol'] = DummyProtocol(protocol_seq)
+@parametrize_from_file(schema=kwargs_schema())
+def test_reagent_alt_names(kwargs, expected, error):
+    x1 = MockReagent(**kwargs)
+    with error:
+        assert x1.alt_names == expected
 
-    d1 = DummyConstruct(**kwargs)
-    assert d1.seq == DnaSeq(expected)
+@parametrize_from_file(schema=kwargs_schema())
+def test_reagent_date(kwargs, expected, error):
+    x1 = MockReagent(**kwargs)
+    with error:
+        assert x1.date == expected
 
-def test_construct_seq_err():
-    d1 = DummyConstruct()
-    with pytest.raises(QueryError, match='no sequence specified'):
-        d1.seq
+@parametrize_from_file(schema=kwargs_schema())
+def test_reagent_desc(kwargs, expected, error):
+    x1 = MockReagent(**kwargs)
+    with error:
+        assert x1.desc == expected
 
-@parametrize_via_toml('test_model.toml')
-def test_construct_length(columns, expected):
-    d1 = DummyConstruct(**columns)
-    assert d1.length == expected
+def test_reagent_maker_args_1():
+    x1 = MockReagent(
+            synthesis=Fields(['m'], {'conc': '1 nM'}),
+            cleanups=[
+                Fields(['m'], {'conc': '2 nM'}),
+                Fields(['m'], {'conc': '3 nM'}),
+            ],
+    )
+    assert x1.synthesis_args[0] == 'm'
+    assert x1.synthesis_args['conc'] == '1 nM'
 
-def test_construct_length_err():
-    d1 = DummyConstruct()
-    with pytest.raises(QueryError, match='no sequence specified'):
-        d1.length
+    assert x1.cleanup_args[0][0] == 'm'
+    assert x1.cleanup_args[0]['conc'] == '2 nM'
 
-@parametrize_via_toml('test_model.toml')
-def test_construct_name(columns, expected):
-    d1 = DummyConstruct(**columns)
-    assert d1.name == (expected or None)
+    assert x1.cleanup_args[1][0] == 'm'
+    assert x1.cleanup_args[1]['conc'] == '3 nM'
 
-@parametrize_via_toml('test_model.toml')
-def test_construct_date(columns, expected):
-    d1 = DummyConstruct(**columns)
-    assert d1.date == (expected or None)
+def test_reagent_maker_args_2():
+    x1 = MockReagent(
+            synthesis=lambda: Fields(['m'], {'conc': '1 nM'}),
+            cleanups=lambda: [
+                Fields(['m'], {'conc': '2 nM'}),
+                Fields(['m'], {'conc': '3 nM'}),
+            ],
+    )
+    assert x1.synthesis_args[0] == 'm'
+    assert x1.synthesis_args['conc'] == '1 nM'
 
-@parametrize_via_toml('test_model.toml')
-def test_construct_desc(columns, expected):
-    d1 = DummyConstruct(**columns)
-    assert d1.desc == (expected or None)
+    assert x1.cleanup_args[0][0] == 'm'
+    assert x1.cleanup_args[0]['conc'] == '2 nM'
 
-def test_construct_protocol():
-    d1 = DummyConstruct()
+    assert x1.cleanup_args[1][0] == 'm'
+    assert x1.cleanup_args[1]['conc'] == '3 nM'
 
-    with pytest.raises(QueryError, match="no protocol"):
-        d1.protocol
+def test_reagent_makers():
+    x1 = MockReagent(
+            synthesis=Fields(['m'], {'conc': '1 nM'}),
+            cleanups=[
+                Fields(['m'], {'conc': '2 nM'}),
+                Fields(['m'], {'conc': '3 nM'}),
+            ],
+    )
+    m1 = x1.synthesis_maker
+    m2 = x1.cleanup_makers[0]
+    m3 = x1.cleanup_makers[1]
 
-    protocol = DummyProtocol('ATCG')
-    d2 = DummyConstruct(protocol=protocol)
-    d3 = DummyConstruct(protocol=lambda: protocol)
+    assert isinstance(m1, MockMaker)
+    assert m1.product_conc == Quantity(1, 'nM')
 
-    assert d2.protocol is protocol
-    assert d3.protocol is protocol
+    assert isinstance(m2, MockMaker)
+    assert m2.product_conc == Quantity(2, 'nM')
 
-def test_construct_conc():
-    d1 = DummyConstruct()
+    assert isinstance(m3, MockMaker)
+    assert m3.product_conc == Quantity(3, 'nM')
 
-    with pytest.raises(QueryError, match="no concentration"):
-        d1.conc_str
+def test_reagent_maker_err_1():
+    x1 = MockReagent()
+    with pytest.raises(QueryError, match="no synthesis specified"):
+        x1.synthesis_args
+    with pytest.raises(QueryError, match="no synthesis specified"):
+        x1.synthesis_maker
+    with pytest.raises(QueryError, match="no synthesis specified"):
+        x1.cleanup_args
+    with pytest.raises(QueryError, match="no synthesis specified"):
+        x1.cleanup_makers
 
-    d2 = DummyConstruct(seq='ATCG', conc='10 ng/µL')
+def test_reagent_maker_err_2():
+    x1 = MockReagent(
+            # no synthesis
+            cleanups=[
+                Fields(['m'], {'conc': '2 nM'}),
+                Fields(['m'], {'conc': '3 nM'}),
+            ],
+    )
+    with pytest.raises(QueryError, match="no synthesis specified"):
+        x1.cleanup_args
+    with pytest.raises(QueryError, match="no synthesis specified"):
+        x1.cleanup_makers
 
-    assert d2.conc_str == '10 ng/µL'
-    assert d2.conc_ng_uL == pytest.approx(10)
+def test_reagent_get_maker_attr_1():
+    x1 = MockReagent(
+            synthesis=Fields(['m'], {'conc': '1 nM'}),
+            cleanups=[
+                Fields(['m'], {'conc': '2 nM'}),
+                Fields(['m'], {'conc': '3 nM'}),
+            ],
+    )
+    assert x1.get_maker_attr('product_conc') == Quantity(3, 'nM')
+    assert x1.get_maker_attr('product_conc', None) == Quantity(3, 'nM')
 
-    d3 = DummyConstruct(seq='ATCG', conc='10 nM')
+def test_reagent_get_maker_attr_2():
+    x1 = MockReagent(
+            synthesis=Fields(['m'], {'conc': '1 nM'}),
+            cleanups=[
+                Fields(['m'], {'conc': '2 nM'}),
+                Fields(['m'], {}),
+            ],
+    )
+    assert x1.get_maker_attr('product_conc') == Quantity(2, 'nM')
+    assert x1.get_maker_attr('product_conc', None) == Quantity(2, 'nM')
 
-    assert d3.conc_str == '10 nM'
-    assert d3.conc_nM == pytest.approx(10)
+def test_reagent_get_maker_attr_3():
+    x1 = MockReagent(
+            synthesis=Fields(['m'], {'conc': '1 nM'}),
+            cleanups=[
+                Fields(['m'], {}),
+                Fields(['m'], {}),
+            ],
+    )
+    assert x1.get_maker_attr('product_conc') == Quantity(1, 'nM')
+    assert x1.get_maker_attr('product_conc', None) == Quantity(1, 'nM')
 
+def test_reagent_get_maker_attr_4():
+    x1 = MockReagent(
+            synthesis=Fields(['m'], {}),
+            cleanups=[
+                Fields(['m'], {}),
+                Fields(['m'], {}),
+            ],
+    )
+    with pytest.raises(QueryError, match='product_conc'):
+        x1.get_maker_attr('product_conc')
+    assert x1.get_maker_attr('product_conc', None) == None
+
+def test_reagent_get_maker_attr_5():
+    x1 = MockReagent()
+    with pytest.raises(QueryError, match='product_conc'):
+        x1.get_maker_attr('product_conc')
+    assert x1.get_maker_attr('product_conc', None) == None
+
+
+@parametrize_from_file(schema=kwargs_schema())
+def test_molecule_seq(kwargs, expected, error):
+    x1 = MockMolecule(**kwargs)
+    with error:
+        assert x1.seq == expected
+
+        # Make sure the sequence is cached:
+        x1._attrs['seq'] = '!!!'
+        assert x1.seq == expected
+
+@parametrize_from_file(schema=kwargs_schema())
+def test_molecule_length(kwargs, expected, error):
+    x1 = MockMolecule(**kwargs)
+    with error:
+        assert x1.length == expected
+
+@parametrize_from_file(
+        schema=kwargs_schema([eval_freezerbox]),
+)
+def test_molecule_conc(kwargs, expected, error):
+    db = Database()
+    db['x1'] = x1 = MockMolecule(**kwargs)
+
+    get_by_unit = {
+            'nM': lambda: x1.conc_nM,
+            'uM': lambda: x1.conc_uM,
+            'µM': lambda: x1.conc_uM,
+            'ng/uL': lambda: x1.conc_ng_uL,
+            'ng/µL': lambda: x1.conc_ng_uL,
+            'mg/mL': lambda: x1.conc_mg_mL,
+    }
+
+    # The first expected value should have the same units as the specified 
+    # concentration.
+    with error:
+        assert x1.conc == expected[0]
+
+    for q in expected:
+        with error:
+            assert x1.get_conc(q.unit).value == pytest.approx(q.value)
+            assert x1.get_conc(q.unit).unit == q.unit
+        with error:
+            assert get_by_unit[q.unit]() == pytest.approx(q.value)
+
+
+def test_protein_mw():
+    r1 = Protein(seq='DYKDDDDK')
+    assert r1.mw == pytest.approx(1012.98, abs=0.1)
+
+@parametrize_from_file(
+        schema=kwargs_schema({
+            'molecule': eval,
+            'strandedness': eval,
+        }),
+)
+def test_nucleic_acid_molecule(kwargs, expected, error):
+    x1 = NucleicAcid(**kwargs)
+    with error:
+        assert x1.molecule == expected['molecule']
+        assert x1.is_double_stranded == (expected['strandedness'] == 2)
+        assert x1.is_single_stranded == (expected['strandedness'] == 1)
+
+@parametrize_from_file(schema=kwargs_schema())
+def test_nucleic_acid_circular(kwargs, expected, error):
+    x1 = NucleicAcid(**kwargs)
+    with error:
+        assert x1.is_circular == expected
+        assert x1.is_linear == (not expected)
+
+def test_nucleic_acid_mw():
+    # 5'-phosphorylation assumed.
+    # http://molbiotools.com/dnacalculator.html
+    f1 = NucleicAcid(seq='ATCG')
+    assert f1.is_circular == (not f1.is_linear) == False
+    assert f1.is_double_stranded == (not f1.is_single_stranded) == True
+    assert f1.mw == pytest.approx(2347.65, abs=0.1)
 
 def test_plasmid_mw():
     # http://molbiotools.com/dnacalculator.html
@@ -201,16 +398,7 @@ def test_plasmid_mw():
 
     assert p1.is_circular == (not p1.is_linear) == True
     assert p1.is_double_stranded == (not p1.is_single_stranded) == True
-    assert p1.mw == pytest.approx(2471.58, rel=1e-3)
-
-def test_fragment_mw():
-    # 5'-phosphorylation assumed.
-    # http://molbiotools.com/dnacalculator.html
-    f1 = Fragment(protocol=DummyProtocol('ATCG'))
-
-    assert f1.is_circular == (not f1.is_linear) == False
-    assert f1.is_double_stranded == (not f1.is_single_stranded) == True
-    assert f1.mw == pytest.approx(2507.61, rel=1e-3)
+    assert p1.mw == pytest.approx(2471.58, abs=0.1)
 
 def test_oligo_mw():
     # 5'-OH assumed.
@@ -219,11 +407,66 @@ def test_oligo_mw():
 
     assert o1.is_circular == (not o1.is_linear) == False
     assert o1.is_double_stranded == (not o1.is_single_stranded) == False
-    assert o1.mw == pytest.approx(1173.82, rel=1e-3)
+    assert o1.mw == pytest.approx(1173.82, abs=0.1)
 
-@parametrize_via_toml('test_model.toml')
-def test_oligo_tm(seq, name, expected):
-    o1 = Oligo(seq=seq, name=name)
-    assert o1.tm == pytest.approx(expected)
+@parametrize_from_file(schema=kwargs_schema())
+def test_oligo_tm(kwargs, expected, error):
+    o1 = Oligo(**kwargs)
+    with error:
+        assert o1.tm == pytest.approx(expected)
 
+
+def test_intermediate():
+    db = Database()
+    db['x1'] = x1 = MockMolecule(
+            synthesis=Fields('m', {'conc': '1 nM'}),
+            cleanups=[
+                Fields('m', {'conc': '2 nM'}),
+                Fields('m', {'conc': '3 nM'}),
+            ],
+    )
+
+    # Access the concentration before creating the intermediates so that a 
+    # concentration value is cached.  The intermediates will need to forget 
+    # this value:
+    assert x1.conc == Quantity(3, 'nM')
+
+    i1 = x1.make_intermediate(0)
+    i2 = x1.make_intermediate(1)
+    i3 = x1.make_intermediate(2)
+
+    with pytest.raises(QueryError) as err:
+        x1.make_intermediate(3)
+
+    assert err.match("x1: intermediate 3 doesn't exist")
+    assert err.match("intermediates:")
+    assert err.match("0: m conc='1 nM'")
+    assert err.match("1: m conc='2 nM'")
+    assert err.match("2: m conc='3 nM'")
+
+    # Access the concentration again after creating the intermediates, to make 
+    # sure that doing so does not somehow re-establish the cache:
+    assert x1.conc == Quantity(3, 'nM')
+
+    # Test that precursors are correct:
+    assert i2.precursor is i1
+    assert i3.precursor is i2
+
+    # Test that fields are correct:
+    assert i1.maker_args[0] == 'm'
+    assert i1.maker_args['conc'] == '1 nM'
+    assert i2.maker_args[0] == 'm'
+    assert i2.maker_args['conc'] == '2 nM'
+    assert i3.maker_args[0] == 'm'
+    assert i3.maker_args['conc'] == '3 nM'
+
+    # Test that makers are correct:
+    assert i1.maker.product_conc == Quantity(1, 'nM')
+    assert i2.maker.product_conc == Quantity(2, 'nM')
+    assert i3.maker.product_conc == Quantity(3, 'nM')
+
+    # Test that properties depending on fields are re-evaluated correctly.
+    assert i1.conc == Quantity(1, 'nM')
+    assert i2.conc == Quantity(2, 'nM')
+    assert i3.conc == Quantity(3, 'nM')
 

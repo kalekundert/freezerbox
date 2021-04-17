@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
 import re
-from Bio.Seq import Seq
-from Bio.Alphabet import generic_dna
+from stepwise import Quantity
 from more_itertools import split_when
 from .errors import ParseError, only_raise
 
-DnaSeq = lambda x: Seq(normalize_seq(x), generic_dna)
 no_default = object()
 
 def normalize_seq(raw_seq):
@@ -21,7 +19,7 @@ def normalize_seq(raw_seq):
     return seq.upper()
 
 def get_tag_prefixes(*args):
-    from .model import Construct
+    from .model import Reagent
 
     def add(prefixes, cls):
         if cls.tag_prefix:
@@ -30,7 +28,7 @@ def get_tag_prefixes(*args):
             add(prefixes, subcls)
 
     prefixes = set()
-    for cls in args or [Construct]:
+    for cls in args or [Reagent]:
         add(prefixes, cls)
     
     return prefixes
@@ -223,6 +221,43 @@ def parse_size_bp(size_str):
             return size_from_str(m.group('size'))
 
     raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
+
+
+@only_raise(ParseError)
+def convert_conc_unit(conc, mw, new_unit):
+    molar_conversion_factors = {
+            'pM': 1e12,
+            'nM': 1e9,
+            'uM': 1e6,
+            'µM': 1e6,
+            'mM': 1e3,
+            'M': 1,
+    }
+    mass_volume_conversion_factors = {
+            'ng/uL': 1e3,
+            'ng/µL': 1e3,
+            'mg/mL': 1,
+    }
+
+    def pick_conversion_factors():
+        if mw is not None:
+            return {
+                    **molar_conversion_factors,
+                    **{
+                        k: mw * v
+                        for k, v in mass_volume_conversion_factors.items()
+                    },
+            }
+
+        if conc.unit in molar_conversion_factors:
+            return molar_conversion_factors
+
+        if conc.unit in mass_volume_conversion_factors:
+            return mass_volume_conversion_factors
+
+        return {}
+
+    return conc.convert_unit(new_unit, pick_conversion_factors())
 
 def unanimous(values):
     from itertools import groupby

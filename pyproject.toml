@@ -18,6 +18,7 @@ requires = [
   'docopt',
   'inform>=1.21',
   'more_itertools>=8.0',
+  'networkx',
   'pandas',
   'parsy',
   'setuptools',
@@ -40,14 +41,15 @@ freezerbox = "freezerbox.cli.main:main"
 [tool.flit.entrypoints."freezerbox.databases"]
 excel = "freezerbox.loaders.excel"
 
-[tool.flit.entrypoints."stepwise.protocols"]
-protocols = "freezerbox.stepwise:Plugin"
+#[tool.flit.entrypoints."stepwise.protocols"]
+#protocols = "freezerbox.stepwise:Plugin"
 
 [tool.flit.metadata.requires-extra]
 test = [
   'pytest',
   'pytest-cov',
   'coveralls',
+  'parametrize_from_file',
 ]
 doc = [
   'sphinx',
@@ -67,6 +69,7 @@ addopts = "--doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = 'NORMALIZE_WHITESPACE'
 filterwarnings = [
   'ignore::DeprecationWarning:xlrd.xlsx',
+  'ignore::PendingDeprecationWarning:Bio.Alphabet',
 ]
 
 [tool.pccc]

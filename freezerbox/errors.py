@@ -4,7 +4,18 @@ import functools
 from tidyexc import Error
 
 class Po4Error(Error):
-    pass
+
+    @property
+    def brief_str(self):
+        brief_str = super().brief_str
+        culprit = self.data.get('culprit')
+
+        if culprit:
+            culprit = getattr(culprit, '_tag', None) or culprit
+            brief_str = f"{culprit}: {brief_str}"
+
+        return brief_str
+
 
 class LoadError(Po4Error):
     pass

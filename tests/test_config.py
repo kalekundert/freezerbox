@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-import os, po4, pytest
+import os, freezerbox, pytest
 from contextlib import contextmanager
 from pathlib import Path
-from po4 import load_config, Po4Config, Po4TargetConfig
+from freezerbox import load_config, ReagentConfig, MakerArgsConfig
 from more_itertools import one, first
 
-from test_model import DummyConstruct
+from test_model import MockReagent
 
 DUMMY_CONFIG = Path(__file__).parent / 'dummy_config'
 
-class DummyObj:
+class MockObj:
     pass
 
 def test_config():
@@ -49,60 +49,60 @@ def cd(dir):
         os.chdir(prev_cwd)
 
 
-def test_po4_config_tags_1():
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
+def test_reagent_config_tags_1():
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
 
-    obj = DummyObj()
-    config = Po4Config()
+    obj = MockObj()
+    config = ReagentConfig()
     layer = one(config.load(obj))
 
-    obj.po4_db = db
-    obj.tag = 'd1'
+    obj.db = db
+    obj.tag = 'x1'
 
     assert layer.values['name'] == ['1']
     assert layer.location == 'a'
 
-def test_po4_config_tags_2():
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
-    db['d2'] = DummyConstruct(name='2')
+def test_reagent_config_tags_2():
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
+    db['x2'] = MockReagent(name='2')
 
-    obj = DummyObj()
-    config = Po4Config()
+    obj = MockObj()
+    config = ReagentConfig()
     layer = one(config.load(obj))
 
-    obj.po4_db = db
-    obj.tag = 'd1', 'd2'
+    obj.db = db
+    obj.tag = 'x1', 'x2'
 
     assert layer.values['name'] == ['1', '2']
     assert layer.location == 'a'
 
-def test_po4_config_tags_not_found():
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
+def test_reagent_config_tags_not_found():
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
 
-    obj = DummyObj()
-    config = Po4Config()
+    obj = MockObj()
+    config = ReagentConfig()
     layer = one(config.load(obj))
 
-    obj.po4_db = db
-    obj.tag = 'd2'
+    obj.db = db
+    obj.tag = 'x2'
 
     with pytest.raises(KeyError):
         layer.values['name']
 
     assert layer.location == 'a'
 
-def test_po4_config_tags_not_parseable():
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
+def test_reagent_config_tags_not_parseable():
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
 
-    obj = DummyObj()
-    config = Po4Config()
+    obj = MockObj()
+    config = ReagentConfig()
     layer = one(config.load(obj))
 
-    obj.po4_db = db
+    obj.db = db
     obj.tag = 'not-a-tag'
 
     with pytest.raises(KeyError):
@@ -110,72 +110,72 @@ def test_po4_config_tags_not_parseable():
 
     assert layer.location == 'a'
 
-def test_po4_config_key_not_found():
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
+def test_reagent_config_key_not_found():
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
 
-    obj = DummyObj()
-    config = Po4Config()
+    obj = MockObj()
+    config = ReagentConfig()
     layer = one(config.load(obj))
 
-    obj.po4_db = db
-    obj.tag = 'd1'
+    obj.db = db
+    obj.tag = 'x1'
 
     with pytest.raises(KeyError):
         layer.values['not-a-key']
 
     assert layer.location == 'a'
 
-def test_po4_config_pick():
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
-    db['d2'] = DummyConstruct(name='2')
+def test_reagent_config_pick():
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
+    db['x2'] = MockReagent(name='2')
 
-    obj = DummyObj()
-    config = Po4Config(pick=first)
+    obj = MockObj()
+    config = ReagentConfig(pick=first)
     layer = one(config.load(obj))
 
-    obj.po4_db = db
-    obj.tag = ['d1', 'd2']
+    obj.db = db
+    obj.tag = ['x1', 'x2']
 
     assert layer.values['name'] == '1'
     assert layer.location == 'a'
 
-def test_po4_config_db_autoload(monkeypatch):
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
-    monkeypatch.setattr(po4.model, 'load_db', lambda: db)
+def test_reagent_config_db_autoload(monkeypatch):
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
+    monkeypatch.setattr(freezerbox.model, 'load_db', lambda: db)
 
-    obj = DummyObj()
-    config = Po4Config()
+    obj = MockObj()
+    config = ReagentConfig()
     layer = one(config.load(obj))
 
-    obj.tag = 'd1'
+    obj.tag = 'x1'
 
     assert layer.values['name'] == ['1']
     assert layer.location == 'a'
 
-def test_po4_config_db_not_found():
-    obj = DummyObj()
-    config = Po4Config(autoload_db=False)
+def test_reagent_config_db_not_found():
+    obj = MockObj()
+    config = ReagentConfig(autoload_db=False)
     layer = one(config.load(obj))
 
-    obj.tag = 'd1'
+    obj.tag = 'x1'
 
-    with pytest.raises(KeyError, match="no PO₄ database found"):
+    with pytest.raises(KeyError, match="no freezerbox database found"):
         layer.values['name']
 
     assert layer.location == '*no database loaded*'
 
-def po4_config_from_ctor():
-    return Po4Config(
+def reagent_config_from_ctor():
+    return ReagentConfig(
             db_getter=lambda self: self.my_db,
             tag_getter=lambda self: self.my_tag,
     )
 
-def po4_config_from_subclass():
+def reagent_config_from_subclass():
 
-    class MyConfig(Po4Config):
+    class MyConfig(ReagentConfig):
         db_getter = lambda self: self.my_db
         tag_getter = lambda self: self.my_tag
 
@@ -183,73 +183,96 @@ def po4_config_from_subclass():
 
 @pytest.mark.parametrize(
         'config_factory', [
-            po4_config_from_ctor,
-            po4_config_from_subclass,
+            reagent_config_from_ctor,
+            reagent_config_from_subclass,
         ]
 )
-def test_po4_config_getters(config_factory):
-    db = po4.Database(name='a')
-    db['d1'] = DummyConstruct(name='1')
+def test_reagent_config_getters(config_factory):
+    db = freezerbox.Database(name='a')
+    db['x1'] = MockReagent(name='1')
 
-    obj = DummyObj()
+    obj = MockObj()
     config = config_factory()
     layer = one(config.load(obj))
 
     obj.my_db = db
-    obj.my_tag = 'd1'
+    obj.my_tag = 'x1'
 
     assert layer.values['name'] == ['1']
     assert layer.location == 'a'
 
 
-def test_po4_target_config():
-    db = po4.Database(name='loc')
-    db['d1'] = d1 = DummyConstruct(name='1')
+def test_maker_args_config_synthesis():
+    db = freezerbox.Database(name='loc')
+    db['x1'] = x1 = MockReagent(
+            synthesis=freezerbox.Fields(['a'], {'b': 'c'}),
+    )
+    i1 = x1.make_intermediate(0)
 
-    obj = DummyObj()
-    config = Po4TargetConfig()
+    obj = MockObj()
+    config = MakerArgsConfig()
     layer = one(config.load(obj))
 
-    obj.po4_db = db
-    obj.po4_target = po4.Target(d1, po4.Fields(['a'], {'b': 'c'}))
+    obj.product = i1
 
     assert layer.values[0] == 'a'
     assert layer.values['b'] == 'c'
-    assert layer.values.product is d1
+    assert layer.values[freezerbox.PRODUCT] is i1
     assert layer.location == 'loc'
 
-def po4_target_config_from_ctor():
-    return Po4TargetConfig(
-            db_getter=lambda self: self.my_db,
-            target_getter=lambda self: self.my_target,
+def test_maker_args_config_cleanup():
+    db = freezerbox.Database(name='loc')
+    db['x1'] = x1 = MockReagent(
+            synthesis=freezerbox.Fields(['a'], {'b': 'c'}),
+            cleanups=[freezerbox.Fields(['d'], {'e': 'f'})],
+    )
+    i1 = x1.make_intermediate(1)
+
+    obj = MockObj()
+    config = MakerArgsConfig()
+    layer = one(config.load(obj))
+
+    obj.product = i1
+
+    assert layer.values[0] == 'd'
+    assert layer.values['e'] == 'f'
+    assert layer.values[freezerbox.PRODUCT] is i1
+    assert layer.values[freezerbox.PRECURSOR] is i1.precursor
+    assert layer.location == 'loc'
+
+def maker_args_config_from_ctor():
+    return MakerArgsConfig(
+            product_getter=lambda self: self.my_product,
     )
 
-def po4_target_config_from_subclass():
+def maker_args_config_from_subclass():
 
-    class MyConfig(Po4TargetConfig):
-        db_getter = lambda self: self.my_db
-        target_getter = lambda self: self.my_target
+    class MyConfig(MakerArgsConfig):
+        product_getter = lambda self: self.my_product
 
     return MyConfig()
 
 @pytest.mark.parametrize(
         'config_factory', [
-            po4_target_config_from_ctor,
-            po4_target_config_from_subclass,
+            maker_args_config_from_ctor,
+            maker_args_config_from_subclass,
         ]
 )
-def test_po4_target_config_getters_inherit(config_factory):
-    db = po4.Database(name='loc')
-    db['d1'] = d1 = DummyConstruct(name='1')
+def test_maker_args_config_getters_inherit(config_factory):
+    db = freezerbox.Database(name='loc')
+    db['x1'] = x1 = MockReagent(
+            synthesis=freezerbox.Fields(['a'], {'b': 'c'}),
+            cleanups=[freezerbox.Fields(['d'], {'e': 'f'})],
+    )
+    i1 = x1.make_intermediate(0)
 
-    obj = DummyObj()
+    obj = MockObj()
     config = config_factory()
     layer = one(config.load(obj))
 
-    obj.my_db = db
-    obj.my_target = po4.Target(d1, po4.Fields(['a'], {'b': 'c'}))
+    obj.my_product = i1
 
     assert layer.values[0] == 'a'
     assert layer.values['b'] == 'c'
-    assert layer.values.product is d1
+    assert layer.values[freezerbox.PRODUCT] is i1
     assert layer.location == 'loc'
