@@ -1,0 +1,904 @@
+test_grouped_topological_sort:
+  -
+    id: empty
+    nodes:
+    edges:
+    expected:
+  -
+    id: linear a
+    nodes:
+      1: 'a'
+    edges:
+    expected:
+      - 'a', [1]
+
+  -
+    id: linear a a
+    nodes:
+      1: 'a'
+      2: 'a'
+    edges:
+    expected:
+      - 'a', [1, 2]
+  -
+    id: linear a b
+    nodes:
+      1: 'a'
+      2: 'b'
+    edges:
+    expected:
+      - 'a', [1]
+      - 'b', [2]
+  -
+    id: linear b a
+    nodes:
+      1: 'b'
+      2: 'a'
+    edges:
+    expected:
+      - 'a', [2]
+      - 'b', [1]
+
+  -
+    id: linear a-a
+    nodes:
+      1: 'a'
+      2: 'a'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [1]
+      - 'a', [2]
+  -
+    id: linear a-b
+    nodes:
+      1: 'a'
+      2: 'b'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [1]
+      - 'b', [2]
+  -
+    id: linear b-a
+    nodes:
+      1: 'b'
+      2: 'a'
+    edges:
+      - 1, 2
+    expected:
+      - 'b', [1]
+      - 'a', [2]
+
+  -
+    id: linear a-a a
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [1, 3]
+      - 'a', [2]
+  -
+    id: linear a-a b
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [1]
+      - 'a', [2]
+      - 'b', [3]
+  -
+    id: linear a-b a
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [1, 3]
+      - 'b', [2]
+  -
+    id: linear a-b b
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [1]
+      - 'b', [2, 3]
+  -
+    id: linear b-a a
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 1, 2
+    expected:
+      - 'b', [1]
+      - 'a', [2, 3]
+  -
+    id: linear b-a b
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 1, 2
+    expected:
+      - 'b', [1, 3]
+      - 'a', [2]
+  -
+    id: linear b-b a
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 1, 2
+    expected:
+      - 'a', [3]
+      - 'b', [1]
+      - 'b', [2]
+  -
+    id: linear b-b b
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 1, 2
+    expected:
+      - 'b', [1, 3]
+      - 'b', [2]
+
+  -
+    id: linear a a-a
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 2, 3
+    expected:
+      - 'a', [1, 2]
+      - 'a', [3]
+  -
+    id: linear a a-b
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 2, 3
+    expected:
+      - 'a', [1, 2]
+      - 'b', [3]
+  -
+    id: linear a b-a
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 2, 3
+    expected:
+      - 'b', [2]
+      - 'a', [1, 3]
+  -
+    id: linear a b-b
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 2, 3
+    expected:
+      - 'a', [1]
+      - 'b', [2]
+      - 'b', [3]
+  -
+    id: linear b a-a
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 2, 3
+    expected:
+      - 'a', [2]
+      - 'a', [3]
+      - 'b', [1]
+  -
+    id: linear b a-b
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 2, 3
+    expected:
+      - 'a', [2]
+      - 'b', [1, 3]
+  -
+    id: linear b b-a
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 2, 3
+    expected:
+      - 'b', [1, 2]
+      - 'a', [3]
+  -
+    id: linear b b-b
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 2, 3
+    expected:
+      - 'b', [1, 2]
+      - 'b', [3]
+
+  -
+    id: linear a-a a-a
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1, 3]
+      - 'a', [2, 4]
+  -
+    id: linear a-a a-b
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1, 3]
+      - 'a', [2]
+      - 'b', [4]
+  -
+    id: linear a-a b-a
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'b'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1]
+      - 'b', [3]
+      - 'a', [2, 4]
+  -
+    id: linear a-a b-b
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'b'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1]
+      - 'a', [2]
+      - 'b', [3]
+      - 'b', [4]
+  -
+    id: linear a-b a-a
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1, 3]
+      - 'a', [4]
+      - 'b', [2]
+  -
+    id: linear a-b a-b
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1, 3]
+      - 'b', [2, 4]
+  -
+    id: linear a-b b-a
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'b'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1]
+      - 'b', [2, 3]
+      - 'a', [4]
+  -
+    id: linear a-b b-b
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'b'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [1]
+      - 'b', [2, 3]
+      - 'b', [4]
+  -
+    id: linear b-a a-a
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [3]
+      - 'b', [1]
+      - 'a', [2, 4]
+  -
+    id: linear b-a a-b
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [3]
+      - 'b', [1, 4]
+      - 'a', [2]
+  -
+    id: linear b-a b-a
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'b'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'b', [1, 3]
+      - 'a', [2, 4]
+  -
+    id: linear b-a b-b
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'b'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'b', [1, 3]
+      - 'a', [2]
+      - 'b', [4]
+  -
+    id: linear b-b a-a
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [3]
+      - 'a', [4]
+      - 'b', [1]
+      - 'b', [2]
+  -
+    id: linear b-b a-b
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'a', [3]
+      - 'b', [1, 4]
+      - 'b', [2]
+  -
+    id: linear b-b b-a
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'b'
+      4: 'a'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'b', [1, 3]
+      - 'a', [4]
+      - 'b', [2]
+  -
+    id: linear b-b b-b
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'b'
+      4: 'b'
+    edges:
+      - 1, 2
+      - 3, 4
+    expected:
+      - 'b', [1, 3]
+      - 'b', [2, 4]
+
+  -
+    id: linear a-a a-b-c
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [1, 3]
+      - 'a', [2]
+      - 'b', [4]
+      - 'c', [5]
+  -
+    id: linear a-b a-b-c
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [1, 3]
+      - 'b', [2, 4]
+      - 'c', [5]
+  -
+    id: linear a-c a-b-c
+    nodes:
+      1: 'a'
+      2: 'c'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [1, 3]
+      - 'b', [4]
+      - 'c', [2, 5]
+  -
+    id: linear b-a a-b-c
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [3]
+      - 'b', [1, 4]
+      - 'a', [2]
+      - 'c', [5]
+  -
+    id: linear b-b a-b-c
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [3]
+      - 'b', [1, 4]
+      - 'b', [2]
+      - 'c', [5]
+  -
+    id: linear b-c a-b-c
+    nodes:
+      1: 'b'
+      2: 'c'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [3]
+      - 'b', [1, 4]
+      - 'c', [2, 5]
+  -
+    id: linear c-a a-b-c
+    nodes:
+      1: 'c'
+      2: 'a'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [3]
+      - 'b', [4]
+      - 'c', [1, 5]
+      - 'a', [2]
+  -
+    id: linear c-b a-b-c
+    nodes:
+      1: 'c'
+      2: 'b'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [3]
+      - 'b', [4]
+      - 'c', [1, 5]
+      - 'b', [2]
+  -
+    id: linear c-c a-b-c
+    nodes:
+      1: 'c'
+      2: 'c'
+      3: 'a'
+      4: 'b'
+      5: 'c'
+    edges:
+      - 1, 2
+      - 3, 4
+      - 4, 5
+    expected:
+      - 'a', [3]
+      - 'b', [4]
+      - 'c', [1, 5]
+      - 'c', [2]
+
+  -
+    id: branched a>a<a
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'a', [1, 3]
+      - 'a', [2]
+  -
+    id: branched a>a<b
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'a', [1]
+      - 'b', [3]
+      - 'a', [2]
+  -
+    id: branched a>b<a
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'a', [1, 3]
+      - 'b', [2]
+  -
+    id: branched a>b<b
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'a', [1]
+      - 'b', [3]
+      - 'b', [2]
+  -
+    id: branched b>a<a
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'a', [3]
+      - 'b', [1]
+      - 'a', [2]
+  -
+    id: branched b>a<b
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'b', [1, 3]
+      - 'a', [2]
+  -
+    id: branched b>b<a
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'a', [3]
+      - 'b', [1]
+      - 'b', [2]
+  -
+    id: branched b>b<b
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 1, 2
+      - 3, 2
+    expected:
+      - 'b', [1, 3]
+      - 'b', [2]
+
+  -
+    id: branched a<a>a
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'a', [2]
+      - 'a', [1, 3]
+  -
+    id: branched a<a>b
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'a', [2]
+      - 'a', [1]
+      - 'b', [3]
+  -
+    id: branched a<b>a
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'b', [2]
+      - 'a', [1, 3]
+  -
+    id: branched a<b>b
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'b', [2]
+      - 'a', [1]
+      - 'b', [3]
+  -
+    id: branched b<a>a
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'a', [2]
+      - 'a', [3]
+      - 'b', [1]
+  -
+    id: branched b<a>b
+    nodes:
+      1: 'b'
+      2: 'a'
+      3: 'b'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'a', [2]
+      - 'b', [1, 3]
+  -
+    id: branched b<b>a
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'a'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'b', [2]
+      - 'a', [3]
+      - 'b', [1]
+  -
+    id: branched b<b>b
+    nodes:
+      1: 'b'
+      2: 'b'
+      3: 'b'
+    edges:
+      - 2, 1
+      - 2, 3
+    expected:
+      - 'b', [2]
+      - 'b', [1, 3]
+
+  -
+    id: branched cross
+    # 1   2
+    #  \ /
+    #   3
+    #  / \
+    # 4   5
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+      4: 'a'
+      5: 'a'
+    edges:
+      - 1, 3
+      - 2, 3
+      - 3, 4
+      - 3, 5
+    expected:
+      - 'a', [1, 2]
+      - 'a', [3]
+      - 'a', [4, 5]
+
+  -
+    id: err-cycle
+    nodes:
+      1: 'a'
+      2: 'a'
+    edges:
+      - 1, 2
+      - 2, 1
+    error:
+      type: nx.NetworkXUnfeasible
+  -
+    id: err-cycle
+    nodes:
+      1: 'a'
+      2: 'b'
+    edges:
+      - 1, 2
+      - 2, 1
+    error:
+      type: nx.NetworkXUnfeasible
+  -
+    id: err-cycle
+    nodes:
+      1: 'a'
+      2: 'a'
+      3: 'a'
+    edges:
+      - 1, 2
+      - 2, 3
+      - 3, 1
+    error:
+      type: nx.NetworkXUnfeasible
+  -
+    id: err-cycle
+    nodes:
+      1: 'a'
+      2: 'b'
+      3: 'c'
+    edges:
+      - 1, 2
+      - 2, 3
+      - 3, 1
+    error:
+      type: nx.NetworkXUnfeasible
+
+test_group_by_synthesis:
+  -
+    products:
+
+test_group_by_cleanup:
+

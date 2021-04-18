@@ -1,12 +1,12 @@
 test_group_by:
   -
     id: identity
-    grouper: po4.group_by_identity
+    grouper: freezerbox.group_by_identity
     items: []
     expected:
   -
     id: identity
-    grouper: po4.group_by_identity
+    grouper: freezerbox.group_by_identity
     items: [1]
     expected:
       -
@@ -14,7 +14,7 @@ test_group_by:
         items: [1]
   -
     id: identity
-    grouper: po4.group_by_identity
+    grouper: freezerbox.group_by_identity
     items: [1, 2]
     expected:
       -
@@ -25,7 +25,7 @@ test_group_by:
         items: [2]
   -
     id: identity
-    grouper: po4.group_by_identity
+    grouper: freezerbox.group_by_identity
     items: [1, 2, 1, 2]
     expected:
       -
@@ -36,7 +36,7 @@ test_group_by:
         items: [2, 2]
   -
     id: identity-key
-    grouper: po4.group_by_identity
+    grouper: freezerbox.group_by_identity
     items: ['a', 'b', 'A', 'B']
     key: lambda x: x.upper()
     expected:
@@ -49,12 +49,12 @@ test_group_by:
 
   -
     id: cluster
-    grouper: po4.group_by_cluster(max_diff=2)
+    grouper: freezerbox.group_by_cluster(max_diff=2)
     items: []
     expected:
   -
     id: cluster
-    grouper: po4.group_by_cluster(max_diff=2)
+    grouper: freezerbox.group_by_cluster(max_diff=2)
     items: [1]
     expected:
       -
@@ -62,7 +62,7 @@ test_group_by:
         items: [1]
   -
     id: cluster
-    grouper: po4.group_by_cluster(max_diff=2)
+    grouper: freezerbox.group_by_cluster(max_diff=2)
     items: 1, 2
     expected:
       -
@@ -70,7 +70,7 @@ test_group_by:
         items: [1, 2]
   -
     id: cluster
-    grouper: po4.group_by_cluster(max_diff=2)
+    grouper: freezerbox.group_by_cluster(max_diff=2)
     items: 1, 3
     expected:
       -
@@ -81,7 +81,7 @@ test_group_by:
         items: [3]
   -
     id: cluster
-    grouper: po4.group_by_cluster(max_diff=2)
+    grouper: freezerbox.group_by_cluster(max_diff=2)
     items: 1, 2, 3, 4
     expected:
       -
@@ -92,7 +92,7 @@ test_group_by:
         items: [3, 4]
   -
     id: cluster-agg
-    grouper: po4.group_by_cluster(max_diff=2, aggregate=min)
+    grouper: freezerbox.group_by_cluster(max_diff=2, aggregate=min)
     items: 1, 2, 3, 4
     expected:
       -
@@ -103,7 +103,7 @@ test_group_by:
         items: [3, 4]
   -
     id: cluster-key
-    grouper: po4.group_by_cluster(max_diff=2)
+    grouper: freezerbox.group_by_cluster(max_diff=2)
     items: 'a', 'b', 'c', 'd'
     key: lambda x: ord(x) - ord('a')
     expected:
@@ -136,7 +136,7 @@ test_iter_combos:
     id: empty
     items:
     group_by:
-      a: po4.group_by_identity
+      a: freezerbox.group_by_identity
     merge_by:
     expected:
   -
@@ -152,7 +152,7 @@ test_iter_combos:
     items:
       - DummyItem(a=1)
     group_by:
-      a: po4.group_by_identity
+      a: freezerbox.group_by_identity
     merge_by:
     expected:
       -
@@ -166,7 +166,7 @@ test_iter_combos:
       - DummyItem(a=1)
       - DummyItem(a=2)
     group_by:
-      a: po4.group_by_identity
+      a: freezerbox.group_by_identity
     merge_by:
     expected:
       -
@@ -185,7 +185,7 @@ test_iter_combos:
       - DummyItem(a=1, b=1)
       - DummyItem(a=1, b=2)
     group_by:
-      a: po4.group_by_identity
+      a: freezerbox.group_by_identity
     merge_by:
     expected:
       -
@@ -202,7 +202,7 @@ test_iter_combos:
       - DummyItem(a=3)
       - DummyItem(a=4)
     group_by:
-      a: po4.group_by_cluster(max_diff=2)
+      a: freezerbox.group_by_cluster(max_diff=2)
     merge_by:
     expected:
       -
@@ -285,7 +285,7 @@ test_iter_combos:
       - DummyItem(a=3, b=1)
       - DummyItem(a=4, b=2)
     group_by:
-      b: po4.group_by_identity
+      b: freezerbox.group_by_identity
     merge_by:
       a: list
     expected:
@@ -310,8 +310,8 @@ test_iter_combos:
       - DummyItem(a=1, b=1)
       - DummyItem(a=1, b=2)
     group_by:
-      a: po4.group_by_identity
-      b: po4.group_by_identity
+      a: freezerbox.group_by_identity
+      b: freezerbox.group_by_identity
     merge_by:
     expected:
       -
@@ -334,8 +334,8 @@ test_iter_combos:
       - DummyItem(a=1, b=1, c=3)
       - DummyItem(a=1, b=2, c=4)
     group_by:
-      a: po4.group_by_identity
-      b: po4.group_by_identity
+      a: freezerbox.group_by_identity
+      b: freezerbox.group_by_identity
     merge_by:
     expected:
       -

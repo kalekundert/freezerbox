@@ -11,5 +11,5 @@ from .errors import *
 from .model import *
 from .protocols import *
 from .fields import *
-from .combos import *
+from .group_by import *
 from .utils import *

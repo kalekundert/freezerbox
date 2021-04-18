@@ -20,7 +20,7 @@ class DummyItem:
 
 @parametrize_from_file(
         schema=Schema({
-            'grouper': eval_po4,
+            'grouper': eval_freezerbox,
             'items': eval,
             Optional('key', default='lambda x: x'): eval,
             'expected': Or([{
@@ -43,8 +43,8 @@ def test_group_by(grouper, items, key, expected):
 @parametrize_from_file(
         schema=Schema({
             'items': Or([eval_with(DummyItem=DummyItem)], empty_list),
-            'group_by': Or({str: eval_po4}, empty_dict),
-            'merge_by': Or({str: eval_po4}, empty_dict),
+            'group_by': Or({str: eval_freezerbox}, empty_dict),
+            'merge_by': Or({str: eval_freezerbox}, empty_dict),
             'expected': Or([{
                 'attrs': Or({str: eval_pytest}, empty_dict),
                 'items': [eval_with(DummyItem=DummyItem)],
@@ -54,7 +54,7 @@ def test_group_by(grouper, items, key, expected):
 def test_iter_combos(items, group_by, merge_by, expected):
     actual = [
             (attrs, list(items))
-            for attrs, items in po4.iter_combos(
+            for attrs, items in freezerbox.iter_combos(
                 items,
                 group_by=group_by,
                 merge_by=merge_by,

@@ -18,7 +18,7 @@ def iter_combo_makers(cls, solo_makers, *, group_by={}, merge_by={}):
     combos = iter_combos(
             solo_makers,
             group_by=broup_by,
-            merge_by=merge_by,
+            merge_by={'products': list, **merge_by}
     )
     for attrs, items in combos:
         combo_maker = cls.from_params()

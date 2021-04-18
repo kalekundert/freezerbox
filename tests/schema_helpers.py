@@ -94,6 +94,7 @@ def error(x):
 
     err_eval = eval_with(
             freezerbox=freezerbox,
+            nx=nx,
             QueryError=freezerbox.QueryError,
             ParseError=freezerbox.ParseError,
     )
