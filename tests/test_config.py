@@ -8,13 +8,13 @@ from more_itertools import one, first
 
 from test_model import MockReagent
 
-DUMMY_CONFIG = Path(__file__).parent / 'dummy_config'
+MOCK_CONFIG = Path(__file__).parent / 'mock_config'
 
 class MockObj:
     pass
 
 def test_config():
-    with cd(DUMMY_CONFIG):
+    with cd(MOCK_CONFIG):
         load_config.cache_clear()
         config = load_config()
 
@@ -28,7 +28,7 @@ def test_config():
         assert config['database']['db2']['type'] == 'type2'
         assert config['database']['db2']['option'] == 'option2'
 
-    with cd(DUMMY_CONFIG / 'subdir'):
+    with cd(MOCK_CONFIG / 'subdir'):
         load_config.cache_clear()
         config = load_config()
 

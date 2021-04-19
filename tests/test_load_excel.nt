@@ -1,0 +1,34 @@
+test_path_from_tag:
+  -
+    path: 1.dna
+    tag: p1
+    expected: True
+  -
+    path: 01.dna
+    tag: p1
+    expected: True
+  -
+    path: p1.dna
+    tag: p1
+    expected: True
+  -
+    path: 1_name.dna
+    tag: p1
+    expected: True
+  -
+    path: 1-name.dna
+    tag: p1
+    expected: True
+  -
+    path: name.dna
+    tag: p1
+    expected: False
+  -
+    path: name_1.dna
+    tag: p1
+    expected: False
+  -
+    path: 10.dna
+    tag: p1
+    expected: False
+

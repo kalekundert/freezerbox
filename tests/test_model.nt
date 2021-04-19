@@ -327,21 +327,29 @@ test_nucleic_acid_circular:
     expected: False
   -
     kwargs:
-      synthesis: Fields(['m'], {'circular': True})
+      circular: lambda: True
     expected: True
   -
     kwargs:
-      synthesis: Fields(['m'], {'circular': False})
+      circular: lambda: False
+    expected: False
+  -
+    kwargs:
+      synthesis: Fields(['m'], {'circular': 'y'})
+    expected: True
+  -
+    kwargs:
+      synthesis: Fields(['m'], {'circular': 'n'})
     expected: False
   -
     kwargs:
       circular: True
-      synthesis: Fields(['m'], {'circular': False})
+      synthesis: Fields(['m'], {'circular': 'n'})
     expected: True
   -
     kwargs:
       circular: False
-      synthesis: Fields(['m'], {'circular': True})
+      synthesis: Fields(['m'], {'circular': 'y'})
     expected: False
 
 test_oligo_tm:

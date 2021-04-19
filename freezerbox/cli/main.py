@@ -4,9 +4,9 @@
 Query the DNA database.
 
 Usage:
-    po4 query <tags>... [--attrs <list>]
-    po4 check [<db>]
-    po4 which
+    freezerbox query <tags>... [--attrs <list>]
+    freezerbox check [<db>]
+    freezerbox which
 
 Commands:
     query:  Display information about of the given constructs.
@@ -29,7 +29,7 @@ Arguments:
 
 import docopt
 from tqdm import tqdm
-from po4 import load_config, load_db, CheckError, QueryError
+from freezerbox import load_config, load_db, CheckError, QueryError
 
 def main():
     args = docopt.docopt(__doc__)

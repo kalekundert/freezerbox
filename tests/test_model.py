@@ -6,7 +6,6 @@ import datetime
 import autoprop
 from freezerbox import Fields, QueryError
 from freezerbox.model import *
-from utils import *
 from schema_helpers import *
 from mock_model import *
 

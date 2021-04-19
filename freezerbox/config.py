@@ -19,8 +19,8 @@ def load_config():
 
     for dir in reversed(dirs):
         paths = [
-                dir / '.config' / 'po4' / 'conf.toml',
-                dir / '.po4rc',
+                dir / '.config' / 'freezerbox' / 'conf.toml',
+                dir / '.freezerboxrc',
         ]
         for path in paths:
             if path.exists():

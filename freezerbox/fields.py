@@ -22,6 +22,10 @@ class Fields:
         name_strs = (f'{k}={_quote_word(v)}' for k, v in self.by_name.items())
         return ' '.join((*index_strs, *name_strs))
 
+    def __eq__(self, other):
+        return self.by_index == other.by_index and \
+               self.by_name == other.by_name
+
     def __contains__(self, key):
         if isinstance(key, str):
             return key in self.by_name
@@ -42,6 +46,12 @@ class Fields:
                 raise KeyError(key)
 
         raise KeyError(key)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError as err:
+            return default
 
 def parse_fields_list(fields_str):
     with _reformat_errors():

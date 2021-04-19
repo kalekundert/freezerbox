@@ -88,18 +88,33 @@ def test_fields_str(given, expected):
     fields = eval_freezerbox(given)
     assert str(fields) == expected
 
-def test_fields_getitem():
+
+def test_fields_eq():
+    f1 = Fields(['a'], {'b': 2})
+    f2 = Fields(['a'], {'b': 2})
+    g1 = Fields(['x'], {'b': 2})
+    g2 = Fields(['a'], {'x': 2})
+    g3 = Fields(['a'], {'b': 'x'})
+
+    assert f1 == f2
+    assert f1 != g1
+    assert f1 != g2
+    assert f1 != g3
+
+def test_fields_getitem_get():
     fields = Fields(['a', 'b'], {'c': 3, 'd': 4})
 
-    assert fields[0] == 'a'
-    assert fields[1] == 'b'
+    assert fields[0] == fields.get(0) == 'a'
+    assert fields[1] == fields.get(1) == 'b'
 
+    assert fields.get(2) == None
     with pytest.raises(KeyError):
         fields[2]
 
-    assert fields['c'] == 3
-    assert fields['d'] == 4
+    assert fields['c'] == fields.get('c') == 3
+    assert fields['d'] == fields.get('d') == 4
 
+    assert fields.get('e') == None
     with pytest.raises(KeyError):
         fields['e']
 

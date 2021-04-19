@@ -16,11 +16,11 @@ class MockMolecule(freezerbox.Molecule):
 class MockNucleicAcid(freezerbox.NucleicAcid):
     tag_prefix = 'x'
 
-class MockMaker:
+class MockSoloMaker:
 
     @classmethod
     def make(cls, intermediates):
-        yield from (MockMaker(x) for x in intermediates)
+        yield from (cls(x) for x in intermediates)
 
     def __init__(self, product):
         args = product.maker_args
@@ -45,14 +45,29 @@ class MockMaker:
             self.product_conc = stepwise.Quantity.from_string(args['conc'])
 
         if 'circular' in args:
-            self.is_product_circular = args['circular']
+            self.is_product_circular = freezerbox.parse_bool(args['circular'])
 
 
-@pytest.fixture(autouse=True)
-def monkeypatch_maker_plugins(monkeypatch):
-    from string import ascii_lowercase
-    monkeypatch.setattr(freezerbox.model, 'MAKER_PLUGINS', {
-        k: MockMaker for k in ascii_lowercase
-    })
+class MockComboMaker:
 
+    @classmethod
+    def make(cls, intermediates):
+        yield cls(list(intermediates))
 
+    def __init__(self, products):
+        from more_itertools import flatten
+
+        steps = list(flatten(
+            x.maker_args.get('protocol', [])
+            for x in products
+        ))
+        deps = list(flatten(
+            x.maker_args.get('deps', [])
+            for x in products
+        ))
+
+        self.products = products
+        self.protocol = stepwise.Protocol(steps=steps)
+        self.dependencies = deps
+
+MockMaker = MockSoloMaker

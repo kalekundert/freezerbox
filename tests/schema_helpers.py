@@ -99,6 +99,7 @@ def error(x):
             nx=nx,
             QueryError=freezerbox.QueryError,
             ParseError=freezerbox.ParseError,
+            LoadError=freezerbox.LoadError,
     )
     err_type = err_eval(x['type'])
     err_messages = x.get('message', [])

@@ -1,0 +1,37 @@
+test_load_db_err:
+  -
+    id: no-use
+    config:
+      database: {}
+    error:
+      type: LoadError
+      message: no database specified
+
+  -
+    id: unknown-use
+    config:
+      use: 'db1'
+    error:
+      type: LoadError
+      message: unknown database 'db1'
+
+  -
+    id: no-type
+    config:
+      use: 'db1'
+      database: {'db1': {}}
+    error:
+      type: LoadError
+      message: no 'type' specified for database 'db1'
+
+  -
+    id: unknown-type
+    config:
+      use: 'db1'
+      database: {'db1': {'type': 'unknown'}}
+    error:
+      type: LoadError
+      message: no 'unknown' database plugin found
+
+
+

@@ -5,22 +5,26 @@ import autosnapgene as snap
 from pathlib import Path
 from voluptuous import Required, All, Any, Coerce
 from warnings import catch_warnings, filterwarnings
-from ..model import Database, Tag, Plasmid, Fragment, Oligo
-from ..protocols import Protocol
+from stepwise import Quantity
+from ..model import Database, Tag
+from ..model import NucleicAcid, Protein, Buffer, Plasmid, Oligo
+from ..fields import parse_fields, parse_fields_list
 from ..utils import *
 
 schema = {
         'type': 'excel',
         Required('dir'): All(str, Coerce(Path)),
         'columns': {str: Any(
-            'seq', 'protocol', 'name', 'alt_names', 'date', 'desc', 
-            'length', 'conc', 'mw',
+            'seq', 'molecule', 'synthesis', 'cleanups', 'name', 'alt_names', 
+            'date', 'desc', 'length', 'conc', 'mw', 'circular',
         )},
 }
 default_config = {
         'columns': {
             'Sequence': 'seq',
-            'Construction': 'protocol',
+            'Molecule': 'molecule',
+            'Synthesis': 'synthesis',
+            'Cleanups': 'cleanups',
             'Name': 'name',
             'Cross-refs': 'alt_names',
             'Date': 'date',
@@ -28,6 +32,7 @@ default_config = {
             'Length': 'length',
             'Conc': 'conc',
             'MW': 'mw',
+            'Circular': 'circular',
         }
 }
 
@@ -35,14 +40,17 @@ def load(config):
     root = config['dir']
 
     db_xlsx = {
-            Plasmid:  root / 'plasmids.xlsx',
-            Fragment: root / 'fragments.xlsx',
-            Oligo:    root / 'oligos.xlsx',
+            NucleicAcid: root / 'fragments.xlsx',
+            Plasmid:     root / 'plasmids.xlsx',
+            Oligo:       root / 'oligos.xlsx',
+            Protein:     root / 'proteins.xlsx',
+            Buffer:      root / 'buffers.xlsx',
     }
     seq_dirs = {
-            Plasmid:  root / 'plasmids',
-            Fragment: root / 'fragments',
-            Oligo:    root / 'oligos',
+            NucleicAcid: root / 'fragments',
+            Plasmid:     root / 'plasmids',
+            Oligo:       root / 'oligos',
+            Protein:     root / 'proteins',
     }
 
     for dir in seq_dirs.values():
@@ -51,6 +59,9 @@ def load(config):
     db = Database(str(root))
 
     for cls, path in db_xlsx.items():
+        if not path.exists():
+            continue
+
         with catch_warnings():
             filterwarnings(
                     'ignore',
@@ -65,14 +76,20 @@ def load(config):
 
         for i, row in df.iterrows():
             tag = Tag(cls.tag_prefix, i)
-            kwargs = dict(row)
+            kwargs = {k: v for k, v in row.items() if v is not None}
 
-            if not kwargs.get('seq'):
+            if not kwargs.get('seq') and cls is not Buffer:
                 kwargs['seq'] = _defer(_seq_from_tag, seq_dirs[cls], tag)
             if x := kwargs.get('alt_names'):
-                kwargs['alt_names'] = x.split(',')
-            if x := kwargs.get('protocol'):
-                kwargs['protocol'] = _defer(Protocol.from_text, db, x)
+                kwargs['alt_names'] = [y.strip() for y in x.split(',')]
+            if x := kwargs.get('conc'):
+                kwargs['conc'] = _defer(Quantity.from_string, x)
+            if x := kwargs.get('synthesis'):
+                kwargs['synthesis'] = _defer(parse_fields, x)
+            if x := kwargs.get('cleanups'):
+                kwargs['cleanups'] = _defer(parse_fields_list, x)
+            if x := kwargs.get('circular'):
+                kwargs['circular'] = _defer(parse_bool, x)
 
             db[tag] = cls(**kwargs)
 
@@ -80,7 +97,7 @@ def load(config):
 
 def _defer(f, *args, **kwargs):
     """
-    Create a closure that call the given function with the given arguments.
+    Create a closure that calls the given function with the given arguments.
 
     The point of this function is to avoid the surprising behavior that can 
     occur if you define a closure in a scope where variables are changing (e.g. 

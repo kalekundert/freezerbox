@@ -13,8 +13,8 @@ from .config import load_config
 from .errors import LoadError, QueryError, CheckError, only_raise
 from .utils import *
 
-DB_PLUGINS = entrypoints.get_group_named('po4.databases')
-MAKER_PLUGINS = entrypoints.get_group_named('po4.make')
+DB_PLUGINS = entrypoints.get_group_named('freezerbox.databases')
+MAKER_PLUGINS = entrypoints.get_group_named('freezerbox.make')
 INTERMEDIATE_SUBCLASSES = {}
 
 class Database:
@@ -319,6 +319,11 @@ class Molecule(Reagent):
         if conc is None:
             raise QueryError("no concentration specified", culprit=self)
 
+        # Allow parsing to be deferred until the concentration is accessed, so 
+        # errors don't prevent the rest of the database from loading.
+        if callable(conc):
+            conc = conc()
+
         if not unit or unit == conc.unit:
             return conc
         else:
@@ -418,6 +423,9 @@ class NucleicAcid(Molecule):
 
         if circular is None:
             circular = False
+
+        if callable(circular):
+            circular = circular()
 
         return circular
 
@@ -666,7 +674,10 @@ def load_db(use=None, config=None):
     except KeyError as err:
         raise LoadError(f"no 'type' specified for database {use!r}") from None
 
-    plugin = DB_PLUGINS[type_use].load()
+    try:
+        plugin = DB_PLUGINS[type_use].load()
+    except KeyError as err:
+        raise LoadError(f"no {err!r} database plugin found") from None
 
     if defaults := getattr(plugin, 'default_config'):
         config_use = (Config(defaults) + config_use).data
