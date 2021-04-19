@@ -53,63 +53,6 @@ def parse_tag(tag_str):
         raise ParseError(f"expected a tag (e.g. 'p100'), not {tag_str!r}")
 
 @only_raise(ParseError)
-def parse_params(params_str, *, sep=r'\s', on_duplicate=None, on_unmatched=None):
-    params = {}
-    param_pattern = fr'''\s*
-            (?P<key>\w+)=(
-              (?P<value>[^"'][^{sep}]*)|
-              (?P<quote>["'])(?P<value_quoted>.*?)(?P=quote)
-            )
-            ({sep}|$)
-    '''
-
-    unmatched = set(range(len(params_str)))
-
-    for m in re.finditer(param_pattern, params_str, re.VERBOSE):
-        key = m.group('key')
-        value = m.group('value') or m.group('value_quoted')
-
-        if key in params:
-            if on_duplicate:
-                on_duplicate(params, key, value)
-            else:
-                raise ParseError(f"duplicate key {key!r} in {params_str!r}")
-
-        params[key] = value
-        unmatched -= set(range(m.start(), m.end()))
-
-    if unmatched:
-        if on_unmatched:
-            on_unmatched(params_str, unmatched)
-        else:
-            groups = split_when(
-                    sorted(unmatched), 
-                    lambda a, b: b != a + 1
-            )
-            substrs = ', '.join(
-                    repr(params_str[x[0]:x[-1]+1])
-                    for x in groups
-            )
-            if substrs == repr(params_str):
-                raise ParseError(f"can't parse {params_str!r}")
-            else:
-                raise ParseError(f"can't parse {params_str!r}: didn't expect {substrs}")
-
-    return params
-
-def parse_param(params, key, pattern, default=no_default):
-    if key not in params:
-        if default is not no_default:
-            return default
-        else:
-            raise ParseError(f"missing required {key!r} parameter")
-
-    if m := re.fullmatch(pattern, p := params[key]):
-        return m.groups() or m.group()
-    else:
-        raise ParseError(f"expected {key}≈{pattern!r}, found {p!r}")
-
-@only_raise(ParseError)
 def parse_bool(bool_str):
     if bool_str.lower() in ('1', 'y', 'yes', 'true'):
         return True
@@ -205,25 +148,6 @@ def parse_conc_ng_uL(conc_str, mw):
         raise ParseError(f"can't interpret {conc_str!r} as a concentration, did you forget a unit?")
 
 @only_raise(ParseError)
-def parse_size_bp(size_str):
-    bp_parsers = [
-            (
-                fr'(?P<size>\d+)\s*bp',
-                int,
-            ), (
-                fr'(?P<size>\d+.?\d*)\s*kb',
-                lambda x: int(float(x) * 1000),
-            ),
-    ]
-
-    for pattern, size_from_str in bp_parsers:
-        if m := re.fullmatch(pattern, size_str):
-            return size_from_str(m.group('size'))
-
-    raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
-
-
-@only_raise(ParseError)
 def convert_conc_unit(conc, mw, new_unit):
     molar_conversion_factors = {
             'pM': 1e12,
@@ -259,8 +183,22 @@ def convert_conc_unit(conc, mw, new_unit):
 
     return conc.convert_unit(new_unit, pick_conversion_factors())
 
-def unanimous(values):
-    from itertools import groupby
-    from more_itertools import one
-    return one((x[0] for x in groupby(values)))
+@only_raise(ParseError)
+def parse_size_bp(size_str):
+    bp_parsers = [
+            (
+                fr'(?P<size>\d+)\s*bp',
+                int,
+            ), (
+                fr'(?P<size>\d+.?\d*)\s*kb',
+                lambda x: int(float(x) * 1000),
+            ),
+    ]
+
+    for pattern, size_from_str in bp_parsers:
+        if m := re.fullmatch(pattern, size_str):
+            return size_from_str(m.group('size'))
+
+    raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
+
 

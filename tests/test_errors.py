@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pytest
-from po4 import only_raise
+from freezerbox import only_raise
 
 class ParentError(Exception):
     pass

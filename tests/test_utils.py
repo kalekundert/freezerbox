@@ -1,34 +1,33 @@
 #!/usr/bin/env python3
 
 import pytest
-from po4 import Tag, ParseError
-from po4.model import Construct, Plasmid, Fragment, Oligo
-from po4.utils import *
-from utils import Params, parametrize_via_toml
-from test_model import DummyConstruct
+import parametrize_from_file
+
+from freezerbox import Tag
+from freezerbox.model import *
+from freezerbox.utils import *
+from stepwise import Quantity
+from schema_helpers import *
 
 class PrefixParams(Params):
     args = 'args, expected'
     params = [
-            ([Construct, Plasmid, Fragment, Oligo], 'dfop'),
-            ([Construct, Plasmid, Fragment,      ], 'dfop'),
-            ([Construct, Plasmid,           Oligo], 'dfop'),
-            ([Construct, Plasmid,                ], 'dfop'),
-            ([Construct,          Fragment, Oligo], 'dfop'),
-            ([Construct,          Fragment,      ], 'dfop'),
-            ([Construct,                    Oligo], 'dfop'),
-            ([Construct,                         ], 'dfop'),
-            ([           Plasmid, Fragment, Oligo], 'fop'),
-            ([           Plasmid, Fragment,      ], 'fp'),
-            ([           Plasmid,           Oligo], 'op'),
-            ([           Plasmid,                ], 'p'),
-            ([                    Fragment, Oligo], 'fo'),
-            ([                    Fragment,      ], 'f'),
-            ([                              Oligo], 'o'),
-            ([                                   ], 'dfop'),
+            # 'x' is from the various mock reagents.
+            ([],                                    'xbrfpo'),
+            ([Reagent],                             'xbrfpo'),
+            ([Buffer],                              'b'),
+            ([Protein],                             'r'),
+            ([Protein, NucleicAcid],                'xrfpo'),
+            ([NucleicAcid],                         'xfpo'),
+            ([NucleicAcid, Plasmid],                'xfpo'),
+            ([NucleicAcid, Oligo],                  'xfpo'),
+            ([NucleicAcid, Plasmid, Oligo],         'xfpo'),
+            ([Plasmid],                             'p'),
+            ([Oligo],                               'o'),
+            ([Plasmid, Oligo],                      'po'),
     ]
 
-@parametrize_via_toml('test_utils.toml')
+@parametrize_from_file
 def test_normalize_seq(raw_seq, expected):
     assert normalize_seq(raw_seq) == expected
 
@@ -38,91 +37,130 @@ def test_get_tag_prefixes(args, expected):
 
 @PrefixParams.parametrize
 def test_get_tag_pattern(args, expected):
-    assert get_tag_pattern(*args) == fr'[{expected}]\d+'
+    assert re.fullmatch(
+            fr'\[[{expected}]+\]\\d\+',
+            get_tag_pattern(*args),
+    )
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_tag(tag_str, expected):
-    assert parse_tag(tag_str) == Tag(**expected)
+@parametrize_from_file(
+        schema=Schema({
+            'tag_str': str,
+            **error_or(**{
+                'expected': {
+                    'type': str,
+                    'id': Coerce(int),
+                },
+            }),
+        }),
+)
+def test_parse_tag(tag_str, expected, error):
+    with error:
+        assert parse_tag(tag_str) == Tag(**expected)
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_tag_err(tag_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_tag(tag_str)
+@parametrize_from_file(
+        schema=Schema({
+            'bool_str': str,
+            **error_or(**{
+                'expected': eval,
+            }),
+        }),
+)
+def test_parse_bool(bool_str, expected, error):
+    with error:
+        assert parse_bool(bool_str) == expected
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_params(params_str, expected):
-    assert parse_params(params_str) == expected
+@parametrize_from_file(
+        schema=Schema({
+            'time_str': str,
+            **error_or(**{
+                'expected': Coerce(float),
+            }),
+        }),
+)
+def test_parse_time_s(time_str, expected, error):
+    with error:
+        assert parse_time_s(time_str) == pytest.approx(expected)
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_params_err(params_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_params(params_str)
+@parametrize_from_file(
+        schema=Schema({
+            'temp_str': str,
+            **error_or(**{
+                'expected': Coerce(float),
+            }),
+        }),
+)
+def test_parse_temp_C(temp_str, expected, error):
+    with error:
+        assert parse_temp_C(temp_str) == pytest.approx(expected)
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_param(params, key, pattern, default, expected):
-    if isinstance(expected, list):
-        expected = tuple(expected)
-    assert parse_param(params, key, pattern, default) == expected
+@parametrize_from_file(
+        schema=Schema({
+            'vol_str': str,
+            **error_or(**{
+                'expected': Coerce(float),
+            }),
+        }),
+)
+def test_parse_volume_uL(vol_str, expected, error):
+    with error:
+        assert parse_volume_uL(vol_str) == expected
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_param_err(params, key, pattern, error):
-    with pytest.raises(ParseError, match=error):
-        parse_param(params, key, pattern)
+@parametrize_from_file(
+        schema=Schema({
+            'conc_str': str,
+            'mw': Coerce(float),
+            'expected_nM': Coerce(float),
+            'expected_ng_uL': Coerce(float),
+        }),
+)
+def test_parse_conc(conc_str, mw, expected_nM, expected_ng_uL):
+    from itertools import combinations
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_bool(bool_str, expected):
-    assert parse_bool(bool_str) == expected
+    conc = {
+            'nM': parse_conc_nM(conc_str, mw),
+            'uM': parse_conc_uM(conc_str, mw),
+            'ng/uL': parse_conc_ng_uL(conc_str, mw),
+    }
+    expected = {
+            'nM': expected_nM,
+            'uM': expected_nM / 1000,
+            'ng/uL': expected_ng_uL,
+    }
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_bool_err(bool_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_bool(bool_str)
+    for k in conc:
+        assert conc[k] == pytest.approx(expected[k])
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_time_s(time_str, expected):
-    assert parse_time_s(time_str) == expected
+    for k1, k2 in combinations(conc, 2):
+        q_given = Quantity(conc[k1], k1)
+        q_expected = Quantity(expected[k2], k2)
+        q_converted = convert_conc_unit(q_given, mw, k2)
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_time_s_err(time_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_time_s(time_str)
+        assert q_converted.value == pytest.approx(q_expected.value)
+        assert q_converted.unit == q_expected.unit
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_temp_C(temp_str, expected):
-    assert parse_temp_C(temp_str) == expected
-
-@parametrize_via_toml('test_utils.toml')
-def test_parse_temp_C_err(temp_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_temp_C(temp_str)
-
-@parametrize_via_toml('test_utils.toml')
-def test_parse_volume_uL(vol_str, expected):
-    assert parse_volume_uL(vol_str) == expected
-
-@parametrize_via_toml('test_utils.toml')
-def test_parse_volume_uL_err(vol_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_volume_uL(vol_str)
-
-@parametrize_via_toml('test_utils.toml')
-def test_parse_conc_nM(conc_str, mw, expected_nM, expected_ng_uL):
-    assert parse_conc_nM(conc_str, mw)    == pytest.approx(expected_nM)
-    assert parse_conc_uM(conc_str, mw)    == pytest.approx(expected_nM / 1000)
-    assert parse_conc_ng_uL(conc_str, mw) == pytest.approx(expected_ng_uL)
-
-@parametrize_via_toml('test_utils.toml')
+@parametrize_from_file(
+        schema=Schema({
+            'conc_str': str,
+            'mw': Coerce(float),
+            'error': error,
+        }),
+)
 def test_parse_conc_err(conc_str, mw, error):
-    with pytest.raises(ParseError, match=error):
+    with error:
         parse_conc_nM(conc_str, mw)
-    with pytest.raises(ParseError, match=error):
+    with error:
+        parse_conc_uM(conc_str, mw)
+    with error:
         parse_conc_ng_uL(conc_str, mw)
-@parametrize_via_toml('test_utils.toml')
-def test_parse_size_bp(size_str, expected):
-    assert parse_size_bp(size_str) == expected
 
-@parametrize_via_toml('test_utils.toml')
-def test_parse_size_bp_err(size_str, error):
-    with pytest.raises(ParseError, match=error):
-        parse_size_bp(size_str)
-
+@parametrize_from_file(
+        schema=Schema({
+            'size_str': str,
+            **error_or(**{
+                'expected': Coerce(int),
+            }),
+        }),
+)
+def test_parse_size_bp(size_str, expected, error):
+    with error:
+        assert parse_size_bp(size_str) == expected

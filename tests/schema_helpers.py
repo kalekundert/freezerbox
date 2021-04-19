@@ -126,3 +126,19 @@ def error(x):
 
     return expect_error()
 
+
+class Params:
+
+    @classmethod
+    def parametrize(cls, f):
+        args = cls.args
+
+        params = []
+        for k, v in cls.__dict__.items():
+            if k.startswith('params'):
+                params.extend(v)
+
+        # Could also check to make sure parameters make sense.
+
+        return pytest.mark.parametrize(args, params)(f)
+
