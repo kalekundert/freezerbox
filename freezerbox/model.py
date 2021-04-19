@@ -21,55 +21,55 @@ class Database:
 
     def __init__(self, name=None):
         self.name = name
-        self._constructs = {}
+        self._reagents = {}
 
     def __iter__(self):
-        yield from self._constructs
+        yield from self._reagents
 
     def __len__(self):
-        return len(self._constructs)
+        return len(self._reagents)
 
     def __getitem__(self, tag):
         tag = parse_tag(tag)
         try:
-            return self._constructs[tag]
+            return self._reagents[tag]
         except KeyError:
             raise QueryError(f"not found in database", culprit=tag) from None
 
-    def __setitem__(self, tag, construct):
+    def __setitem__(self, tag, reagent):
         tag = parse_tag(tag)
-        if tag in self._constructs:
+        if tag in self._reagents:
             raise LoadError("already in database, cannot be replaced", culprit=tag)
-        if tag.type != construct.tag_prefix:
+        if tag.type != reagent.tag_prefix:
             err = LoadError(
                     tag=tag,
-                    construct=construct,
+                    reagent=reagent,
             )
-            err.brief = "{construct} cannot have tag '{tag}'"
-            err.blame += "expected {construct.tag_prefix!r} prefix"
+            err.brief = "{reagent} cannot have tag '{tag}'"
+            err.blame += "expected {reagent.tag_prefix!r} prefix"
             raise err
 
-        self._constructs[tag] = construct
-        construct._db = self
-        construct._tag = tag
+        self._reagents[tag] = reagent
+        reagent._db = self
+        reagent._tag = tag
 
     def __delitem__(self, tag):
-        construct = self._constructs.pop(parse_tag(tag))
-        construct._db = None
-        construct._tag = None
-        autoprop.clear_cache(construct)
+        reagent = self._reagents.pop(parse_tag(tag))
+        reagent._db = None
+        reagent._tag = None
+        autoprop.clear_cache(reagent)
 
-    def __contains__(self, construct):
-        return construct._tag in self._constructs
+    def __contains__(self, reagent):
+        return reagent._tag in self._reagents
 
     def keys(self):
-        return self._constructs.keys()
+        return self._reagents.keys()
 
     def values(self):
-        return self._constructs.values()
+        return self._reagents.values()
 
     def items(self):
-        return self._constructs.items()
+        return self._reagents.items()
 
 
 @dataclass(frozen=True)
@@ -90,6 +90,10 @@ class Reagent:
         self._tag = None
         self._attrs = kwargs
         self._intermediates = {}
+
+    def __repr__(self):
+        attr_strs = ', '.join(f'{k}={v!r}' for k, v in self._attrs.items())
+        return f'{self.__class__.__qualname__}({attr_strs})'
 
     def check(self):
         pass
@@ -127,7 +131,7 @@ class Reagent:
 
         # Note that this is a shallow copy, so changes to any mutable 
         # attributes will be reflected in the intermediate.  That said, 
-        # constructs are supposed to be fully immutable, so this should never 
+        # reagents are supposed to be fully immutable, so this should never 
         # matter in practice.
 
         intermediate.__dict__ = self.__dict__.copy()
@@ -137,9 +141,9 @@ class Reagent:
         intermediate._step = step
         intermediate._parent = parent
 
-        # Any property of the construct (e.g. concentration, volume, etc.) 
-        # could be affected by cleanup steps that come after this intermediate, 
-        # so any cached property values need to be discarded.  Properties that 
+        # Any property of the reagent (e.g. concentration, volume, etc.) could 
+        # be affected by cleanup steps that come after this intermediate, so 
+        # any cached property values need to be discarded.  Properties that 
         # aren't affected by cleanup steps (e.g. seq) can manually implement 
         # caching if desired.
 
@@ -541,7 +545,20 @@ class MakerInterface:
     # they are expected to implement this interface.
 
     # Note that I don't use autoprop on this class, because I don't want 
-    # getters to be part of the interface.
+    # getters to be part of the interface.  Subclasses are free to use 
+    # autoprop, though.
+
+    @property
+    def protocol(self):
+        raise AttributeError
+
+    @property
+    def protocol_duration(self):
+        raise AttributeError
+
+    @property
+    def dependencies(self):
+        raise AttributeError
 
     @property
     def product_tags(self):
@@ -584,18 +601,6 @@ class MakerInterface:
 
     @property
     def is_product_phosphorylated_3(self):
-        raise AttributeError
-
-    @property
-    def protocol(self):
-        raise AttributeError
-
-    @property
-    def protocol_duration(self):
-        raise AttributeError
-
-    @property
-    def dependencies(self):
         raise AttributeError
 
 

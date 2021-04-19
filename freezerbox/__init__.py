@@ -9,7 +9,6 @@ __version__ = '0.1.0'
 from .config import *
 from .errors import *
 from .model import *
-from .protocols import *
 from .fields import *
 from .group_by import *
 from .utils import *

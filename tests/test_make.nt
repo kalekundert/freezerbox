@@ -1,0 +1,71 @@
+
+test_make:
+  -
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['2']}),
+        >             Fields(['c'], {'protocol': ['3']}),
+        >         ],
+        > )
+    expected:
+      - 1
+      - Label the product: x1
+      - 2
+      - 3
+  -
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['2']}),
+        >             Fields(['c'], {'protocol': ['3']}),
+        >         ],
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['4']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['5']}),
+        >             Fields(['c'], {'protocol': ['6']}),
+        >         ],
+        > )
+    expected:
+      - 1
+      - Label the product: x1
+      - 4
+      - Label the product: x2
+      - 2
+      - 5
+      - 3
+      - 6
+  -
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['2']}),
+        >             Fields(['c'], {'protocol': ['3']}),
+        >         ],
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['4'], 'deps': ['x1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['5']}),
+        >             Fields(['c'], {'protocol': ['6']}),
+        >         ],
+        > )
+    expected:
+      - 1
+      - Label the product: x1
+      - 2
+      - 3
+      - 4
+      - Label the product: x2
+      - 5
+      - 6

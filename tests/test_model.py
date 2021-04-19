@@ -32,7 +32,7 @@ def test_database_getitem_setitem():
 
     with pytest.raises(LoadError, match="x1: already in database, cannot be replaced"):
         db['x1'] = MockReagent()
-    with pytest.raises(LoadError, match="<.*MockReagent.*> cannot have tag 'p1'\n. expected 'x' prefix"):
+    with pytest.raises(LoadError, match="MockReagent\\(\\) cannot have tag 'p1'\n. expected 'x' prefix"):
         db['p1'] = MockReagent()
 
     assert x1.db is db
@@ -119,6 +119,12 @@ def test_tag():
     assert tag.id == 1
     assert str(tag) == 'p1'
 
+
+@parametrize_from_file(schema=kwargs_schema())
+def test_reagent_repr(kwargs, expected, error):
+    x1 = MockReagent(**kwargs)
+    with error:
+        assert repr(x1) == expected
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_name(kwargs, expected, error):
