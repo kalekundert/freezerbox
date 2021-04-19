@@ -18,7 +18,6 @@ def test_make(reagents, expected):
     tags = list(reagents.keys())
 
     for tag, reagent in reagents.items():
-        debug(tag)
         db[tag] = reagent
 
     app = Make(db, tags)
