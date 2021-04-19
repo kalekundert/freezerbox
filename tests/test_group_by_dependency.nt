@@ -852,7 +852,15 @@ test_grouped_topological_sort:
       - 'a', [4, 5]
 
   -
-    id: err-cycle
+    id: err cycle a
+    nodes:
+      1: 'a'
+    edges:
+      - 1, 1
+    error:
+      type: nx.NetworkXUnfeasible
+  -
+    id: err cycle a-a
     nodes:
       1: 'a'
       2: 'a'
@@ -862,7 +870,7 @@ test_grouped_topological_sort:
     error:
       type: nx.NetworkXUnfeasible
   -
-    id: err-cycle
+    id: err cycle a-b
     nodes:
       1: 'a'
       2: 'b'
@@ -872,7 +880,7 @@ test_grouped_topological_sort:
     error:
       type: nx.NetworkXUnfeasible
   -
-    id: err-cycle
+    id: err cycle a-a-a
     nodes:
       1: 'a'
       2: 'a'
@@ -884,7 +892,7 @@ test_grouped_topological_sort:
     error:
       type: nx.NetworkXUnfeasible
   -
-    id: err-cycle
+    id: err cycle a-b-c
     nodes:
       1: 'a'
       2: 'b'
@@ -898,7 +906,191 @@ test_grouped_topological_sort:
 
 test_group_by_synthesis:
   -
-    products:
+    id: empty
+    reagents:
+    expected:
+  -
+    id: single
+    reagents:
+      x1: MockReagent(synthesis=Fields(['a'], {}))
+    expected:
+      -
+        arg0: a
+        tags: x1
+  -
+    id: order-reagents
+    reagents:
+      x1: MockReagent(synthesis=Fields(['a'], {}))
+      x2: MockReagent(synthesis=Fields(['a'], {}))
+    expected:
+      -
+        arg0: a
+        tags: x1 x2
+  -
+    id: order-reagents
+    reagents:
+      x2: MockReagent(synthesis=Fields(['a'], {}))
+      x1: MockReagent(synthesis=Fields(['a'], {}))
+    expected:
+      -
+        arg0: a
+        tags: x2 x1
+  -
+    id: order-groups
+    reagents:
+      x1: MockReagent(synthesis=Fields(['a'], {}))
+      x2: MockReagent(synthesis=Fields(['b'], {}))
+    expected:
+      -
+        arg0: a
+        tags: x1
+      -
+        arg0: b
+        tags: x2
+  -
+    id: order-groups
+    reagents:
+      x2: MockReagent(synthesis=Fields(['b'], {}))
+      x1: MockReagent(synthesis=Fields(['a'], {}))
+    expected:
+      -
+        arg0: b
+        tags: x2
+      -
+        arg0: a
+        tags: x1
+  -
+    id: deps
+    reagents:
+      x1: MockReagent(synthesis=Fields(['a'], {}))
+      x2: MockReagent(synthesis=Fields(['a'], {'deps': ['x1']}))
+    expected:
+      -
+        arg0: a
+        tags: x1
+      -
+        arg0: a
+        tags: x2
+  -
+    id: deps
+    reagents:
+      x1: MockReagent(synthesis=Fields(['a'], {'deps': ['x2']}))
+      x2: MockReagent(synthesis=Fields(['a'], {}))
+    expected:
+      -
+        arg0: a
+        tags: x2
+      -
+        arg0: a
+        tags: x1
+  -
+    id: deps-ignore
+    reagents:
+      x1: MockReagent(synthesis=Fields(['a'], {'deps': ['x2']}))
+    expected:
+      -
+        arg0: a
+        tags: x1
 
 test_group_by_cleanup:
+  -
+    id: empty
+    reagents:
+    expected:
+  -
+    id: empty
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[]
+        > )
+    expected:
+  -
+    id: single
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[
+        >             Fields(['b'], {'id': 1}),
+        >         ],
+        > )
+    expected:
+      -
+        arg0: b
+        ids: 1
+  -
+    id: deps
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[
+        >             Fields(['b'], {'id': 1}),
+        >             Fields(['b'], {'id': 2}),
+        >         ],
+        > )
+    expected:
+      -
+        arg0: b
+        ids: 1
+      -
+        arg0: b
+        ids: 2
+  -
+    id: deps
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[
+        >             Fields(['b'], {'id': 1}),
+        >             Fields(['b'], {'id': 2}),
+        >         ],
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[
+        >             Fields(['b'], {'id': 3}),
+        >             Fields(['b'], {'id': 4}),
+        >         ],
+        > )
+    expected:
+      -
+        arg0: b
+        ids: 1 3
+      -
+        arg0: b
+        ids: 2 4
+  -
+    id: deps
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[
+        >             Fields(['a'], {'id': 1}),
+        >             Fields(['b'], {'id': 2}),
+        >         ],
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {}),
+        >         cleanups=[
+        >             Fields(['b'], {'id': 3}),
+        >             Fields(['a'], {'id': 4}),
+        >         ],
+        > )
+    expected:
+      -
+        arg0: a
+        ids: 1
+      -
+        arg0: b
+        ids: 2 3
+      -
+        arg0: a
+        ids: 4
 

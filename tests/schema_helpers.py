@@ -7,6 +7,7 @@ import networkx as nx
 import stepwise
 from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
 from unittest.mock import MagicMock
+from mock_model import MockReagent
 
 class eval_with:
 
@@ -32,6 +33,7 @@ eval_freezerbox = eval_with(
         nx=nx,
         Quantity=stepwise.Quantity,
         Fields=freezerbox.Fields,
+        MockReagent=MockReagent,
 )
 eval_pytest = eval_with().all(pytest)
 

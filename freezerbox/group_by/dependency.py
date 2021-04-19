@@ -3,63 +3,67 @@
 import networkx as nx
 from math import inf
 from copy import deepcopy
+from more_itertools import pairwise
+from ..utils import parse_tag
 
 def group_by_synthesis(products):
     # Sort groups by order of appearance:
 
-    group_order = {}
-    next_order = 0
+    group_from_arg0 = {}
+    arg0_from_group = {}
+    next_group = 0
 
-    for product in product:
-        group = product.synthesis_args.by_index[0]
-        if group not in group_order:
-            group_order[group] = next_order
-            next_order += 1
+    for product in products:
+        arg0 = product.synthesis_args.by_index[0]
+        if arg0 not in arg0_from_group:
+            group_from_arg0[arg0] = next_group
+            arg0_from_group[next_group] = arg0
+            next_group += 1
 
     # Construct a dependency graph:
 
     deps = nx.DiGraph()
 
     for i, product in enumerate(products):
-        group = product.synthesis_args.by_index[0]
+        arg0 = product.synthesis_args.by_index[0]
         deps.add_node(
                 product.tag,
-                group=group_order[group],
+                group=group_from_arg0[arg0],
                 order=i,
         )
 
     for product in products:
         for dep in product.synthesis_maker.dependencies:
-            if dep in G:
-                G.add_edge(dep, product.tag)
+            dep = parse_tag(dep)
+            if dep in deps:
+                deps.add_edge(dep, product.tag)
 
     # Split into groups and yield intermediates:
 
-    intermediates = {
+    intermediate_from_tag = {
             x.tag: x.make_intermediate(0)
             for x in products
     }
 
-    for key, tags in grouped_topological_sort(deps):
-        yield key, [intermediates[tag] for tag in tags]
+    for group, tags in grouped_topological_sort(deps):
+        arg0 = arg0_from_group[group]
+        intermediates = [intermediate_from_tag[tag] for tag in tags]
+        yield arg0, intermediates
 
 def group_by_cleanup(products):
 
     # Construct a dependency graph:
 
     deps = nx.DiGraph()
+    products = list(products)
 
     for i, product in enumerate(products):
         for j, cleanup in enumerate(product.cleanup_args):
             deps.add_node((i, j), group=cleanup.by_index[0])
 
-        for j, k in enumerate(range(len(product.cleanups_args))):
+        for pair in pairwise(enumerate(product.cleanup_args)):
+            (j, args_j), (k, args_k) = pair
             deps.add_edge((i, j), (i, k))
-
-        for pair in pairwise(enumerate(product.cleanups_args)):
-            (i, args_i), (j, args_j) = pair
-            node_i = args_i[0], product.tag, i
-            node_j = args_j[0], product.tag, j
 
     # Split into groups:
 
