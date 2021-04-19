@@ -21,6 +21,7 @@ requires = [
   'networkx',
   'pandas',
   'parsy',
+  'scikit-learn',
   'setuptools',
   'stepwise',
   'stepwise_mol_bio',
