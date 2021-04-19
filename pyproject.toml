@@ -8,7 +8,7 @@ author = "Kale Kundert"
 author-email = "kale@thekunderts.net"
 home-page = 'https://github.com/kalekundert/freezerbox'
 description-file = 'README.rst'
-requires-python = "~=3.6"
+requires-python = "~=3.8"
 requires = [
   'appdirs',
   'autoprop',
@@ -41,8 +41,8 @@ freezerbox = "freezerbox.cli.main:main"
 [tool.flit.entrypoints."freezerbox.databases"]
 excel = "freezerbox.loaders.excel"
 
-#[tool.flit.entrypoints."stepwise.protocols"]
-#protocols = "freezerbox.stepwise:Plugin"
+[tool.flit.entrypoints."stepwise.protocols"]
+protocols = "freezerbox.stepwise:Plugin"
 
 [tool.flit.metadata.requires-extra]
 test = [
