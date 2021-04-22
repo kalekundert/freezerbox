@@ -36,20 +36,20 @@ Arguments:
         products = [self.db[x] for x in self.tags]
 
         for key, group in group_by_synthesis(products):
-            for maker in iter_makers(key, group):
+            for maker in iter_makers(self.db, key, group):
                 protocol += maker.protocol
                 protocol += label_products(maker.products)
 
             parents = [x.parent for x in group]
             for key, subgroup in group_by_cleanup(parents):
-                for maker in iter_makers(key, subgroup):
+                for maker in iter_makers(self.db, key, subgroup):
                     protocol += maker.protocol
 
         return protocol
 
-def iter_makers(key, targets):
+def iter_makers(db, key, products):
     factory = load_maker_factory(key)
-    yield from factory(targets)
+    yield from factory(db, products)
 
 def label_products(products):
     tags = ', '.join(str(x.tag) for x in products)

@@ -19,8 +19,8 @@ class MockNucleicAcid(freezerbox.NucleicAcid):
 class MockSoloMaker:
 
     @classmethod
-    def make(cls, intermediates):
-        yield from (cls(x) for x in intermediates)
+    def make(cls, db, products):
+        yield from (cls(x) for x in products)
 
     def __init__(self, product):
         args = product.maker_args
@@ -51,8 +51,8 @@ class MockSoloMaker:
 class MockComboMaker:
 
     @classmethod
-    def make(cls, intermediates):
-        yield cls(list(intermediates))
+    def make(cls, db, products):
+        yield cls(list(products))
 
     def __init__(self, products):
         from more_itertools import flatten

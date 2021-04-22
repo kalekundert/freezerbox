@@ -126,13 +126,13 @@ def test_reagent_config_key_not_found():
 
     assert layer.location == 'a'
 
-def test_reagent_config_pick():
+def test_reagent_config_transform():
     db = freezerbox.Database(name='a')
     db['x1'] = MockReagent(name='1')
     db['x2'] = MockReagent(name='2')
 
     obj = MockObj()
-    config = ReagentConfig(pick=first)
+    config = ReagentConfig(transform=first)
     layer = one(config.load(obj))
 
     obj.db = db

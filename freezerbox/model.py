@@ -532,7 +532,7 @@ class Oligo(NucleicAcid):
     def get_melting_temp(self):
         from Bio.SeqUtils import MeltingTemp
 
-        # If the TM is encoded in the oligo name, use that.
+        # If the Tm is encoded in the oligo name, use that.
         if m := re.search(r'[-_ ](TM|Tm|tm)=?(\d+)', self.name):
             return float(m.group(2))
 
@@ -555,6 +555,10 @@ class MakerInterface:
     # Note that I don't use autoprop on this class, because I don't want 
     # getters to be part of the interface.  Subclasses are free to use 
     # autoprop, though.
+
+    @classmethod
+    def make(self, db, products):
+        raise NotImplementedError
 
     @property
     def protocol(self):
@@ -639,7 +643,7 @@ class IntermediateMixin:
             raise QueryError("no protocol specified", culprit=self)
 
         factory = load_maker_factory(key)
-        return one(factory([self]))
+        return one(factory(self.db, [self]))
 
     def get_maker_args(self):
         if self.step == 0:

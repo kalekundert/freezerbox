@@ -35,10 +35,11 @@ PRODUCT = object()
 PRECURSOR = object()
 
 class ReagentConfig:
+    autoload = True
+    autoload_db = True
     db_getter = lambda obj: obj.db
     tag_getter = lambda obj: obj.tag
-    autoload_db = True
-    pick = list
+    transform = list
 
     class QueryHelper:
 
@@ -82,7 +83,7 @@ class ReagentConfig:
             if not self.db:
                 raise KeyError("no freezerbox database found")
 
-            # Fourth: Lookup values.
+            # Fourth: Lookup the key as an attribute of the selected reagents.
 
             try:
                 values = [
@@ -93,22 +94,22 @@ class ReagentConfig:
             except (QueryError, AttributeError) as err:
                 raise KeyError from err
 
-            return self.config.pick(values)
+            return self.config.transform(values)
 
         def get_location(self):
             return self.db.name if self.db else "*no database loaded*"
 
-    def __init__(self, tag_getter=None, db_getter=None, autoload_db=None, pick=None):
+    def __init__(self, tag_getter=None, db_getter=None, autoload_db=None, transform=None):
         cls = self.__class__
 
-        # Access the getter/pick functions through the class.  If accessed via 
-        # the instance, they would become bound and would require a self 
+        # Access the getter/transform functions through the class.  If accessed 
+        # via the instance, they would become bound and would require a self 
         # argument. 
 
         self.db_getter = db_getter or cls.db_getter
         self.tag_getter = tag_getter or cls.tag_getter
         self.autoload_db = autoload_db if autoload_db is not None else self.autoload_db
-        self.pick = pick or cls.pick
+        self.transform = transform or cls.transform
 
     def load(self, obj):
         helper = self.QueryHelper(self, obj)
@@ -119,6 +120,7 @@ class ReagentConfig:
 
 
 class MakerArgsConfig:
+    autoload = False
     product_getter = lambda obj: obj.product
 
     class QueryHelper:
