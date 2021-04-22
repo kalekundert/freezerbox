@@ -201,4 +201,17 @@ def parse_size_bp(size_str):
 
     raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
 
+def unanimous(items):
+    it = iter(items)
+
+    try:
+        value = next(it)
+    except StopIteration:
+        raise ValueError
+
+    for next_value in it:
+        if next_value != value:
+            raise ValueError
+
+    return value
 

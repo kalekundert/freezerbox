@@ -164,3 +164,15 @@ def test_parse_conc_err(conc_str, mw, error):
 def test_parse_size_bp(size_str, expected, error):
     with error:
         assert parse_size_bp(size_str) == expected
+
+@parametrize_from_file(
+        schema=Schema({
+            'items': eval,
+            **error_or(**{
+                'expected': eval,
+            }),
+        }),
+)
+def test_unanimous(items, expected, error):
+    with error:
+        assert unanimous(items) == expected

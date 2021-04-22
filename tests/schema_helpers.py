@@ -101,10 +101,14 @@ def error(x):
             ParseError=freezerbox.ParseError,
             LoadError=freezerbox.LoadError,
     )
-    err_type = err_eval(x['type'])
-    err_messages = x.get('message', [])
-    if not isinstance(err_messages, list):
-        err_messages = list(err_messages)
+    if isinstance(x, str):
+        err_type = err_eval(x)
+        err_messages = []
+    else:
+        err_type = err_eval(x['type'])
+        err_messages = x.get('message', [])
+        if not isinstance(err_messages, list):
+            err_messages = list(err_messages)
 
     # Normally I'd use `@contextmanager` to make a context manager like this, 
     # but generator-based context managers cannot be reused.  This is a problem 
