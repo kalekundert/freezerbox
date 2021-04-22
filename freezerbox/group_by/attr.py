@@ -11,17 +11,19 @@ from operator import attrgetter
 
 # Items will be maker instances
 
-def iter_combo_makers(cls, solo_makers, *, group_by={}, merge_by={}):
-    # This function assumes that makers are `appcli.App` instances.  That's not 
-    # great, but I think the effort to generalize this would not be worth it 
-    # for now.
+def iter_combo_makers(
+        factory,
+        solo_makers, *,
+        group_by={},
+        merge_by={}
+    ):
     combos = iter_combos(
             solo_makers,
             group_by=broup_by,
             merge_by={'products': list, **merge_by}
     )
     for attrs, items in combos:
-        combo_maker = cls.from_params()
+        combo_maker = factory()
         for k, v in attrs.items():
             setattr(combo_maker, k, v)
         yield combo_maker
