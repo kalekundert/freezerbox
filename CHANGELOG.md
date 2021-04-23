@@ -2,6 +2,18 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.0 (2021-04-23)
+### Feature
+* Pass database to maker factories ([`52bb4d3`](https://github.com/kalekundert/freezerbox/commit/52bb4d3afd7ac94f85b2edde226002ff7fe0d1bb))
+* Give `iter_combo_makers()` a factory argument ([`31cbc0e`](https://github.com/kalekundert/freezerbox/commit/31cbc0e69c00dbb0f5805ec7c62fb0902e4f3c55))
+* Add `unanimous()` ([`d611a49`](https://github.com/kalekundert/freezerbox/commit/d611a492526bf4d4d9110baf3096e32561e063cb))
+
+### Fix
+* Correctly merge products ([`0f9e5b6`](https://github.com/kalekundert/freezerbox/commit/0f9e5b6b25339e2eec5a9d864b7656b0c9ef3f84))
+* Main modules cannot use relative imports ([`c5e444e`](https://github.com/kalekundert/freezerbox/commit/c5e444ee5061bbc08a2c16891e862a3bf45331e2))
+* Load maker entry points ([`606b72d`](https://github.com/kalekundert/freezerbox/commit/606b72de014bd66bc5e9a66431e33a61d7aef1fa))
+* Allow any non-control character in unquoted words ([`d53426c`](https://github.com/kalekundert/freezerbox/commit/d53426c52fd47b99dc4f7492270ef5284ef50357))
+
 ## v0.3.0 (2021-04-19)
 ### Feature
 * Load synthesis and cleanups from excel ([`3d207d4`](https://github.com/kalekundert/freezerbox/commit/3d207d4b574bea2b3a66d954fd313a2093708b83))
