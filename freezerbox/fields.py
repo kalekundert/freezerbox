@@ -115,10 +115,10 @@ def word():
         escape = regex(fr'\\[\\{quote_char}]').map(lambda x: x[-1])
         value_char = escape | regex(fr'[^\\{quote_char}]+')
         word = yield value_char.many().concat()
-        yield string(quote_char)
+        yield string(quote_char).desc("quote")
         return word
 
-unquoted_word = regex(r'\w+')
+unquoted_word = regex(r'''[^=;\s'"]+''').desc('word')
 
 @contextmanager
 def _reformat_errors():
