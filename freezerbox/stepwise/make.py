@@ -3,10 +3,11 @@
 import appcli
 import autoprop
 import stepwise
+import freezerbox
 
 from inform import plural
-from ..group_by import group_by_synthesis, group_by_cleanup
-from ..model import load_maker_factory
+from freezerbox.group_by import group_by_synthesis, group_by_cleanup
+from freezerbox.model import load_maker_factory
 
 @autoprop
 class Make(appcli.App):
@@ -57,7 +58,7 @@ def label_products(products):
 
 if __name__ == '__main__':
     app = Make.from_params()
-    app.db = load_db()
+    app.db = freezerbox.load_db()
     app.load()
     app.protocol.print()
 
