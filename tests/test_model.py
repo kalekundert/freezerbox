@@ -347,6 +347,12 @@ def test_protein_mw():
     db['r1'] = r1 = Protein(seq='DYKDDDDK')
     assert r1.mw == pytest.approx(1012.98, abs=0.1)
 
+def test_protein_mw_err():
+    db = Database()
+    db['r1'] = r1 = Protein(seq='X')
+    with pytest.raises(QueryError, match="'X' is not a valid unambiguous letter for protein"):
+        r1.mw
+
 @parametrize_from_file(
         schema=kwargs_schema({
             'molecule': eval,
@@ -377,6 +383,13 @@ def test_nucleic_acid_mw():
     assert f1.is_circular == (not f1.is_linear) == False
     assert f1.is_double_stranded == (not f1.is_single_stranded) == True
     assert f1.mw == pytest.approx(2347.65, abs=0.1)
+
+def test_nucleic_acid_mw_err():
+    db = Database()
+    db['f1'] = f1 = NucleicAcid(seq='X')
+
+    with pytest.raises(QueryError, match="'X' is not a valid unambiguous letter for DNA"):
+        f1.mw
 
 def test_plasmid_mw():
     # http://molbiotools.com/dnacalculator.html

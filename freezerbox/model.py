@@ -375,6 +375,7 @@ class Protein(Molecule):
         analysis = ProteinAnalysis(self.seq)
         return analysis.isoelectric_point()
 
+    @only_raise(QueryError)
     def _calc_mw(self):
         from Bio.SeqUtils import molecular_weight
         return molecular_weight(
@@ -489,6 +490,7 @@ class NucleicAcid(Molecule):
         self._molecule = molecule
         self._strandedness = strandedness
 
+    @only_raise(QueryError)
     def _calc_mw(self):
         from Bio.SeqUtils import molecular_weight
         mw = molecular_weight(
