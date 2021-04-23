@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.2 (2021-04-23)
+### Fix
+* Update dependencies ([`1124099`](https://github.com/kalekundert/freezerbox/commit/11240990585a7a76bb4b4703f5681d96b59fde5f))
+
 ## v0.4.1 (2021-04-23)
 ### Fix
 * Raise QueryError if molecular weight calculation fails. ([`aac3195`](https://github.com/kalekundert/freezerbox/commit/aac3195a5b50660c2be73b968dd9ce1429631fdf))
