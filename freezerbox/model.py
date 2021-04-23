@@ -573,6 +573,11 @@ class MakerInterface:
         raise AttributeError
 
     @property
+    def products(self):
+        # Required by make for "Label the product..." step.
+        raise AttributeError
+
+    @property
     def product_tags(self):
         raise AttributeError
 
@@ -643,7 +648,8 @@ class IntermediateMixin:
             raise QueryError("no protocol specified", culprit=self)
 
         factory = load_maker_factory(key)
-        return one(factory(self.db, [self]))
+        makers = list(factory(self.db, [self]))
+        return one(makers)
 
     def get_maker_args(self):
         if self.step == 0:
@@ -693,5 +699,10 @@ def load_db(use=None, config=None):
     return plugin.load(config_use)
 
 def load_maker_factory(key):
-    return MAKER_PLUGINS[key].make
+    try:
+        plugin = MAKER_PLUGINS[key].load()
+    except KeyError as err:
+        raise QueryError("no {err!r} maker plugins found")
+
+    return plugin.make
 
