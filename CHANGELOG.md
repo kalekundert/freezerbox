@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.1 (2021-04-23)
+### Fix
+* Raise QueryError if molecular weight calculation fails. ([`aac3195`](https://github.com/kalekundert/freezerbox/commit/aac3195a5b50660c2be73b968dd9ce1429631fdf))
+
 ## v0.4.0 (2021-04-23)
 ### Feature
 * Pass database to maker factories ([`52bb4d3`](https://github.com/kalekundert/freezerbox/commit/52bb4d3afd7ac94f85b2edde226002ff7fe0d1bb))
