@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from itertools import groupby, count
+from itertools import groupby, count, chain
 from more_itertools import unzip
 from statistics import mean
 from operator import attrgetter
@@ -19,8 +19,11 @@ def iter_combo_makers(
     ):
     combos = iter_combos(
             solo_makers,
-            group_by=broup_by,
-            merge_by={'products': list, **merge_by}
+            group_by=group_by,
+            merge_by={
+                'products': lambda x: list(chain(*x)),
+                **merge_by,
+            }
     )
     for attrs, items in combos:
         combo_maker = factory()
