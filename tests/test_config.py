@@ -3,7 +3,7 @@
 import os, freezerbox, pytest
 from contextlib import contextmanager
 from pathlib import Path
-from freezerbox import load_config, ReagentConfig, MakerArgsConfig
+from freezerbox import load_config, ReagentConfig, MakerArgsConfig, Fields
 from more_itertools import one, first
 
 from test_model import MockReagent
@@ -205,7 +205,7 @@ def test_reagent_config_getters(config_factory):
 def test_maker_args_config_synthesis():
     db = freezerbox.Database(name='loc')
     db['x1'] = x1 = MockReagent(
-            synthesis=freezerbox.Fields(['a'], {'b': 'c'}),
+            synthesis=Fields(['a'], {'b': 'c'}),
     )
     i1 = x1.make_intermediate(0)
 
@@ -213,18 +213,18 @@ def test_maker_args_config_synthesis():
     config = MakerArgsConfig()
     layer = one(config.load(obj))
 
-    obj.product = i1
+    obj.products = [i1]
 
     assert layer.values[0] == 'a'
     assert layer.values['b'] == 'c'
-    assert layer.values[freezerbox.PRODUCT] is i1
+    assert layer.values.product is i1
     assert layer.location == 'loc'
 
 def test_maker_args_config_cleanup():
     db = freezerbox.Database(name='loc')
     db['x1'] = x1 = MockReagent(
-            synthesis=freezerbox.Fields(['a'], {'b': 'c'}),
-            cleanups=[freezerbox.Fields(['d'], {'e': 'f'})],
+            synthesis=Fields(['a'], {'b': 'c'}),
+            cleanups=[Fields(['d'], {'e': 'f'})],
     )
     i1 = x1.make_intermediate(1)
 
@@ -232,23 +232,23 @@ def test_maker_args_config_cleanup():
     config = MakerArgsConfig()
     layer = one(config.load(obj))
 
-    obj.product = i1
+    obj.products = [i1]
 
     assert layer.values[0] == 'd'
     assert layer.values['e'] == 'f'
-    assert layer.values[freezerbox.PRODUCT] is i1
-    assert layer.values[freezerbox.PRECURSOR] is i1.precursor
+    assert layer.values.product is i1
+    assert layer.values.precursor is i1.precursor
     assert layer.location == 'loc'
 
 def maker_args_config_from_ctor():
     return MakerArgsConfig(
-            product_getter=lambda self: self.my_product,
+            products_getter=lambda self: self.my_products,
     )
 
 def maker_args_config_from_subclass():
 
     class MyConfig(MakerArgsConfig):
-        product_getter = lambda self: self.my_product
+        products_getter = lambda self: self.my_products
 
     return MyConfig()
 
@@ -261,8 +261,8 @@ def maker_args_config_from_subclass():
 def test_maker_args_config_getters_inherit(config_factory):
     db = freezerbox.Database(name='loc')
     db['x1'] = x1 = MockReagent(
-            synthesis=freezerbox.Fields(['a'], {'b': 'c'}),
-            cleanups=[freezerbox.Fields(['d'], {'e': 'f'})],
+            synthesis=Fields(['a'], {'b': 'c'}),
+            cleanups=[Fields(['d'], {'e': 'f'})],
     )
     i1 = x1.make_intermediate(0)
 
@@ -270,9 +270,26 @@ def test_maker_args_config_getters_inherit(config_factory):
     config = config_factory()
     layer = one(config.load(obj))
 
-    obj.my_product = i1
+    obj.my_products = [i1]
 
     assert layer.values[0] == 'a'
     assert layer.values['b'] == 'c'
-    assert layer.values[freezerbox.PRODUCT] is i1
+    assert layer.values.product is i1
     assert layer.location == 'loc'
+
+def test_maker_args_config_err():
+    db = freezerbox.Database(name='loc')
+    db['x1'] = x1 = MockReagent(
+            synthesis=Fields(['a'], {'b': 'c'}),
+    )
+    i1 = x1.make_intermediate(0)
+
+    obj = MockObj()
+    config = MakerArgsConfig()
+    layer = one(config.load(obj))
+
+    obj.products = []
+
+    with pytest.raises(KeyError, match="expected 1 product, found 0"):
+        layer.values[0]
+

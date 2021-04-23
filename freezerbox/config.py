@@ -6,10 +6,10 @@ import appcli
 from pathlib import Path
 from configurator import Config
 from functools import lru_cache
-from more_itertools import always_iterable
+from more_itertools import one, always_iterable
 
 from .utils import parse_tag
-from .errors import QueryError, ParseError
+from .errors import QueryError, ParseError, only_raise
 
 @lru_cache
 def load_config():
@@ -30,9 +30,6 @@ def load_config():
         dir = dir.parent
 
     return config.data
-
-PRODUCT = object()
-PRECURSOR = object()
 
 class ReagentConfig:
     autoload = True
@@ -64,7 +61,10 @@ class ReagentConfig:
             # database is expensive, and if the tags won't be in the database 
             # anyways, there's no reason to waste the time.
             
-            tags = self.config.tag_getter(self.obj)
+            try:
+                tags = self.config.tag_getter(self.obj)
+            except AttributeError as err:
+                raise KeyError from err
 
             try:
                 tags = [
@@ -121,7 +121,7 @@ class ReagentConfig:
 
 class MakerArgsConfig:
     autoload = False
-    product_getter = lambda obj: obj.product
+    products_getter = lambda obj: obj.products
 
     class QueryHelper:
 
@@ -129,29 +129,37 @@ class MakerArgsConfig:
             self.config = config
             self.obj = obj
 
+        @only_raise(KeyError)
         def __getitem__(self, key):
-            product = self.config.product_getter(self.obj)
+            return self.product.maker_args[key]
 
-            if key is PRODUCT:
-                return product
+        @property
+        def product(self):
+            products = self.config.products_getter(self.obj)
+            try:
+                return one(products)
+            except ValueError:
+                err = QueryError(
+                        lambda e: f"expected 1 product, found {len(products)}",
+                        products=products,
+                )
+                raise err from None
 
-            if key is PRECURSOR:
-                return product.precursor
-
-            return product.maker_args[key]
+        @property
+        def precursor(self):
+            return self.product.precursor
 
         def get_location(self):
-            product = self.config.product_getter(self.obj)
-            return product.db.name
+            return self.product.db.name
 
 
-    def __init__(self, db_getter=None, product_getter=None):
+    def __init__(self, db_getter=None, products_getter=None):
         cls = self.__class__
 
         # Access the getter through the class.  If accessed via the instance, 
         # it would become bound and would require a self argument. 
 
-        self.product_getter = product_getter or cls.product_getter
+        self.products_getter = products_getter or cls.products_getter
 
     def load(self, obj):
         helper = self.QueryHelper(self, obj)

@@ -18,18 +18,19 @@ class Po4Error(Error):
 
 
 class LoadError(Po4Error):
+    # For errors relating to loading the database.
     pass
 
 class QueryError(Po4Error):
+    # For errors relating to looking up information from the database.
     pass
 
 class ParseError(QueryError):
+    # For errors relating to parsing a value from the database, e.g. a unit.
     pass
 
 class CheckError(Po4Error):
-    pass
-
-class UsageError(Po4Error):
+    # For errors found when checking the database for self-consistency.
     pass
 
 
