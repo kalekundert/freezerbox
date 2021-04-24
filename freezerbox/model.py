@@ -704,7 +704,7 @@ def load_maker_factory(key):
     try:
         plugin = MAKER_PLUGINS[key].load()
     except KeyError as err:
-        raise QueryError("no {err!r} maker plugins found")
+        raise QueryError(f"no {err.args[0]!r} maker plugins found")
 
     return plugin.make
 
