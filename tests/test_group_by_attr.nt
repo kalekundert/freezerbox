@@ -35,6 +35,14 @@ test_group_by:
         value: 2
         items: [2, 2]
   -
+    id: identity-unsortable
+    grouper: freezerbox.group_by_identity
+    items: [None]
+    expected:
+      -
+        value: None
+        items: [None]
+  -
     id: identity-key
     grouper: freezerbox.group_by_identity
     items: ['a', 'b', 'A', 'B']
@@ -46,6 +54,28 @@ test_group_by:
       -
         value: 'B'
         items: ['b', 'B']
+  -
+    id: identity-unsortable
+    grouper: freezerbox.group_by_identity
+    items: [None, 1, None, 1]
+    expected:
+      -
+        value: None
+        items: [None, None]
+      -
+        value: 1
+        items: [1, 1]
+  -
+    id: identity-unhashable
+    grouper: freezerbox.group_by_identity
+    items: [[1], [2], [1], [2]]
+    expected:
+      -
+        value: [1]
+        items: [[1], [1]]
+      -
+        value: [2]
+        items: [[2], [2]]
 
   -
     id: cluster

@@ -117,5 +117,38 @@ class group_by_cluster:
             yield value, items
 
 def group_by_identity(items, key=lambda x: x):
-    yield from groupby(sorted(items, key=key), key=key)
+    # The advantage of this algorithm is that it only requires the items to 
+    # support the equality operator.  More efficient algorithms would require 
+    # additional functionality, and therefore would not support all inputs:
+    # 
+    # - itertools.groupby(): inputs must be sorted, therefore items must 
+    #   support comparison operators.
+    # - dict of lists: items must be hashable.
+
+    groups = []
+
+    for item in items:
+        item_key = key(item)
+
+        for group in groups:
+            if item_key == group[0]:
+                group[1].append(item)
+                break
+        else:
+            groups.append((item_key, [item]))
+
+    yield from groups
+
+    ###
+    #groups = {}
+    #for item in items:
+    #    group = key(item)
+    #    groups.setdefault(group, []).append(item)
+
+    #yield from group.items()
+
+    ###
+    #items = list(items)
+    #debug(items, key, list(map(key, items)))
+    #yield from groupby(sorted(items, key=key), key=key)
     
