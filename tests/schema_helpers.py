@@ -33,6 +33,8 @@ eval_freezerbox = eval_with(
         nx=nx,
         Quantity=stepwise.Quantity,
         Fields=freezerbox.Fields,
+        parse_fields=freezerbox.parse_fields,
+        parse_fields_list=freezerbox.parse_fields_list,
         MockReagent=MockReagent,
 )
 eval_pytest = eval_with().all(pytest)

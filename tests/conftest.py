@@ -2,6 +2,8 @@
 
 import pytest
 import freezerbox
+
+from freezerbox.stepwise.make import StepwiseMaker, OrderMaker
 from mock_model import MockSoloMaker, MockComboMaker
 
 class MockEntryPoint:
@@ -16,6 +18,8 @@ class MockEntryPoint:
 def monkeypatch_maker_plugins(monkeypatch):
     from string import ascii_lowercase
     monkeypatch.setattr(freezerbox.model, 'MAKER_PLUGINS', {
+        'sw': MockEntryPoint(StepwiseMaker),
+        'order': MockEntryPoint(OrderMaker),
         'mock': MockEntryPoint(MockSoloMaker),
         'merge': MockEntryPoint(MockComboMaker),
         **{k: MockEntryPoint(MockSoloMaker) for k in ascii_lowercase},

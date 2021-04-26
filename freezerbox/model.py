@@ -622,6 +622,11 @@ class MakerInterface:
     def is_product_phosphorylated_3(self):
         raise AttributeError
 
+    @property
+    def label_products(self):
+        raise AttributeError
+
+
 
 @autoprop.immutable
 class IntermediateMixin:

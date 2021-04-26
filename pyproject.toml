@@ -41,6 +41,10 @@ freezerbox = "freezerbox.cli.main:main"
 [tool.flit.entrypoints."freezerbox.databases"]
 excel = "freezerbox.loaders.excel"
 
+[tool.flit.entrypoints."freezerbox.make"]
+sw = "freezerbox.stepwise.make:StepwiseMaker"
+order = "freezerbox.stepwise.make:OrderMaker"
+
 [tool.flit.entrypoints."stepwise.protocols"]
 protocols = "freezerbox.stepwise:Plugin"
 
