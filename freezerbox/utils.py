@@ -88,6 +88,14 @@ def parse_time_s(time_str):
     raise ParseError(f"can't interpret {time_str!r} as a time, did you forget a unit?")
 
 @only_raise(ParseError)
+def parse_time_m(time_str):
+    return parse_time_s(time_str) / 60
+
+@only_raise(ParseError)
+def parse_time_h(time_str):
+    return parse_time_s(time_str) / 3600
+
+@only_raise(ParseError)
 def parse_temp_C(temp_str):
     temp_pattern = fr'(?P<temp>[0-9.]+)\s*°?C'
 
