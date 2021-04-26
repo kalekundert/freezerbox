@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2021-04-26)
+### Feature
+* Add built-in `sw` and `order` makers ([`165630a`](https://github.com/kalekundert/freezerbox/commit/165630aedc992953e21ea90c9a4a28076c4a3e9e))
+
 ## v0.5.0 (2021-04-26)
 ### Feature
 * Add functions to parse minutes and hours ([`db69545`](https://github.com/kalekundert/freezerbox/commit/db695453e6198fe6ad2aeaa69727407edc45916c))
