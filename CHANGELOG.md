@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.5.0 (2021-04-26)
+### Feature
+* Add functions to parse minutes and hours ([`db69545`](https://github.com/kalekundert/freezerbox/commit/db695453e6198fe6ad2aeaa69727407edc45916c))
+
+### Fix
+* Debug error message ([`3cf8850`](https://github.com/kalekundert/freezerbox/commit/3cf88501bfa80945dfb16d2ca00a12d9be75024a))
+* Support grouping non-sortable values ([`cf0bb2b`](https://github.com/kalekundert/freezerbox/commit/cf0bb2b4ee79a871c4264427d2d77a0f0cc40e09))
+
 ## v0.4.2 (2021-04-23)
 ### Fix
 * Update dependencies ([`1124099`](https://github.com/kalekundert/freezerbox/commit/11240990585a7a76bb4b4703f5681d96b59fde5f))
