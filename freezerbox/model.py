@@ -627,7 +627,6 @@ class MakerInterface:
         raise AttributeError
 
 
-
 @autoprop.immutable
 class IntermediateMixin:
     # Mixin class; must appear before Reagent in MRO, e.g.:

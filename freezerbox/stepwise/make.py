@@ -23,18 +23,142 @@ class Make(appcli.App):
 Display a protocol for making the given reagents.
 
 Usage:
-    make <tag>...
+    make <tags>...
 
 Arguments:
-    <tag>
+    <tags>
         The name of a reagent in the freezerbox database, e.g. p01 or f01.
+
+Protocols are derived from the "Synthesis" and "Cleanups" columns of the 
+FreezerBox database.  There is an important distinction between these two 
+columns.  The "Synthesis" column is for protocols that actually create new 
+reagents.  This most often means creating new sequences.  Examples of such 
+protocols include PCR, Gibson or Golden Gate assemblies, restriction digests, 
+etc.  In contrast, the "Cleanups" column is for protocols that don't create new 
+reagents.  These often relate to things like purification or storage.  Examples 
+include minipreps, gel purifications, aliquoting, etc.
+
+Each reagent can only have one synthesis protocol, but can have any number of 
+cleanup protocols.  This limit on synthesis protocols ensures that every 
+reagent has its own name and can be easily and unambiguously referred to in 
+other protocols.
+
+Both columns have the same basic syntax for specifying protocol parameters 
+(shown below).  For the "Cleanups" column, multiple protocols can be specified 
+by separating several of these specifications with semi-colons (;).
+
+    <protocol> [<value>]... [<key>=<value>]...
+
+The following protocols are currently installed:
+
+<%!
+from freezerbox.model import MAKER_PLUGINS
+from textwrap import indent
+%>\
+${indent('\\n'.join(MAKER_PLUGINS), '    ')}
+
+Except for `sw` and `order`, each of these should correspond to a stepwise 
+protocol of the same (or similar) name.  Information about the parameters 
+expected by each protocol can obtained by running that protocol with the `-h` 
+flag, e.g. `sw pcr -h`.  Look for a section in the resulting help text labeled 
+"Database".  If you are unsure of a specific protocol's name, it may be helpful 
+to get a list of every installed protocol (not all of which can be used in the 
+FreezerBox database) by running `sw list`.
+
+`sw` and `order` are built-in protocols available only in FreezerBox.  They do 
+not correspond to any stepwise commands, but are documented below:
+
+`sw`
+    Create reagents using arbitrary stepwise commands.
+
+        sw <command>... [deps=<tags>] [cwd=<path>] [expt=<id>] [project=<path>] 
+            [seq=<seq>] [conc=<conc>] [volume=<vol>] [molecule=<type>]
+
+    <command>
+        The arguments to pass to stepwise.  Note that this may need to be 
+        quoted if characters such as equals (=), semi-colon (;), backslash (\), 
+        or quotes themselves ('") appear in the command.
+
+    deps=<tags>
+        The tags (e.g. p1, f1) of any reagents that must be synthesized before 
+        the reagent in question.  If not specified, you may get protocols with 
+        steps out of order.
+
+    cwd=<path>
+        The directory that should be moved to before executing the protocol 
+        command.  If not specified, the command will be executed in the current 
+        working directory.  This is useful for commands that are not installed 
+        globally.
+
+    expt=<id>
+        The id number of an Ex Memo experiment.  If specified, the protocol 
+        command will be executed from the directory corresponding to that 
+        experiment.  This is basically a more succinct way to specify `cwd`, in 
+        the event that you use Ex Memo.
+
+    project=<path>
+        The path to the root directory of an Ex Memo project.  This is used in 
+        conjunction with the `expt` option described above.  If not specified, 
+        the project encompassing the current working directory will be used.
+
+    seq=<seq>
+        The sequence of the reagent (if applicable).  This can also be 
+        specified in the "Sequence" column.
+
+    conc=<conc>
+        The concentration of the reagent (if applicable), including a unit.  
+        This can also be specified in the "Sequence" column.
+
+    volume=<vol>
+        The concentration of the reagent (if applicable), including a unit.  
+        This can also be specified in the "Sequence" column.
+
+    molecule=<molecule>
+        What kind of nucleic acid the reagent is (if applicable), e.g. DNA, 
+        RNA, ssDNA, dsRNA, etc.
+
+    Unlike protocols with devoted plugins, protocols specified in this way 
+    can't be smartly merged into succinct master mixes, because FreezerBox 
+    doesn't really understand anything about them.  However, it's still useful 
+    to be able to specify arbitrary commands for one-off reagents.  If you find 
+    yourself using this protocol a lot, you might want to think about writing a 
+    protocol plugin.  
+
+    Note that you cannot pipe commands with this protocol.  If you need one or 
+    more pipes, put your commands in a shell script and reference that script 
+    from the database.
+
+`order`
+    Indicate that a reagent was ordered from a vendor.
+
+        order vendor=<name> [seq=<seq>] [conc=<conc>] [volume=<vol>] 
+            [molecule=<type>]
+
+    vendor=<name>
+        The name of the company the reagent was ordered from.
+
+    seq=<seq>
+        The sequence of the reagent (if applicable).  This can also be 
+        specified in the "Sequence" column.
+
+    conc=<conc>
+        The concentration of the reagent (if applicable), including a unit.  
+        This can also be specified in the "Sequence" column.
+
+    volume=<vol>
+        The concentration of the reagent (if applicable), including a unit.  
+        This can also be specified in the "Sequence" column.
+
+    molecule=<molecule>
+        What kind of nucleic acid the reagent is (if applicable), e.g. DNA, 
+        RNA, ssDNA, dsRNA, etc.
 """
 
     __config__ = [
             appcli.DocoptConfig(),
     ]
 
-    tags = appcli.param('<tag>')
+    tags = appcli.param('<tags>')
 
     def __init__(self, db, tags=None):
         self.db = db
