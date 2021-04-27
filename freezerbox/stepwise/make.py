@@ -5,11 +5,14 @@ import autoprop
 import stepwise
 import freezerbox
 
-from inform import plural
-from freezerbox.group_by import group_by_synthesis, group_by_cleanup
-from freezerbox.model import load_maker_factory
+from freezerbox import (
+        load_maker_factory, group_by_synthesis, group_by_cleanup,
+        iter_combo_makers, group_by_identity,
+        join_lists, join_sets, unanimous, only_raise, QueryError,
+)
 from stepwise import Quantity
-from more_itertools import one
+from more_itertools import one, first
+from inform import plural
 
 @autoprop
 class Make(appcli.App):
@@ -54,9 +57,30 @@ Arguments:
 @autoprop
 class StepwiseMaker:
 
+    def __init__(self):
+        self.dependencies = set()
+        self._product_seqs = []
+        self._product_concs = []
+        self._product_volumes = []
+        self._product_molecules = []
+
     @classmethod
     def make(cls, db, products):
-        yield from map(cls.from_product, products)
+        yield from iter_combo_makers(
+                cls,
+                map(cls.from_product, products),
+                group_by={
+                    '_protocol_str': group_by_identity,
+                },
+                merge_by={
+                    'protocol': first,
+                    'dependencies': join_sets,
+                    '_product_seqs': join_lists,
+                    '_product_concs': join_lists,
+                    '_product_volumes': join_lists,
+                    '_product_molecules': join_lists,
+                }
+        )
 
     @classmethod
     def from_product(cls, product):
@@ -64,24 +88,41 @@ class StepwiseMaker:
         args = product.maker_args
 
         maker.products = [product]
-        maker.dependencies = set()
-        maker.load_cmd = ' '.join(args.by_index[1:])
 
-        if 'seq' in args:
-            maker.product_seqs = [args['seq']]
         if 'deps' in args:
             maker.dependencies = {x.strip() for x in args['deps'].split(',')}
+        if 'seq' in args:
+            maker._product_seqs = [args['seq']]
         if 'conc' in args:
-            maker.product_conc = Quantity.from_string(args['conc'])
+            maker._product_concs = [Quantity.from_string(args['conc'])]
         if 'volume' in args:
-            maker.product_volume = Quantity.from_string(args['volume'])
+            maker._product_volumes = [Quantity.from_string(args['volume'])]
         if 'molecule' in args:
-            maker.product_molecule = args['molecule']
+            maker._product_molecules = [args['molecule']]
+
+        load_cmd = ' '.join(args.by_index[1:])
+        if not load_cmd:
+            raise QueryError("no stepwise command specified", culprit=product)
+
+        maker.protocol = stepwise.load(load_cmd).protocol
+        maker._protocol_str = maker.protocol.format_text()
 
         return maker
 
-    def get_protocol(self):
-        return stepwise.load(self.load_cmd)
+    def get_product_seqs(self):
+        return self._product_seqs
+
+    @only_raise(QueryError)
+    def get_product_conc(self):
+        return unanimous(self._product_concs)
+
+    @only_raise(QueryError)
+    def get_product_volume(self):
+        return unanimous(self._product_volumes)
+
+    @only_raise(QueryError)
+    def get_product_molecule(self):
+        return unanimous(self._product_molecules)
 
 
 @autoprop

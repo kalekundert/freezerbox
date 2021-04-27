@@ -31,14 +31,15 @@ def test_make(reagents, expected, disable_capture):
             'expected': {str: eval_freezerbox},
         }),
 )
-def test_builtin_maker_attrs(maker, expected):
+def test_builtin_maker_attrs(maker, expected, disable_capture):
     db = Database()
     db['x1'] = x1 = MockReagent(
             synthesis=parse_fields(maker),
     )
 
-    for attr, value in expected.items():
-        assert getattr(x1.synthesis_maker, attr) == value
+    with disable_capture:
+        for attr, value in expected.items():
+            assert getattr(x1.synthesis_maker, attr) == value
 
 @pytest.fixture
 def disable_capture(pytestconfig):

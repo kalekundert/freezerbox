@@ -113,6 +113,24 @@ test_make:
       - Label the product: x1
       - B
       - C
+  -
+    id: sw
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=parse_fields('sw step A'),
+        >         cleanups=parse_fields_list('sw step B; sw step C'),
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=parse_fields('sw step A'),
+        >         cleanups=parse_fields_list('sw step B; sw step C'),
+        > )
+    expected:
+      - A
+      - Label the products: x1, x2
+      - B
+      - C
 
   -
     id: order
@@ -126,63 +144,58 @@ test_make:
 
 test_builtin_maker_attrs:
   -
-    id: sw-cmd
-    maker: sw cmd --flag
-    expected:
-      load_cmd: 'cmd --flag'
-  -
     id: sw-seq
-    maker: sw seq=GATTACA
+    maker: sw step A seq=GATTACA
     expected:
       product_seqs: ['GATTACA']
   -
     id: sw-deps
-    maker: sw
+    maker: sw step A
     expected:
       dependencies: set()
   -
     id: sw-deps
-    maker: sw deps=x2
+    maker: sw step A deps=x2
     expected:
       dependencies: {'x2'}
   -
     id: sw-deps
-    maker: sw deps=x2,x3
+    maker: sw step A deps=x2,x3
     expected:
       dependencies: {'x2', 'x3'}
   -
     id: sw-deps
-    maker: sw deps='x2, x3'
+    maker: sw step A deps='x2, x3'
     expected:
       dependencies: {'x2', 'x3'}
   -
     id: sw-deps
-    maker: sw deps=x2,x2
+    maker: sw step A deps=x2,x2
     expected:
       dependencies: {'x2'}
   -
     id: sw-conc
-    maker: sw conc=75nM
+    maker: sw step A conc=75nM
     expected:
       product_conc: Quantity(75, 'nM')
   -
     id: sw-conc
-    maker: sw conc='75 nM'
+    maker: sw step A conc='75 nM'
     expected:
       product_conc: Quantity(75, 'nM')
   -
     id: sw-volume
-    maker: sw volume=10µL
+    maker: sw step A volume=10µL
     expected:
       product_volume: Quantity(10, 'µL')
   -
     id: sw-volume
-    maker: sw volume='10 µL'
+    maker: sw step A volume='10 µL'
     expected:
       product_volume: Quantity(10, 'µL')
   -
     id: sw-molecule
-    maker: sw molecule=dsDNA
+    maker: sw step A molecule=dsDNA
     expected:
       product_molecule: 'dsDNA'
   -
