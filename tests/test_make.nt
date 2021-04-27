@@ -136,11 +136,26 @@ test_make:
     reagents:
       x1:
         > MockReagent(
-        >         synthesis=parse_fields(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment'),
+        >         synthesis=parse_fields(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment_1'),
         > )
     expected:
       - A
       - Label the product: x1
+  -
+    id: sw-cwd
+    # Make sure the cwd is set individually for each maker.  This actually 
+    # checks for a bug in stepwise, where the current working directory was 
+    # calculated only the first time the library singleton was instantiated.
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=parse_fields(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment_1'),
+        >         cleanups=parse_fields_list(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment_2'),
+        > )
+    expected:
+      - A
+      - Label the product: x1
+      - B
   -
     id: sw-exmemo
     reagents:
