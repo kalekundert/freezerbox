@@ -14,6 +14,7 @@ from stepwise import Quantity
 from more_itertools import one, first
 from inform import plural
 from os import getcwd, chdir
+from os.path import expanduser
 from contextlib import contextmanager
 
 @autoprop
@@ -103,10 +104,11 @@ class StepwiseMaker:
             maker._product_molecules = [args['molecule']]
 
         if 'cwd' in args:
-            cwd = args['cwd']
+            cwd = expanduser(args['cwd'])
         elif 'expt' in args:
             import exmemo
-            work = exmemo.Workspace.from_path(args.get('project', getcwd()))
+            root = expanduser(args.get('project', getcwd()))
+            work = exmemo.Workspace.from_path(root)
             expt = work.pick_experiment(args['expt'])
             cwd = expt.root_dir.resolve()
         else:
