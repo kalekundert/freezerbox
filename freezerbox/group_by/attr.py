@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from itertools import groupby, count, chain
+from itertools import groupby, count
 from more_itertools import unzip
 from statistics import mean
 from operator import attrgetter
+from ..utils import join_lists
 
 # group_by_...(items, key):
 #   Functions that yield (value, subitems) tuples.  Each item in `subitems` 
@@ -21,7 +22,7 @@ def iter_combo_makers(
             solo_makers,
             group_by=group_by,
             merge_by={
-                'products': lambda x: list(chain(*x)),
+                'products': join_lists,
                 **merge_by,
             }
     )
@@ -139,16 +140,3 @@ def group_by_identity(items, key=lambda x: x):
 
     yield from groups
 
-    ###
-    #groups = {}
-    #for item in items:
-    #    group = key(item)
-    #    groups.setdefault(group, []).append(item)
-
-    #yield from group.items()
-
-    ###
-    #items = list(items)
-    #debug(items, key, list(map(key, items)))
-    #yield from groupby(sorted(items, key=key), key=key)
-    

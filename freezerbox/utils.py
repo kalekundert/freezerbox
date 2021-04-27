@@ -215,11 +215,22 @@ def unanimous(items):
     try:
         value = next(it)
     except StopIteration:
-        raise ValueError
+        raise ValueError("empty iterable")
 
     for next_value in it:
         if next_value != value:
-            raise ValueError
+            raise ValueError(f"found multiple values: {value!r}, {next_value!r}")
 
     return value
+
+def join_lists(x):
+    from itertools import chain
+    return list(chain(*x))
+
+def join_dicts(x):
+    from collections import ChainMap
+    return dict(ChainMap(*x))
+
+def join_sets(x):
+    return set.union(set(), *x)
 

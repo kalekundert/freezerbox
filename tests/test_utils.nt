@@ -399,7 +399,9 @@ test_parse_size_bp:
 test_unanimous:
   -
     items: []
-    error: ValueError
+    error:
+      type: ValueError
+      message: empty iterable
   -
     items: [1]
     expected: 1
@@ -408,10 +410,75 @@ test_unanimous:
     expected: 1
   -
     items: [1, 2]
-    error: ValueError
+    error:
+      type: ValueError
+      message: found multiple values: 1, 2
   -
     items: [2, 1]
-    error: ValueError
+    error:
+      type: ValueError
+      message: found multiple values: 2, 1
   -
     items: [2, 2]
     expected: 2
+
+test_join_lists:
+  -
+    given: []
+    expected: []
+  -
+    given: [[]]
+    expected: []
+  -
+    given: [[1]]
+    expected: [1]
+  -
+    given: [[1, 2]]
+    expected: [1, 2]
+  -
+    given: [[1], [2]]
+    expected: [1, 2]
+  -
+    given: [[1, 2], [3, 4]]
+    expected: [1, 2, 3, 4]
+
+test_join_dicts:
+  -
+    given: []
+    expected: {}
+  -
+    given: [{}]
+    expected: {}
+  -
+    given: [{'a': 2}]
+    expected: {'a': 2}
+  -
+    given: [{'a': 1, 'b': 2}]
+    expected: {'a': 1, 'b': 2}
+  -
+    given: [{'a': 1}, {'b': 2}]
+    expected: {'a': 1, 'b': 2}
+  -
+    given: [{'a': 1, 'b': 2}, {'c': 3, 'd': 4}]
+    expected: {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+
+test_join_sets:
+  -
+    given: []
+    expected: set()
+  -
+    given: [set()]
+    expected: set()
+  -
+    given: [{1}]
+    expected: {1}
+  -
+    given: [{1, 2}]
+    expected: {1, 2}
+  -
+    given: [{1}, {2}]
+    expected: {1, 2}
+  -
+    given: [{1, 2}, {2, 3}]
+    expected: {1, 2, 3}
+

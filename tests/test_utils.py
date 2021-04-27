@@ -176,3 +176,16 @@ def test_parse_size_bp(size_str, expected, error):
 def test_unanimous(items, expected, error):
     with error:
         assert unanimous(items) == expected
+
+@parametrize_from_file(schema=Schema({str: eval}))
+def test_join_lists(given, expected):
+    assert join_lists(given) == expected
+
+@parametrize_from_file(schema=Schema({str: eval}))
+def test_join_dicts(given, expected):
+    assert join_dicts(given) == expected
+
+@parametrize_from_file(schema=Schema({str: eval}))
+def test_join_sets(given, expected):
+    assert join_sets(given) == expected
+
