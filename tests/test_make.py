@@ -7,6 +7,7 @@ from freezerbox import Database, parse_fields
 from freezerbox.stepwise.make import Make
 from schema_helpers import *
 from mock_model import *
+from os import getcwd
 
 @parametrize_from_file(
         schema=Schema({
@@ -17,6 +18,7 @@ from mock_model import *
 def test_make(reagents, expected, disable_capture):
     db = freezerbox.Database()
     tags = list(reagents.keys())
+    cwd = getcwd()
 
     for tag, reagent in reagents.items():
         db[tag] = reagent
@@ -24,6 +26,8 @@ def test_make(reagents, expected, disable_capture):
     app = Make(db, tags)
     with disable_capture:
         assert app.protocol.steps == expected
+
+    assert getcwd() == cwd
 
 @parametrize_from_file(
         schema=Schema({

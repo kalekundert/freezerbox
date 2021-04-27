@@ -13,6 +13,8 @@ from freezerbox import (
 from stepwise import Quantity
 from more_itertools import one, first
 from inform import plural
+from os import getcwd, chdir
+from contextlib import contextmanager
 
 @autoprop
 class Make(appcli.App):
@@ -100,11 +102,23 @@ class StepwiseMaker:
         if 'molecule' in args:
             maker._product_molecules = [args['molecule']]
 
+        if 'cwd' in args:
+            cwd = args['cwd']
+        elif 'expt' in args:
+            import exmemo
+            work = exmemo.Workspace.from_path(args.get('project', getcwd()))
+            expt = work.pick_experiment(args['expt'])
+            cwd = expt.root_dir.resolve()
+        else:
+            cwd = getcwd()
+
         load_cmd = ' '.join(args.by_index[1:])
         if not load_cmd:
             raise QueryError("no stepwise command specified", culprit=product)
 
-        maker.protocol = stepwise.load(load_cmd).protocol
+        with cd(cwd):
+            maker.protocol = stepwise.load(load_cmd).protocol
+
         maker._protocol_str = maker.protocol.format_text()
 
         return maker
@@ -165,6 +179,17 @@ def iter_makers(db, key, products):
 def label_products(products):
     tags = ', '.join(str(x.tag) for x in products)
     return f"Label the {plural(products):product/s}: {tags}"
+
+@contextmanager
+def cd(new_path):
+    try:
+        old_path = getcwd()
+        chdir(new_path)
+        yield
+
+    finally:
+        chdir(old_path)
+
 
 if __name__ == '__main__':
     app = Make.from_params()

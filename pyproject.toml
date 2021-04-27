@@ -18,6 +18,7 @@ requires = [
   'configurator',
   'docopt',
   'entrypoints',
+  'exmemo',
   'inform~=1.21',
   'more_itertools~=8.0',
   'networkx',

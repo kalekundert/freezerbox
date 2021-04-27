@@ -8,6 +8,7 @@ import stepwise
 from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
 from unittest.mock import MagicMock
 from mock_model import MockReagent
+from pathlib import Path
 
 class eval_with:
 
@@ -36,6 +37,7 @@ eval_freezerbox = eval_with(
         parse_fields=freezerbox.parse_fields,
         parse_fields_list=freezerbox.parse_fields_list,
         MockReagent=MockReagent,
+        TEST_DIR=Path(__file__).parent,
 )
 eval_pytest = eval_with().all(pytest)
 

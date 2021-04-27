@@ -131,6 +131,26 @@ test_make:
       - Label the products: x1, x2
       - B
       - C
+  -
+    id: sw-cwd
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=parse_fields(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment'),
+        > )
+    expected:
+      - A
+      - Label the product: x1
+  -
+    id: sw-exmemo
+    reagents:
+      x1:
+        > MockReagent(
+        >         synthesis=parse_fields(f'sw mock_protocol.sh expt=1 project={TEST_DIR}/mock_project'),
+        > )
+    expected:
+      - A
+      - Label the product: x1
 
   -
     id: order
