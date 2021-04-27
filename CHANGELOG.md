@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2021-04-27)
+### Feature
+* Merge stepwise makers with identical protocols ([`8225267`](https://github.com/kalekundert/freezerbox/commit/822526735fed5cfa084b291ddfa7189fe5795f3d))
+* Add functions for joining lists/dicts/sets ([`bc44d7a`](https://github.com/kalekundert/freezerbox/commit/bc44d7a43a69258453024c7a0a8cab199b948edb))
+
 ## v0.6.0 (2021-04-26)
 ### Feature
 * Add built-in `sw` and `order` makers ([`165630a`](https://github.com/kalekundert/freezerbox/commit/165630aedc992953e21ea90c9a4a28076c4a3e9e))
