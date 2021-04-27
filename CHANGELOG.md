@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.8.0 (2021-04-27)
+### Feature
+* Expand ~ in directory fields ([`4e0e8b7`](https://github.com/kalekundert/freezerbox/commit/4e0e8b789bc296e85d7a04fbae09f5ed0fa98036))
+* Integrate the stepwise maker with exmemo ([`4a69ad9`](https://github.com/kalekundert/freezerbox/commit/4a69ad9261cafbe0508564e160a73206300fa652))
+
 ## v0.7.0 (2021-04-27)
 ### Feature
 * Merge stepwise makers with identical protocols ([`8225267`](https://github.com/kalekundert/freezerbox/commit/822526735fed5cfa084b291ddfa7189fe5795f3d))
