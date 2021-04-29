@@ -10,14 +10,11 @@ from freezerbox.errors import ParseError
 from parsy import ParseError as ParsyError
 from schema_helpers import *
 
-fields_dict = Or(
-        {
-            'by_index': empty_ok([str]),
-            'by_name': empty_ok({str: str}),
-        },
-        empty_dict,
-)
-fields_dict_list = Or([fields_dict], empty_list)
+fields_dict = empty_ok({
+    'by_index': empty_ok([str]),
+    'by_name': empty_ok({str: str}),
+})
+fields_dict_list = empty_ok([fields_dict])
 
 
 @parametrize_from_file

@@ -693,7 +693,7 @@ def load_db(use=None, config=None):
     try:
         plugin = DB_PLUGINS[type_use].load()
     except KeyError as err:
-        raise LoadError(f"no {err!r} database plugin found") from None
+        raise LoadError(f"no {err} database plugin found") from None
 
     if defaults := getattr(plugin, 'default_config'):
         config_use = (Config(defaults) + config_use).data

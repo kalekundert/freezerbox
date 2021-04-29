@@ -165,14 +165,14 @@ test_molecule_conc:
     kwargs:
     error:
       type: QueryError
-      message: d1: no concentration specified
+      message: x1: no concentration specified
   -
     id: err
     kwargs:
       synthesis: Fields(['m'], {})
     error:
       type: QueryError
-      message: d1: no concentration specified
+      message: x1: no concentration specified
 
 test_nucleic_acid_molecule:
   -

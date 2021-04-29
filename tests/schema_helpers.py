@@ -18,7 +18,13 @@ class eval_with:
 
     def __call__(self, code):
         try:
-            return eval(code, self.globals)
+            if isinstance(code, list):
+                return [self(x) for x in code]
+            elif isinstance(code, dict):
+                return {k: self(v) for k, v in code}
+            else:
+                return eval(code, self.globals)
+
         except Exception as err:
             raise Invalid(str(err)) from err
 
@@ -40,9 +46,6 @@ eval_freezerbox = eval_with(
         TEST_DIR=Path(__file__).parent,
 )
 eval_pytest = eval_with().all(pytest)
-
-empty_list = And('', lambda x: [])
-empty_dict = And('', lambda x: {})
 
 def empty_ok(x):
     return Or(x, And('', lambda y: type(x)()))
@@ -112,7 +115,7 @@ def error(x):
         err_type = err_eval(x['type'])
         err_messages = x.get('message', [])
         if not isinstance(err_messages, list):
-            err_messages = list(err_messages)
+            err_messages = [err_messages]
 
     # Normally I'd use `@contextmanager` to make a context manager like this, 
     # but generator-based context managers cannot be reused.  This is a problem 
