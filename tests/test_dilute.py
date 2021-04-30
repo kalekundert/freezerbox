@@ -5,7 +5,7 @@ import parametrize_from_file
 import inform
 
 from stepwise import Q, pl, table, format_text
-from freezerbox import Database, parse_fields, parse_fields_list
+from freezerbox import Database, parse_fields, parse_fields_list, cd
 from freezerbox.stepwise.dilute import *
 from schema_helpers import *
 from mock_model import *
@@ -41,7 +41,7 @@ app_expected_error_stderr=Schema({
 
 @parametrize_from_file(schema=given_expected_error)
 def test_parse_stock(given, expected, error):
-    with error:
+    with error, cd(TEST_DIR):
         assert list(parse_stock(given)) == expected
 
 @parametrize_from_file(schema=given_expected_error)

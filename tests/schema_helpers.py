@@ -13,6 +13,8 @@ from mock_model import MockReagent, MockMolecule
 from contextlib import nullcontext
 from pathlib import Path
 
+TEST_DIR = Path(__file__).parent
+
 class do_with:
 
     def __init__(self, globals=None, **kw_globals):
@@ -171,7 +173,7 @@ eval_freezerbox = eval_with(
         approx_Q=approx_Q,
         MockReagent=MockReagent,
         MockMolecule=MockMolecule,
-        TEST_DIR=Path(__file__).parent,
+        TEST_DIR=TEST_DIR,
 ).all(freezerbox)
 eval_pytest = eval_with().all(pytest)
 
