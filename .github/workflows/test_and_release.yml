@@ -32,7 +32,7 @@ jobs:
           flit install -s --extras=test
       - name: Run test suite
         run: |
-          pytest tests --cov freezerbox
+          pytest tests --cov freezerbox -vv
       - name: Report test coverage
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
