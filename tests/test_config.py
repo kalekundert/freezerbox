@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-import os, freezerbox, pytest
-from contextlib import contextmanager
+import freezerbox, pytest
 from pathlib import Path
-from freezerbox import load_config, ReagentConfig, MakerArgsConfig, Fields
+from freezerbox import load_config, ReagentConfig, MakerArgsConfig, Fields, cd
 from more_itertools import one, first
 
 from test_model import MockReagent
@@ -38,15 +37,8 @@ def test_config():
         assert config['database']['db2']['type'] == 'type2'
         assert config['database']['db2']['option'] == 'option2'
 
-@contextmanager
-def cd(dir):
-    try:
-        prev_cwd = Path.cwd()
-        os.chdir(dir)
-        yield
+    load_config.cache_clear()
 
-    finally:
-        os.chdir(prev_cwd)
 
 
 def test_reagent_config_tags_1():

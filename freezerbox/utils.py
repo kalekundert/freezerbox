@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import re
+import re, os
 from stepwise import Quantity
 from more_itertools import split_when
+from contextlib import contextmanager
 from .errors import ParseError, only_raise
 
 no_default = object()
@@ -233,4 +234,14 @@ def join_dicts(x):
 
 def join_sets(x):
     return set.union(set(), *x)
+
+@contextmanager
+def cd(dir):
+    try:
+        prev_cwd = os.getcwd()
+        os.chdir(dir)
+        yield
+
+    finally:
+        os.chdir(prev_cwd)
 

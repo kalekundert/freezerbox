@@ -5,59 +5,80 @@ import pytest
 import parametrize_from_file
 import networkx as nx
 import stepwise
+
+from stepwise import Quantity, Q
 from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
 from unittest.mock import MagicMock
-from mock_model import MockReagent
+from mock_model import MockReagent, MockMolecule
+from contextlib import nullcontext
 from pathlib import Path
 
-class eval_with:
+class do_with:
 
     def __init__(self, globals=None, **kw_globals):
         self.globals = globals or {}
         self.globals.update(kw_globals)
 
-    def __call__(self, code):
+    def all(self, module):
         try:
-            if isinstance(code, list):
-                return [self(x) for x in code]
-            elif isinstance(code, dict):
-                return {k: self(v) for k, v in code}
+            keys = module.__all__
+        except AttributeError:
+            keys = module.__dict__
+
+        self.globals.update({
+                k: module.__dict__[k]
+                for k in keys
+        })
+        return self
+
+class eval_with(do_with):
+
+    def __call__(self, src):
+        try:
+            if isinstance(src, list):
+                return [self(x) for x in src]
+            elif isinstance(src, dict):
+                return {k: self(v) for k, v in src.items()}
             else:
-                return eval(code, self.globals)
+                return eval(src, self.globals)
 
         except Exception as err:
             raise Invalid(str(err)) from err
 
-    def all(self, module):
-        self.globals.update({
-                k: module.__dict__[k]
-                for k in module.__all__
-        })
-        return self
+class exec_with(do_with):
 
-eval_freezerbox = eval_with(
-        freezerbox=freezerbox,
-        nx=nx,
-        Quantity=stepwise.Quantity,
-        Fields=freezerbox.Fields,
-        parse_fields=freezerbox.parse_fields,
-        parse_fields_list=freezerbox.parse_fields_list,
-        MockReagent=MockReagent,
-        TEST_DIR=Path(__file__).parent,
-)
-eval_pytest = eval_with().all(pytest)
+    def __init__(self, get, globals=None, **kw_globals):
+        super().__init__(globals, **kw_globals)
+        self.get = get
+
+    def __call__(self, src):
+        globals = self.globals.copy()
+
+        try:
+            exec(src, globals)
+        except Exception as err:
+            raise Invalid(str(err)) from err
+
+        if callable(self.get):
+            return self.get(globals)
+        else:
+            return globals[self.get]
+
+def eval_db(reagents):
+    db = freezerbox.Database()
+    schema = Schema(
+            empty_ok({
+                str: eval_freezerbox,
+            }),
+    )
+
+    for tag, reagent in schema(reagents).items():
+        db[tag] = reagent
+
+    return db
 
 def empty_ok(x):
     return Or(x, And('', lambda y: type(x)()))
-
-class nullcontext:
-    # This context manager is built in to python>=3.7
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *exc):
-        pass
 
 def error_or(**expected):
     schema = {}
@@ -137,6 +158,22 @@ def error(x):
                 return True
 
     return expect_error()
+
+def approx_Q(x):
+    q = Quantity.from_anything(x)
+    return pytest.approx(q, abs=Quantity(1e-6, q.unit))
+
+eval_freezerbox = eval_with(
+        freezerbox=freezerbox,
+        nx=nx,
+        Quantity=Quantity,
+        Q=Q,
+        approx_Q=approx_Q,
+        MockReagent=MockReagent,
+        MockMolecule=MockMolecule,
+        TEST_DIR=Path(__file__).parent,
+).all(freezerbox)
+eval_pytest = eval_with().all(pytest)
 
 
 class Params:

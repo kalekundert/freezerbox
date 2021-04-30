@@ -2,7 +2,7 @@
 test_make:
   -
     id: solo
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {'protocol': ['1']}),
@@ -18,7 +18,7 @@ test_make:
       - 3
   -
     id: combo
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {'protocol': ['1']}),
@@ -46,7 +46,7 @@ test_make:
       - 6
   -
     id: combo
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['merge'], {'protocol': ['1']}),
@@ -73,7 +73,7 @@ test_make:
       - 6
   -
     id: combo
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {'protocol': ['1']}),
@@ -102,7 +102,7 @@ test_make:
 
   -
     id: sw
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=parse_fields('sw step A'),
@@ -115,7 +115,7 @@ test_make:
       - C
   -
     id: sw
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=parse_fields('sw step A'),
@@ -133,7 +133,7 @@ test_make:
       - C
   -
     id: sw-cwd
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=parse_fields(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment_1'),
@@ -146,7 +146,7 @@ test_make:
     # Make sure the cwd is set individually for each maker.  This actually 
     # checks for a bug in stepwise, where the current working directory was 
     # calculated only the first time the library singleton was instantiated.
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=parse_fields(f'sw mock_protocol.sh cwd={TEST_DIR}/mock_project/notebook/mock_experiment_1'),
@@ -158,7 +158,7 @@ test_make:
       - B
   -
     id: sw-exmemo
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=parse_fields(f'sw mock_protocol.sh expt=1 project={TEST_DIR}/mock_project'),
@@ -169,7 +169,7 @@ test_make:
 
   -
     id: order
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=parse_fields('order vendor=IDT'),

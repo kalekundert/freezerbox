@@ -11,19 +11,16 @@ from os import getcwd
 
 @parametrize_from_file(
         schema=Schema({
-            'reagents': empty_ok({str: eval_freezerbox}),
+            'db': eval_db,
             'expected': empty_ok([str]),
         }),
 )
-def test_make(reagents, expected, disable_capture):
-    db = freezerbox.Database()
-    tags = list(reagents.keys())
+def test_make(db, expected, disable_capture, mock_plugins):
     cwd = getcwd()
 
-    for tag, reagent in reagents.items():
-        db[tag] = reagent
-
+    tags = list(db.keys())
     app = Make(db, tags)
+
     with disable_capture:
         assert app.protocol.steps == expected
 

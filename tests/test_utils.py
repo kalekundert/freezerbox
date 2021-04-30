@@ -134,9 +134,10 @@ def test_parse_conc(conc_str, mw, expected_nM, expected_ng_uL):
         q_given = Quantity(conc[k1], k1)
         q_expected = Quantity(expected[k2], k2)
         q_converted = convert_conc_unit(q_given, mw, k2)
-
-        assert q_converted.value == pytest.approx(q_expected.value)
-        assert q_converted.unit == q_expected.unit
+        assert q_converted == pytest.approx(
+                q_expected,
+                abs=Quantity(1e-6, k2),
+        )
 
 @parametrize_from_file(
         schema=Schema({

@@ -5,12 +5,13 @@ from freezerbox import load_db, parse_tag, Fields
 from freezerbox.model import *
 from pathlib import Path
 from schema_helpers import *
+from mock_model import *
 from datetime import datetime
 
 MOCK_DB = Path(__file__).parent / 'mock_excel_db'
 
-@pytest.fixture(scope='module')
-def db():
+@pytest.fixture(autouse=True)
+def db(mock_plugins):
     MOCK_CONFIG = {
             'use': 'mock',
             'database': {

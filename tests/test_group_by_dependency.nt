@@ -907,11 +907,11 @@ test_grouped_topological_sort:
 test_group_by_synthesis:
   -
     id: empty
-    reagents:
+    db:
     expected:
   -
     id: single
-    reagents:
+    db:
       x1: MockReagent(synthesis=Fields(['a'], {}))
     expected:
       -
@@ -919,7 +919,7 @@ test_group_by_synthesis:
         tags: x1
   -
     id: order-reagents
-    reagents:
+    db:
       x1: MockReagent(synthesis=Fields(['a'], {}))
       x2: MockReagent(synthesis=Fields(['a'], {}))
     expected:
@@ -928,7 +928,7 @@ test_group_by_synthesis:
         tags: x1 x2
   -
     id: order-reagents
-    reagents:
+    db:
       x2: MockReagent(synthesis=Fields(['a'], {}))
       x1: MockReagent(synthesis=Fields(['a'], {}))
     expected:
@@ -937,7 +937,7 @@ test_group_by_synthesis:
         tags: x2 x1
   -
     id: order-groups
-    reagents:
+    db:
       x1: MockReagent(synthesis=Fields(['a'], {}))
       x2: MockReagent(synthesis=Fields(['b'], {}))
     expected:
@@ -949,7 +949,7 @@ test_group_by_synthesis:
         tags: x2
   -
     id: order-groups
-    reagents:
+    db:
       x2: MockReagent(synthesis=Fields(['b'], {}))
       x1: MockReagent(synthesis=Fields(['a'], {}))
     expected:
@@ -961,7 +961,7 @@ test_group_by_synthesis:
         tags: x1
   -
     id: deps
-    reagents:
+    db:
       x1: MockReagent(synthesis=Fields(['a'], {}))
       x2: MockReagent(synthesis=Fields(['a'], {'deps': ['x1']}))
     expected:
@@ -973,7 +973,7 @@ test_group_by_synthesis:
         tags: x2
   -
     id: deps
-    reagents:
+    db:
       x1: MockReagent(synthesis=Fields(['a'], {'deps': ['x2']}))
       x2: MockReagent(synthesis=Fields(['a'], {}))
     expected:
@@ -985,7 +985,7 @@ test_group_by_synthesis:
         tags: x1
   -
     id: deps-ignore
-    reagents:
+    db:
       x1: MockReagent(synthesis=Fields(['a'], {'deps': ['x2']}))
     expected:
       -
@@ -995,11 +995,11 @@ test_group_by_synthesis:
 test_group_by_cleanup:
   -
     id: empty
-    reagents:
+    db:
     expected:
   -
     id: empty
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {}),
@@ -1008,7 +1008,7 @@ test_group_by_cleanup:
     expected:
   -
     id: single
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {}),
@@ -1022,7 +1022,7 @@ test_group_by_cleanup:
         ids: 1
   -
     id: deps
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {}),
@@ -1040,7 +1040,7 @@ test_group_by_cleanup:
         ids: 2
   -
     id: deps
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {}),
@@ -1066,7 +1066,7 @@ test_group_by_cleanup:
         ids: 2 4
   -
     id: deps
-    reagents:
+    db:
       x1:
         > MockReagent(
         >         synthesis=Fields(['a'], {}),

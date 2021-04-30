@@ -8,14 +8,13 @@ import freezerbox
 from freezerbox import (
         load_maker_factory, group_by_synthesis, group_by_cleanup,
         iter_combo_makers, group_by_identity,
-        join_lists, join_sets, unanimous, only_raise, QueryError,
+        join_lists, join_sets, unanimous, only_raise, QueryError, cd
 )
 from stepwise import Quantity
 from more_itertools import one, first
 from inform import plural
-from os import getcwd, chdir
+from os import getcwd
 from os.path import expanduser
-from contextlib import contextmanager
 
 @autoprop
 class Make(appcli.App):
@@ -76,7 +75,7 @@ not correspond to any stepwise commands, but are documented below:
 
     <command>
         The arguments to pass to stepwise.  Note that this may need to be 
-        quoted if characters such as equals (=), semi-colon (;), backslash (\), 
+        quoted if characters such as equals (=), semi-colon (;), backslash (\\), 
         or quotes themselves ('") appear in the command.
 
     deps=<tags>
@@ -305,16 +304,6 @@ def iter_makers(db, key, products):
 def label_products(products):
     tags = ', '.join(str(x.tag) for x in products)
     return f"Label the {plural(products):product/s}: {tags}"
-
-@contextmanager
-def cd(new_path):
-    try:
-        old_path = getcwd()
-        chdir(new_path)
-        yield
-
-    finally:
-        chdir(old_path)
 
 
 if __name__ == '__main__':

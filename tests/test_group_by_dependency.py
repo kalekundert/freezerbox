@@ -27,18 +27,14 @@ def test_grouped_topological_sort(nodes, edges, expected, error):
 
 @parametrize_from_file(
         schema=Schema({
-            'reagents': empty_ok({str: eval_freezerbox}),
+            'db': eval_db,
             'expected': empty_ok([{'arg0': str, 'tags': str}]),
         }),
 )
-def test_group_by_synthesis(reagents, expected):
-    db = freezerbox.Database()
-    for tag, reagent in reagents.items():
-        db[tag] = reagent
-
+def test_group_by_synthesis(db, expected, mock_plugins):
     actual = [
             (k, [str(v.tag) for v in vs])
-            for k, vs in freezerbox.group_by_synthesis(reagents.values())
+            for k, vs in freezerbox.group_by_synthesis(db.values())
     ]
     expected = [
             (x['arg0'], x['tags'].split())
@@ -49,18 +45,14 @@ def test_group_by_synthesis(reagents, expected):
 
 @parametrize_from_file(
         schema=Schema({
-            'reagents': empty_ok({str: eval_freezerbox}),
+            'db': eval_db,
             'expected': empty_ok([{'arg0': str, 'ids': str}]),
         }),
 )
-def test_group_by_cleanup(reagents, expected):
-    db = freezerbox.Database()
-    for tag, reagent in reagents.items():
-        db[tag] = reagent
-
+def test_group_by_cleanup(db, expected, mock_plugins):
     actual = [
             (k, [v.maker_args['id'] for v in vs])
-            for k, vs in freezerbox.group_by_cleanup(reagents.values())
+            for k, vs in freezerbox.group_by_cleanup(db.values())
     ]
     expected = [
             (x['arg0'], list(map(int, x['ids'].split())))

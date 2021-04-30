@@ -190,7 +190,7 @@ def test_reagent_maker_args_2():
     assert x1.cleanup_args[1][0] == 'm'
     assert x1.cleanup_args[1]['conc'] == '3 nM'
 
-def test_reagent_makers():
+def test_reagent_makers(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
@@ -224,7 +224,7 @@ def test_reagent_maker_err_1():
     with pytest.raises(QueryError, match="no synthesis specified"):
         x1.cleanup_makers
 
-def test_reagent_maker_err_2():
+def test_reagent_maker_err_2(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockReagent(
             # no synthesis
@@ -238,7 +238,7 @@ def test_reagent_maker_err_2():
     with pytest.raises(QueryError, match="no synthesis specified"):
         x1.cleanup_makers
 
-def test_reagent_get_maker_attr_1():
+def test_reagent_get_maker_attr_1(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
@@ -250,7 +250,7 @@ def test_reagent_get_maker_attr_1():
     assert x1.get_maker_attr('product_conc') == Quantity(3, 'nM')
     assert x1.get_maker_attr('product_conc', None) == Quantity(3, 'nM')
 
-def test_reagent_get_maker_attr_2():
+def test_reagent_get_maker_attr_2(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
@@ -262,7 +262,7 @@ def test_reagent_get_maker_attr_2():
     assert x1.get_maker_attr('product_conc') == Quantity(2, 'nM')
     assert x1.get_maker_attr('product_conc', None) == Quantity(2, 'nM')
 
-def test_reagent_get_maker_attr_3():
+def test_reagent_get_maker_attr_3(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
@@ -274,7 +274,7 @@ def test_reagent_get_maker_attr_3():
     assert x1.get_maker_attr('product_conc') == Quantity(1, 'nM')
     assert x1.get_maker_attr('product_conc', None) == Quantity(1, 'nM')
 
-def test_reagent_get_maker_attr_4():
+def test_reagent_get_maker_attr_4(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {}),
@@ -296,7 +296,7 @@ def test_reagent_get_maker_attr_5():
 
 
 @parametrize_from_file(schema=kwargs_schema())
-def test_molecule_seq(kwargs, expected, error):
+def test_molecule_seq(kwargs, expected, error, mock_plugins):
     db = Database()
     db['x1'] = x1 = MockMolecule(**kwargs)
     with error:
@@ -316,7 +316,7 @@ def test_molecule_length(kwargs, expected, error):
 @parametrize_from_file(
         schema=kwargs_schema([eval_freezerbox]),
 )
-def test_molecule_conc(kwargs, expected, error):
+def test_molecule_conc(kwargs, expected, error, mock_plugins):
     db = Database()
     db['x1'] = x1 = MockMolecule(**kwargs)
 
@@ -359,7 +359,7 @@ def test_protein_mw_err():
             'strandedness': eval,
         }),
 )
-def test_nucleic_acid_molecule(kwargs, expected, error):
+def test_nucleic_acid_molecule(kwargs, expected, error, mock_plugins):
     db = Database()
     db['f1'] = f1 = NucleicAcid(**kwargs)
     with error:
@@ -368,7 +368,7 @@ def test_nucleic_acid_molecule(kwargs, expected, error):
         assert f1.is_single_stranded == (expected['strandedness'] == 1)
 
 @parametrize_from_file(schema=kwargs_schema())
-def test_nucleic_acid_circular(kwargs, expected, error):
+def test_nucleic_acid_circular(kwargs, expected, error, mock_plugins):
     db = Database()
     db['f1'] = f1 = NucleicAcid(**kwargs)
     with error:
@@ -418,7 +418,7 @@ def test_oligo_tm(kwargs, expected, error):
         assert o1.tm == pytest.approx(expected)
 
 
-def test_intermediate():
+def test_intermediate(mock_plugins):
     db = Database()
     db['x1'] = x1 = MockMolecule(
             synthesis=Fields('m', {'conc': '1 nM'}),

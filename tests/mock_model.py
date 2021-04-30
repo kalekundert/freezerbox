@@ -69,5 +69,23 @@ class MockComboMaker:
         self.products = products
         self.protocol = stepwise.Protocol(steps=steps)
         self.dependencies = deps
+class MockEntryPoint:
+
+    def __init__(self, plugin):
+        self.plugin = plugin
+
+    def load(self):
+        return self.plugin
 
 MockMaker = MockSoloMaker
+
+@pytest.fixture
+def mock_plugins(monkeypatch):
+    from string import ascii_lowercase
+    monkeypatch.setattr(freezerbox.model, 'MAKER_PLUGINS', {
+        **freezerbox.model.MAKER_PLUGINS,
+        'mock': MockEntryPoint(MockSoloMaker),
+        'merge': MockEntryPoint(MockComboMaker),
+        **{k: MockEntryPoint(MockSoloMaker) for k in ascii_lowercase},
+    })
+

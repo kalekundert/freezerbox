@@ -45,6 +45,7 @@ excel = "freezerbox.loaders.excel"
 [tool.flit.entrypoints."freezerbox.make"]
 sw = "freezerbox.stepwise.make:StepwiseMaker"
 order = "freezerbox.stepwise.make:OrderMaker"
+dilute = "freezerbox.stepwise.dilute:Dilute"
 
 [tool.flit.entrypoints."stepwise.protocols"]
 protocols = "freezerbox.stepwise:Plugin"

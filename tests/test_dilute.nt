@@ -1,0 +1,733 @@
+test_parse_stock:
+  -
+    given: ''
+    expected:
+      - Stock('', None, None)
+  -
+    given: 'x1'
+    expected:
+      - Stock('x1', None, None)
+  -
+    given: 'x1:'
+    expected:
+      - Stock('x1', None, None)
+  -
+    given: ':50'
+    expected:
+      - Stock('', Q('50 ng/µL'), None)
+  -
+    given: ':50nM'
+    expected:
+      - Stock('', Q('50 nM'), None)
+  -
+    given: '::100_000'
+    expected:
+      - Stock('', None, 100_000)
+  -
+    given: '::1e6'
+    expected:
+      - Stock('', None, 1e6)
+  -
+    given: 'x1:50:1e6'
+    expected:
+      - Stock('x1', Q('50 ng/µL'), 1e6)
+  -
+    given: ':50:1e6'
+    expected:
+      - Stock('', Q('50 ng/µL'), 1e6)
+  -
+    given: 'mock_nanodrop/nanodrop_one.tsv'
+    expected:
+      - Stock('x1', Q('500 ng/µL'), None)
+      - Stock('x2', Q('400 ng/µL'), None)
+  -
+    given: 'mock_nanodrop/nanodrop_2000.tsv'
+    expected:
+      - Stock('x1', Q('500 ng/µL'), None)
+      - Stock('x2', Q('400 ng/µL'), None)
+  -
+    given: ':::'
+    error:
+      type: ValueError
+      message: expected 1-3 colon-separated fields, got 4: ':::'
+
+test_parse_conc:
+  -
+    given: ''
+    expected: None
+  -
+    given: '50'
+    expected: Q('50 ng/µL')
+  -
+    given: 50
+    expected: Q('50 ng/µL')
+  -
+    given: '50 nM'
+    expected: Q('50 nM')
+  -
+    given: 'nM'
+    error:
+      type: ValueError
+      message: cannot parse 'nM' as a concentration
+
+test_parse_mw:
+  -
+    given: ''
+    expected: None
+  -
+    given: '1441370.4'
+    expected: approx(1441370.4)
+  -
+    given: '1.44e7'
+    expected: approx(1.44e7)
+
+test_parse_volume:
+  -
+    given: '10'
+    expected: 10
+  -
+    given: '10,20'
+    expected: [10, 20]
+
+test_dilute_concs:
+  -
+    id: conc-attr
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x', Q('50 nM')),
+      > ])
+      > app.target_conc = Q('25 nM')
+    expected:
+      -
+        tag: 'x'
+        target_conc: Q('25 nM')
+        stock_conc: Q('50 nM')
+        stock_conc_converted: Q('50 nM')
+        mw: None
+  -
+    id: conc-db
+    db:
+      x1: MockMolecule(conc=Q('30 nM'))
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('50 nM')),
+      > ])
+    expected:
+      -
+        tag: 'x1'
+        target_conc: Q('30 nM')
+        stock_conc: Q('50 nM')
+        stock_conc_converted: Q('50 nM')
+        mw: None
+  -
+    id: conc-err
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x', Q('50 nM')),
+      > ])
+    error:
+      type: ValueError
+      message: x: no target concentration specified
+  -
+    id: stock-attr
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x'),
+      > ])
+      > app.target_conc = Q('25 nM')
+      > app.stock_conc = Q('55 nM')
+    expected:
+      -
+        tag: 'x'
+        target_conc: Q('25 nM')
+        stock_conc: Q('55 nM')
+        stock_conc_converted: Q('55 nM')
+        mw: None
+  -
+    id: stock-db
+    db:
+      x1: MockMolecule(conc=Q('60 nM'))
+    app:
+      > app = Dilute([
+      >     Stock('x1'),
+      > ])
+      > app.target_conc = Q('25 nM')
+    expected:
+      -
+        tag: 'x1'
+        target_conc: Q('25 nM')
+        stock_conc: Q('60 nM')
+        stock_conc_converted: approx_Q('60 nM')
+        mw: None
+  -
+    id: stock-err
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x'),
+      > ])
+      > app.target_conc = Q('25 nM')
+    error:
+      type: ValueError
+      message: x: no stock concentration specified
+  -
+    id: mw-arg
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x', Q('50 nM'), 1e6),
+      > ])
+      > app.target_conc = Q('25 nM')
+    expected:
+      -
+        tag: 'x'
+        target_conc: Q('25 nM')
+        stock_conc: Q('50 nM')
+        stock_conc_converted: Q('50 nM')
+        mw: 1e6
+  -
+    id: mw-attr
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x', Q('50 nM')),
+      > ])
+      > app.target_conc = Q('25 nM')
+      > app.mw = 2e6
+    expected:
+      -
+        tag: 'x'
+        target_conc: Q('25 nM')
+        stock_conc: Q('50 nM')
+        stock_conc_converted: Q('50 nM')
+        mw: 2e6
+  -
+    id: mw-db
+    db:
+      x1: MockMolecule(mw=3e6)
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('50 nM')),
+      > ])
+      > app.target_conc = Q('25 nM')
+    expected:
+      -
+        tag: 'x1'
+        target_conc: Q('25 nM')
+        stock_conc: Q('50 nM')
+        stock_conc_converted: Q('50 nM')
+        mw: 3e6
+  -
+    id: convert
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x', Q('50 nM'), 1e6),
+      > ])
+      > app.target_conc = Q('25 ng/µL')
+    expected:
+      -
+        tag: 'x'
+        target_conc: Q('25 ng/µL')
+        stock_conc: Q('50 nM')
+        stock_conc_converted: approx_Q('50 ng/µL')
+        mw: approx(1e6)
+  -
+    id: multiple
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('70 nM')),
+      >     Stock('x2', Q('80 nM')),
+      > ])
+      > app.target_conc = Q('25 nM')
+    expected:
+      -
+        tag: 'x1'
+        target_conc: Q('25 nM')
+        stock_conc: Q('70 nM')
+        stock_conc_converted: Q('70 nM')
+        mw: None
+      -
+        tag: 'x2'
+        target_conc: Q('25 nM')
+        stock_conc: Q('80 nM')
+        stock_conc_converted: Q('80 nM')
+        mw: None
+
+test_dilute_dilutions:
+  -
+    id: stock-volume
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      >     Stock('x2', Q('10 nM')),
+      >     Stock('x3', Q('1 nM')),
+      >     Stock('x4', Q('0 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.stock_volume_uL = 10
+    expected:
+      -
+        stock_uL: 10
+        diluent_uL: 90
+        final_conc: Q('10 nM')
+      -
+        stock_uL: 10
+        diluent_uL: 0
+        final_conc: Q('10 nM')
+      -
+        stock_uL: 10
+        diluent_uL: 0
+        final_conc: Q('1 nM')
+      -
+        stock_uL: 10
+        diluent_uL: 0
+        final_conc: Q('0 nM')
+    stderr:
+      > the following stocks are too dilute: x3, x4
+  -
+    id: diluent-volume
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      >     Stock('x2', Q('10 nM')),
+      >     Stock('x3', Q('1 nM')),
+      >     Stock('x4', Q('0 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.diluent_volume_uL = 90
+    expected:
+      -
+        stock_uL: 10
+        diluent_uL: 90
+        final_conc: Q('10 nM')
+      -
+        stock_uL: 'any'
+        diluent_uL: 0
+        final_conc: Q('10 nM')
+      -
+        stock_uL: 'any'
+        diluent_uL: 0
+        final_conc: Q('1 nM')
+      -
+        stock_uL: 'any'
+        diluent_uL: 0
+        final_conc: Q('0 nM')
+    stderr:
+      > the following stocks are too dilute: x3, x4
+  -
+    id: target-volume
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      >     Stock('x2', Q('10 nM')),
+      >     Stock('x3', Q('1 nM')),
+      >     Stock('x4', Q('0 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.target_volume_uL = 100
+    expected:
+      -
+        stock_uL: 10
+        diluent_uL: 90
+        final_conc: Q('10 nM')
+      -
+        stock_uL: 100
+        diluent_uL: 0
+        final_conc: Q('10 nM')
+      -
+        stock_uL: 100
+        diluent_uL: 0
+        final_conc: Q('1 nM')
+      -
+        stock_uL: 100
+        diluent_uL: 0
+        final_conc: Q('0 nM')
+    stderr:
+      > the following stocks are too dilute: x3, x4
+  -
+    id: warn-singular
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('1 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.stock_volume_uL = 10
+    expected:
+      -
+        stock_uL: 10
+        diluent_uL: 0
+        final_conc: Q('1 nM')
+    stderr:
+      > the following stock is too dilute: x1
+  -
+    id: err-no-volume
+    app:
+      > app = Dilute([])
+    error:
+      type: ValueError
+      message: no volumes specified
+  -
+    id: err-ambiguous-volume
+    app:
+      > app = Dilute([])
+      > app.stock_volume_uL = 10
+      > app.diluent_volume_uL = 10
+    error:
+      type: ValueError
+      message: specified stock volume and diluent volume
+  -
+    id: err-ambiguous-volume
+    app:
+      > app = Dilute([])
+      > app.diluent_volume_uL = 10
+      > app.target_volume_uL = 10
+    error:
+      type: ValueError
+      message: specified diluent volume and target volume
+  -
+    id: err-ambiguous-volume
+    app:
+      > app = Dilute([])
+      > app.stock_volume_uL = 10
+      > app.target_volume_uL = 10
+    error:
+      type: ValueError
+      message: specified stock volume and target volume
+
+test_dilute_protocol:
+  -
+    id: singular
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.target_volume_uL = 100
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solution to 10 nM [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol'],
+          >         rows=[
+          >             ['x1', '10.00 µL', '90.00 µL'],
+          >         ],
+          >         align='<>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '100 nM', '10 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: plural
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      >     Stock('x2', Q('50 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.target_volume_uL = 100
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solutions to 10 nM [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol'],
+          >         rows=[
+          >             ['x1', '10.00 µL', '90.00 µL'],
+          >             ['x2', '20.00 µL', '80.00 µL'],
+          >         ],
+          >         align='<>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '100 nM', '10 nM'],
+          >             ['x2', '?', '50 nM', '10 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: conc-multiple-targets
+    db:
+      x1: MockMolecule(conc=Q('10 nM'))
+      x2: MockMolecule(conc=Q('20 nM'))
+    app:
+      > app = Dilute([
+      >     Stock('x1'),
+      >     Stock('x2'),
+      > ])
+      > app.stock_conc = Q('100 nM')
+      > app.target_volume_uL = 100
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solutions [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol', 'Final Conc'],
+          >         rows=[
+          >             ['x1', '10.00 µL', '90.00 µL', '10 nM'],
+          >             ['x2', '20.00 µL', '80.00 µL', '20 nM'],
+          >         ],
+          >         align='<>>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '100 nM', '10 nM'],
+          >             ['x2', '?', '100 nM', '20 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: conc-too-dilute
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      >     Stock('x2', Q('1 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.target_volume_uL = 100
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solutions to 10 nM [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol', 'Final Conc'],
+          >         rows=[
+          >             ['x1',  '10.00 µL', '90.00 µL', '10 nM'],
+          >             ['x2', '100.00 µL',  '0.00 µL',  '1 nM'],
+          >         ],
+          >         align='<>>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '100 nM', '10 nM'],
+          >             ['x2', '?',   '1 nM', '10 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: convert-stock-conc
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 ng/µL'), 1e6),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.target_volume_uL = 100
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solution to 10 nM [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol'],
+          >         rows=[
+          >             ['x1', '10.00 µL', '90.00 µL'],
+          >         ],
+          >         align='<>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '1000000.0', '100 ng/µL = 100 nM', '10 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: diluent-with-conc
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('100 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.target_volume_uL = 100
+      > app.diluent = 'water'
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solution to 10 nM in water [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol'],
+          >         rows=[
+          >             ['x1', '10.00 µL', '90.00 µL'],
+          >         ],
+          >         align='<>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '100 nM', '10 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: diluent-without-conc
+    db:
+      x1: MockMolecule(conc=Q('10 nM'))
+      x2: MockMolecule(conc=Q('20 nM'))
+    app:
+      > app = Dilute([
+      >     Stock('x1'),
+      >     Stock('x2'),
+      > ])
+      > app.stock_conc = Q('100 nM')
+      > app.target_volume_uL = 100
+      > app.diluent = 'water'
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solutions in water [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol', 'Final Conc'],
+          >         rows=[
+          >             ['x1', '10.00 µL', '90.00 µL', '10 nM'],
+          >             ['x2', '20.00 µL', '80.00 µL', '20 nM'],
+          >         ],
+          >         align='<>>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '100 nM', '10 nM'],
+          >             ['x2', '?', '100 nM', '20 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: stock-volume-any
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1', Q('10 nM')),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.diluent_volume_uL = 90
+    expected:
+      steps:
+        -
+          > pl(
+          >     "Dilute the following stock solution to 10 nM [1]:",
+          >     table(
+          >         header=['Name', 'Stock Vol', 'Diluent Vol'],
+          >         rows=[
+          >             ['x1', 'any', '0.00 µL'],
+          >         ],
+          >         align='<>>',
+          >     ),
+          > )
+      footnotes:
+        1:
+          > pl(
+          >     "Concentrations:",
+          >     table(
+          >         header=['Name', 'MW', 'Stock Conc', 'Target Conc'],
+          >         rows=[
+          >             ['x1', '?', '10 nM', '10 nM'],
+          >         ],
+          >         align='<>>>',
+          >     )
+          > )
+  -
+    id: stub-1
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1'),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.show_stub = True
+    expected:
+      steps:
+        - "Dilute x1 to 10 nM."
+      footnotes: {}
+  -
+    id: stub-2
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1'),
+      >     Stock('x2'),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.show_stub = True
+    expected:
+      steps:
+        - "Dilute x1 and x2 to 10 nM."
+      footnotes: {}
+  -
+    id: stub-diluent
+    db:
+    app:
+      > app = Dilute([
+      >     Stock('x1'),
+      > ])
+      > app.target_conc = Q('10 nM')
+      > app.show_stub = True
+      > app.diluent = 'water'
+    expected:
+      steps:
+        - "Dilute x1 to 10 nM in water."
+      footnotes: {}
