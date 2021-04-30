@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.9.0 (2021-04-30)
+### Feature
+* Add the `dilute` protocol ([`ffe0276`](https://github.com/kalekundert/freezerbox/commit/ffe02769dfddb84802634cbc9c99627ccad0a765))
+
+### Documentation
+* Describe how to specify protocols for use with make ([`6df0a9b`](https://github.com/kalekundert/freezerbox/commit/6df0a9b91490be53f48262007f68b09c12952cf9))
+
 ## v0.8.0 (2021-04-27)
 ### Feature
 * Expand ~ in directory fields ([`4e0e8b7`](https://github.com/kalekundert/freezerbox/commit/4e0e8b789bc296e85d7a04fbae09f5ed0fa98036))
