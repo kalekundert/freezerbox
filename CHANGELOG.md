@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.10.1 (2021-05-05)
+### Fix
+* Respect empty databases ([`c81a511`](https://github.com/kalekundert/freezerbox/commit/c81a5112b05452a7be9d360f6ff152b45b478810))
+
 ## v0.10.0 (2021-05-05)
 ### Feature
 * Add dependency getter to `Reagent` class ([`fb40b17`](https://github.com/kalekundert/freezerbox/commit/fb40b170a6d5668e172b662cd60135ecc9c59bb5))
