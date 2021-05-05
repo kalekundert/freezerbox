@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.10.0 (2021-05-05)
+### Feature
+* Add dependency getter to `Reagent` class ([`fb40b17`](https://github.com/kalekundert/freezerbox/commit/fb40b170a6d5668e172b662cd60135ecc9c59bb5))
+* Add `parse_mass_ug()` ([`37a4e4c`](https://github.com/kalekundert/freezerbox/commit/37a4e4c229cec697f98200caef1ed3350d53477c))
+
 ## v0.9.0 (2021-04-30)
 ### Feature
 * Add the `dilute` protocol ([`ffe0276`](https://github.com/kalekundert/freezerbox/commit/ffe02769dfddb84802634cbc9c99627ccad0a765))
