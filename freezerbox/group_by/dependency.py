@@ -33,7 +33,7 @@ def group_by_synthesis(products):
         )
 
     for product in products:
-        for dep in product.synthesis_maker.dependencies:
+        for dep in product.dependencies:
             dep = parse_tag(dep)
             if dep in deps:
                 deps.add_edge(dep, product.tag)

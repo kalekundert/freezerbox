@@ -177,6 +177,9 @@ class Reagent:
     def get_desc(self):
         return self._attrs.get('desc', '')
 
+    def get_dependencies(self):
+        return set(self.synthesis_maker.dependencies)
+
     def get_maker_attr(self, attr, default=no_default):
         try:
             makers = [self.synthesis_maker, *self.cleanup_makers]
