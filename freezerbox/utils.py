@@ -121,6 +121,21 @@ def parse_volume_uL(vol_str):
     raise ParseError(f"can't interpret {vol_str!r} as a volume, did you forget a unit?")
 
 @only_raise(ParseError)
+def parse_mass_ug(mass_str):
+    mass_pattern = fr'(?P<mass>\d+)\s*(?P<si_prefix>[nµum])g'
+    si_prefixes = {
+            'n': 1e-3,
+            'u': 1,
+            'µ': 1,
+            'm': 1e3,
+    }
+
+    if m := re.fullmatch(mass_pattern, mass_str):
+        return float(m.group('mass')) * si_prefixes[m.group('si_prefix')]
+
+    raise ParseError(f"can't interpret {mass_str!r} as a mass, did you forget a unit?")
+
+@only_raise(ParseError)
 def parse_conc_nM(conc_str, mw):
     conc_pattern = r'(?P<conc>\d+)\s?(?P<unit>[nuµ]M|ng/[uµ]L)'
     unit_conversion = {

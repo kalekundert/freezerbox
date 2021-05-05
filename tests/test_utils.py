@@ -107,6 +107,18 @@ def test_parse_volume_uL(vol_str, expected, error):
 
 @parametrize_from_file(
         schema=Schema({
+            'mass_str': str,
+            **error_or(**{
+                'expected': Coerce(float),
+            }),
+        }),
+)
+def test_parse_mass_ug(mass_str, expected, error):
+    with error:
+        assert parse_mass_ug(mass_str) == expected
+
+@parametrize_from_file(
+        schema=Schema({
             'conc_str': str,
             'mw': Coerce(float),
             'expected_nM': Coerce(float),

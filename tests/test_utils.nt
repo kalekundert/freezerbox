@@ -250,6 +250,41 @@ test_parse_volume_uL:
       type: ParseError
       message: can't interpret '1 xL' as a volume
 
+test_parse_mass_ug:
+  -
+    mass_str: 1ug
+    expected: 1
+  -
+    mass_str: 1 ug
+    expected: 1
+  -
+    mass_str: 1µg
+    expected: 1
+  -
+    mass_str: 1 µg
+    expected: 1
+  -
+    mass_str: 1 mg
+    expected: 1000
+  -
+    mass_str: 100 ng
+    expected: 0.1
+  -
+    mass_str:
+    error:
+      type: ParseError
+      message: can't interpret '' as a mass
+  -
+    mass_str: 1
+    error:
+      type: ParseError
+      message: can't interpret '1' as a mass
+  -
+    mass_str: 1 xg
+    error:
+      type: ParseError
+      message: can't interpret '1 xg' as a mass
+
 test_parse_conc:
   -
     conc_str: 4 nM
