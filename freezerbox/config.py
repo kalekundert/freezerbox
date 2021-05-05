@@ -51,7 +51,7 @@ class ReagentConfig:
             # the path to the database in error messages if any subsequent 
             # steps fail.
 
-            if not self.db:
+            if self.db is None:
                 try:
                     self.db = self.config.db_getter(self.obj)
                 except AttributeError:
@@ -76,11 +76,11 @@ class ReagentConfig:
 
             # Third: Load the database.
 
-            if not self.db and self.config.autoload_db:
+            if self.db is None and self.config.autoload_db:
                 from .model import load_db
                 self.db = load_db()
 
-            if not self.db:
+            if self.db is None:
                 raise KeyError("no freezerbox database found")
 
             # Fourth: Lookup the key as an attribute of the selected reagents.
@@ -97,7 +97,7 @@ class ReagentConfig:
             return self.config.transform(values)
 
         def get_location(self):
-            return self.db.name if self.db else "*no database loaded*"
+            return self.db.name if self.db is not None else "*no database loaded*"
 
     def __init__(self, tag_getter=None, db_getter=None, autoload_db=None, transform=None):
         cls = self.__class__

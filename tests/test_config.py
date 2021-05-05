@@ -40,7 +40,6 @@ def test_config():
     load_config.cache_clear()
 
 
-
 def test_reagent_config_tags_1():
     db = freezerbox.Database(name='a')
     db['x1'] = MockReagent(name='1')
@@ -158,6 +157,20 @@ def test_reagent_config_db_not_found():
         layer.values['name']
 
     assert layer.location == '*no database loaded*'
+
+def test_reagent_config_empty_db():
+    db = freezerbox.Database(name='a')
+
+    obj = MockObj()
+    config = ReagentConfig()
+    layer = one(config.load(obj))
+
+    obj.db = db
+    obj.tag = []
+
+    assert layer.values['x'] == []
+    assert layer.values.db is db
+    assert layer.location == 'a'
 
 def reagent_config_from_ctor():
     return ReagentConfig(
