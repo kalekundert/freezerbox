@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.11.0 (2021-06-01)
+### Feature
+* Allow conversions to/from µg/µL ([`c8e46b1`](https://github.com/kalekundert/freezerbox/commit/c8e46b1789e9712a469d6cd172177e47824fe5d9))
+
 ## v0.10.1 (2021-05-05)
 ### Fix
 * Respect empty databases ([`c81a511`](https://github.com/kalekundert/freezerbox/commit/c81a5112b05452a7be9d360f6ff152b45b478810))
