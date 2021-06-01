@@ -184,6 +184,8 @@ def convert_conc_unit(conc, mw, new_unit):
     mass_volume_conversion_factors = {
             'ng/uL': 1e3,
             'ng/µL': 1e3,
+            'µg/µL': 1,
+            'ug/uL': 1,
             'mg/mL': 1,
     }
 
