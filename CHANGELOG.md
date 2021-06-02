@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.12.0 (2021-06-02)
+### Feature
+* Infer molecular weight from length ([`94a2d80`](https://github.com/kalekundert/freezerbox/commit/94a2d801523a8f4833a77266dfd09bbb5abec3d2))
+
 ## v0.11.0 (2021-06-01)
 ### Feature
 * Allow conversions to/from µg/µL ([`c8e46b1`](https://github.com/kalekundert/freezerbox/commit/c8e46b1789e9712a469d6cd172177e47824fe5d9))
