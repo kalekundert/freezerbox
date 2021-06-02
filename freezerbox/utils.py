@@ -227,6 +227,50 @@ def parse_size_bp(size_str):
 
     raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
 
+def parse_stranded_molecule(molecule, default_strandedness=None):
+    """
+    Parse the molecule type (e.g. suitable input for Biopython functions) 
+    and strandedness from a molecule string.  
+    """
+    if isinstance(molecule, tuple):
+        return molecule
+
+    stranded_molecules = {
+            'dna':   (0, 'DNA'),
+            'ssdna': (1, 'DNA'),
+            'dsdna': (2, 'DNA'),
+            'rna':   (0, 'RNA'),
+            'ssrna': (1, 'RNA'),
+            'dsrna': (2, 'RNA'),
+    }
+    try:
+        strandedness, molecule = stranded_molecules[molecule.lower()]
+    except KeyError:
+        err = ParseError(molecule=molecule)
+        err.brief = "unknown molecule type: {molecule!r}"
+        err.info += f"expected: {', '.join(map(repr, stranded_molecules))}"
+        raise err
+
+    if not strandedness:
+        strandedness = default_strandedness
+
+    if not strandedness:
+        strandedness = {'DNA': 2, 'RNA': 1}[molecule]
+
+    return molecule, strandedness
+
+def mw_from_length(len, molecule='dna'):
+    molecule, strandedness = parse_stranded_molecule(molecule)
+
+    # Parameters from: 
+    # https://www.thermofisher.com/us/en/home/references/ambion-tech-support/rna-tools-and-calculators/dna-and-rna-molecular-weights-and-conversions.html
+    params = {
+            'DNA': (303.7, 79),
+            'RNA': (320.5, 159),
+    }
+    m, b = params[molecule]
+    return (m * len + b) * strandedness
+
 def unanimous(items):
     it = iter(items)
 

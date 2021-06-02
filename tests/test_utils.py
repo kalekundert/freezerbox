@@ -8,6 +8,7 @@ from freezerbox.model import *
 from freezerbox.utils import *
 from stepwise import Quantity
 from schema_helpers import *
+from pytest import approx
 
 class PrefixParams(Params):
     args = 'args, expected'
@@ -177,6 +178,30 @@ def test_parse_conc_err(conc_str, mw, error):
 def test_parse_size_bp(size_str, expected, error):
     with error:
         assert parse_size_bp(size_str) == expected
+
+@parametrize_from_file(
+        schema=Schema({
+            'molecule': eval,
+            Optional('default_strandedness', default='None'): eval,
+            **error_or(**{
+                'expected': eval,
+            }),
+        })
+)
+def test_parse_stranded_molecule(molecule, default_strandedness, expected, error):
+    with error:
+        actual = parse_stranded_molecule(molecule, default_strandedness)
+        assert actual == expected
+
+@parametrize_from_file(
+        schema=Schema({
+            'len': Coerce(int),
+            'molecule': eval,
+            'expected': Coerce(float),
+        }),
+)
+def test_mw_from_length(len, molecule, expected):
+    assert mw_from_length(len, molecule) == approx(expected)
 
 @parametrize_from_file(
         schema=Schema({

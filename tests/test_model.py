@@ -375,21 +375,16 @@ def test_nucleic_acid_circular(kwargs, expected, error, mock_plugins):
         assert f1.is_circular == expected
         assert f1.is_linear == (not expected)
 
-def test_nucleic_acid_mw():
+@parametrize_from_file(
+        schema=kwargs_schema(),
+)
+def test_nucleic_acid_mw(kwargs, expected, error):
     # 5'-phosphorylation assumed.
     # http://molbiotools.com/dnacalculator.html
     db = Database()
-    db['f1'] = f1 = NucleicAcid(seq='ATCG')
-    assert f1.is_circular == (not f1.is_linear) == False
-    assert f1.is_double_stranded == (not f1.is_single_stranded) == True
-    assert f1.mw == pytest.approx(2347.65, abs=0.1)
-
-def test_nucleic_acid_mw_err():
-    db = Database()
-    db['f1'] = f1 = NucleicAcid(seq='X')
-
-    with pytest.raises(QueryError, match="'X' is not a valid unambiguous letter for DNA"):
-        f1.mw
+    db['f1'] = f1 = NucleicAcid(**kwargs)
+    with error:
+        assert f1.mw == pytest.approx(expected, abs=0.1)
 
 def test_plasmid_mw():
     # http://molbiotools.com/dnacalculator.html

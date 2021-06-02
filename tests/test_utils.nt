@@ -431,6 +431,141 @@ test_parse_size_bp:
       type: ParseError
       message: can't interpret '1.5 bp' as a size
 
+test_parse_stranded_molecule:
+  -
+    id: dsdna
+    molecule: 'dna'
+    expected: ('DNA', 2)
+  -
+    id: dsdna
+    molecule: 'DNA'
+    expected: ('DNA', 2)
+  -
+    id: dsdna
+    molecule: 'dsdna'
+    expected: ('DNA', 2)
+  -
+    id: dsdna
+    molecule: 'dsDNA'
+    expected: ('DNA', 2)
+  -
+    id: dsdna
+    molecule: ('DNA', 2)
+    expected: ('DNA', 2)
+
+  -
+    id: ssdna
+    molecule: 'ssdna'
+    expected: ('DNA', 1)
+  -
+    id: ssdna
+    molecule: 'ssDNA'
+    expected: ('DNA', 1)
+  -
+    id: ssdna
+    molecule: 'dna'
+    default_strandedness: 1
+    expected: ('DNA', 1)
+  -
+    id: ssdna
+    molecule: 'DNA'
+    default_strandedness: 1
+    expected: ('DNA', 1)
+  -
+    id: ssdna
+    molecule: ('DNA', 1)
+    expected: ('DNA', 1)
+
+  -
+    id: ssrna
+    molecule: 'rna'
+    expected: ('RNA', 1)
+  -
+    id: ssrna
+    molecule: 'RNA'
+    expected: ('RNA', 1)
+  -
+    id: ssrna
+    molecule: 'ssrna'
+    expected: ('RNA', 1)
+  -
+    id: ssrna
+    molecule: 'ssRNA'
+    expected: ('RNA', 1)
+  -
+    id: ssrna
+    molecule: ('RNA', 1)
+    expected: ('RNA', 1)
+
+  -
+    id: dsrna
+    molecule: 'dsrna'
+    expected: ('RNA', 2)
+  -
+    id: dsrna
+    molecule: 'dsRNA'
+    expected: ('RNA', 2)
+  -
+    id: dsrna
+    molecule: 'rna'
+    default_strandedness: 2
+    expected: ('RNA', 2)
+  -
+    id: dsrna
+    molecule: 'RNA'
+    default_strandedness: 2
+    expected: ('RNA', 2)
+
+  -
+    id: err
+    molecule: 'xyz'
+    error:
+      type: ParseError
+      message:
+        - unknown molecule type: 'xyz'
+        - expected: 'dna', 'ssdna', 'dsdna', 'rna', 'ssrna', 'dsrna'
+
+test_mw_from_length:
+  # https://www.thermofisher.com/us/en/home/references/ambion-tech-support/rna-tools-and-calculators/dna-and-rna-molecular-weights-and-conversions.html
+  -
+    len: 20
+    molecule: 'ssRNA'
+    expected: 6569
+  -
+    len: 20
+    molecule: ('RNA', 1)
+    expected: 6569
+  -
+    len: 100
+    molecule: 'ssRNA'
+    expected: 32209
+
+  -
+    len: 20
+    molecule: 'ssDNA'
+    expected: 6153
+  -
+    len: 20
+    molecule: ('DNA', 1)
+    expected: 6153
+  -
+    len: 100
+    molecule: 'ssDNA'
+    expected: 30449
+
+  -
+    len: 20
+    molecule: 'dsDNA'
+    expected: 12306
+  -
+    len: 20
+    molecule: ('DNA', 2)
+    expected: 12306
+  -
+    len: 100
+    molecule: 'dsDNA'
+    expected: 60898
+
 test_unanimous:
   -
     items: []

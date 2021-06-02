@@ -106,7 +106,7 @@ test_molecule_length:
     kwargs:
     error:
       type: QueryError
-      message: no sequence specified
+      message: no length specified
 
 test_molecule_conc:
   -
@@ -351,6 +351,63 @@ test_nucleic_acid_circular:
       circular: False
       synthesis: Fields(['m'], {'circular': 'y'})
     expected: False
+
+test_nucleic_acid_mw:
+  -
+    id: mw
+    kwargs:
+      mw: 1000
+    expected: 1000
+  -
+    id: seq
+    kwargs:
+      seq: 'ATCG'
+    expected: 2347.65
+  -
+    id: length
+    kwargs:
+      # https://www.thermofisher.com/us/en/home/references/ambion-tech-support/rna-tools-and-calculators/dna-and-rna-molecular-weights-and-conversions.html
+      length: 20
+    expected: 12306
+  -
+    id: mw-seq
+    kwargs:
+      mw: 1000
+      seq: 'ATCG'
+    expected: 1000
+  -
+    id: mw-length
+    kwargs:
+      mw: 1000
+      length: 20
+    expected: 1000
+  -
+    id: seq-length
+    kwargs:
+      seq: 'ATCG'
+      length: 20
+    expected: 2347.65
+  -
+    id: mw-seq-length
+    kwargs:
+      mw: 1000
+      seq: 'ATCG'
+      length: 20
+    expected: 1000
+
+  -
+    id: err
+    kwargs:
+      seq: 'X'
+    error:
+      type: QueryError
+      message: 'X' is not a valid unambiguous letter
+  -
+    id: err
+    kwargs:
+    error:
+      type: QueryError
+      message: need sequence or length to calculate molecular weight
 
 test_oligo_tm:
   -

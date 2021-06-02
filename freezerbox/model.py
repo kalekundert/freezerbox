@@ -303,7 +303,10 @@ class Molecule(Reagent):
         return seq
 
     def get_length(self):
-        return self._attrs.get('length') or len(self.seq)
+        try:
+            return self._attrs.get('length') or len(self.seq)
+        except QueryError:
+            raise QueryError("no length specified", culprit=self)
 
     def get_mw(self):
         mw = self._attrs.get('mw')
@@ -345,6 +348,7 @@ class Molecule(Reagent):
 
     def get_conc_ng_uL(self):
         return self.get_conc('ng/uL').value
+
     def get_conc_mg_mL(self):
         return self.get_conc('mg/mL').value
 
@@ -400,17 +404,13 @@ class NucleicAcid(Molecule):
         self._strandedness = None
 
     def get_molecule(self):
-        if not self._molecule:
-            self._parse_stranded_molecule()
-
+        self._cache_stranded_molecule()
         assert self._molecule
         return self._molecule
 
     @property
     def is_double_stranded(self):
-        if not self._strandedness:
-            self._parse_stranded_molecule()
-
+        self._cache_stranded_molecule()
         assert self._strandedness
         return self._strandedness == 2
 
@@ -449,14 +449,11 @@ class NucleicAcid(Molecule):
     def is_phosphorylated_3(self):
         return self.get_synthesis_attr('is_product_phosphorylated_3', False)
 
+    def _cache_stranded_molecule(self):
+        if not self._molecule or not self._strandedness:
+            self._parse_stranded_molecule()
+
     def _parse_stranded_molecule(self):
-        """
-        Parse the molecule type (e.g. suitable input for Biopython functions) 
-        and strandedness from a molecule string.  
-        """
-
-        # Find a molecule string:
-
         molecule = self._attrs.get('molecule')
 
         if not molecule:
@@ -468,50 +465,43 @@ class NucleicAcid(Molecule):
         if not molecule:
             raise QueryError("no molecule specified")
 
-        stranded_molecules = {
-                'dna':   (0, 'DNA'),
-                'ssdna': (1, 'DNA'),
-                'dsdna': (2, 'DNA'),
-                'rna':   (0, 'RNA'),
-                'ssrna': (1, 'RNA'),
-                'dsrna': (2, 'RNA'),
-        }
-        try:
-            strandedness, molecule = stranded_molecules[molecule.lower()]
-        except KeyError:
-            err = QueryError(culprit=self, molecule=molecule)
-            err.brief = "unknown molecule type: {molecule!r}"
-            err.info += f"expected: {', '.join(map(repr, stranded_molecules))}"
-            raise err
-
-        if not strandedness:
-            strandedness = self.default_strandedness
-
-        if not strandedness:
-            strandedness = {'DNA': 2, 'RNA': 1}[molecule]
-
-        self._molecule = molecule
-        self._strandedness = strandedness
+        with QueryError.add_info(culprit=self):
+            self._molecule, self._strandedness = parse_stranded_molecule(
+                    molecule, self.default_strandedness)
 
     @only_raise(QueryError)
     def _calc_mw(self):
         from Bio.SeqUtils import molecular_weight
-        mw = molecular_weight(
-                seq=self.seq,
-                seq_type=self.molecule,
-                double_stranded=self.is_double_stranded,
-                circular=self.is_circular,
-        )
 
-        # For some reason Biopython just assumes 5' phosphorylation, so we need 
-        # to correct for that here.
-        if not self.is_phosphorylated_5:
-            num_strands = 2 if self.is_double_stranded else 1
-            num_ends = 0 if self.is_circular else num_strands
-            hpo3 = 1.008 + 30.974 + 3*15.999
-            mw -= hpo3 * num_ends
+        try:
+            mw = molecular_weight(
+                    seq=self.seq,
+                    seq_type=self.molecule,
+                    double_stranded=self.is_double_stranded,
+                    circular=self.is_circular,
+            )
+            # For some reason Biopython just assumes 5' phosphorylation, so we 
+            # need to correct for that here.
+            if not self.is_phosphorylated_5:
+                num_strands = 2 if self.is_double_stranded else 1
+                num_ends = 0 if self.is_circular else num_strands
+                hpo3 = 1.008 + 30.974 + 3*15.999
+                mw -= hpo3 * num_ends
 
-        return mw
+            return mw
+
+        except QueryError:
+            pass
+
+        try:
+            self._cache_stranded_molecule()
+            molecule = self._molecule, self._strandedness
+            return mw_from_length(self.length, molecule)
+
+        except QueryError:
+            pass
+
+        raise QueryError("need sequence or length to calculate molecular weight")
 
 
 @autoprop.immutable
