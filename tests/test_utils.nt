@@ -135,46 +135,114 @@ test_parse_bool:
       type: ParseError
       message: can't interpret 'x' as a bool
 
-test_parse_time_s:
+test_parse_time:
   -
     time_str: 1s
-    expected: 1
+    parsed: Quantity(1, 's')
+    converted:
+      s: 1
+      m: 1/60
+      h: 1/3600
   -
     time_str: 1 sec
-    expected: 1
+    parsed: Quantity(1, 'sec')
+    converted:
+      s: 1
+      m: 1/60
+      h: 1/3600
   -
     time_str: 1 second
-    expected: 1
-  -
-    time_str: 2 seconds
-    expected: 2
-  -
-    time_str: 1m
-    expected: 60
-  -
-    time_str: 1 min
-    expected: 60
-  -
-    time_str: 1 minute
-    expected: 60
-  -
-    time_str: 2 minutes
-    expected: 120
-  -
-    time_str: 1h
-    expected: 3600
-  -
-    time_str: 1 hr
-    expected: 3600
-  -
-    time_str: 1 hour
-    expected: 3600
-  -
-    time_str: 2 hours
-    expected: 7200
+    parsed: Quantity(1, 'second')
+    converted:
+      s: 1
+      m: 1/60
+      h: 1/3600
   -
     time_str: 1m30
-    expected: 90
+    parsed: Quantity(90, 's')
+    converted:
+      s: 90
+      m: 90/60
+      h: 90/3600
+  -
+    time_str: 1
+    kwargs:
+      default_unit: 's'
+    parsed: Quantity(1, 's')
+    converted:
+      s: 1
+      m: 1/60
+      h: 1/3600
+
+  -
+    time_str: 1m
+    parsed: Quantity(1, 'm')
+    converted:
+      s: 60
+      m: 1
+      h: 1/60
+  -
+    time_str: 1 min
+    parsed: Quantity(1, 'min')
+    converted:
+      s: 60
+      m: 1
+      h: 1/60
+  -
+    time_str: 1 minute
+    parsed: Quantity(1, 'minute')
+    converted:
+      s: 60
+      m: 1
+      h: 1/60
+  -
+    time_str: 1h30
+    parsed: Quantity(90, 'm')
+    converted:
+      s: 90*60
+      m: 90
+      h: 90/60
+  -
+    time_str: 1
+    kwargs:
+      default_unit: 'm'
+    parsed: Quantity(1, 'm')
+    converted:
+      s: 60
+      m: 1
+      h: 1/60
+
+  -
+    time_str: 1h
+    parsed: Quantity(1, 'h')
+    converted:
+      s: 3600
+      m: 60
+      h: 1
+  -
+    time_str: 1 hr
+    parsed: Quantity(1, 'hr')
+    converted:
+      s: 3600
+      m: 60
+      h: 1
+  -
+    time_str: 1 hour
+    parsed: Quantity(1, 'hour')
+    converted:
+      s: 3600
+      m: 60
+      h: 1
+  -
+    time_str: 1
+    kwargs:
+      default_unit: 'h'
+    parsed: Quantity(1, 'h')
+    converted:
+      s: 3600
+      m: 60
+      h: 1
+
   -
     time_str:
     error:
@@ -190,20 +258,81 @@ test_parse_time_s:
     error:
       type: ParseError
       message: can't interpret '1:30' as a time
+  -
+    time_str: 1 µL
+    error:
+      type: ParseError
+      message: can't interpret '1 µL' as a time, did you mean '1 s'?
 
-test_parse_temp_C:
+test_format_time_s:
+  -
+    given: 1
+    expected: 1s
+  -
+    given: 59
+    expected: 59s
+  -
+    given: 60
+    expected: 1m
+  -
+    given: 61
+    expected: 1m01
+  -
+    given: 119
+    expected: 1m59
+  -
+    given: 120
+    expected: 2m
+  -
+    given: 121
+    expected: 2m01
+
+test_format_time_m:
+  -
+    given: 1
+    expected: 1m
+  -
+    given: 59
+    expected: 59m
+  -
+    given: 60
+    expected: 1h
+  -
+    given: 61
+    expected: 1h01
+  -
+    given: 119
+    expected: 1h59
+  -
+    given: 120
+    expected: 2h
+  -
+    given: 121
+    expected: 2h01
+
+test_parse_temp:
   -
     temp_str: 60C
-    expected: 60
+    parsed: Quantity(60, 'C')
+    converted:
+      C: 60
   -
     temp_str: 60 C
-    expected: 60
+    parsed: Quantity(60, 'C')
+    converted:
+      C: 60
   -
     temp_str: 60°C
-    expected: 60
+    parsed: Quantity(60, '°C')
+    converted:
+      C: 60
   -
-    temp_str: 60 °C
-    expected: 60
+    temp_str: 60
+    kwargs:
+      default_unit: 'C'
+    parsed: Quantity(60, 'C')
+    converted:
+      C: 60
   -
     temp_str:
     error:
@@ -214,26 +343,51 @@ test_parse_temp_C:
     error:
       type: ParseError
       message: can't interpret '60' as a temperature
+  -
+    temp_str: 60 µL
+    error:
+      type: ParseError
+      message: can't interpret '60 µL' as a temperature, did you mean '60 °C'\?
 
-test_parse_volume_uL:
+test_parse_volume:
+  -
+    vol_str: 1 nL
+    parsed: Q('1 nL')
+    converted:
+      uL: 1e-3
+      mL: 1e-6
   -
     vol_str: 1uL
-    expected: 1
+    parsed: Q('1 uL')
+    converted:
+      uL: 1
+      mL: 1e-3
   -
     vol_str: 1 uL
-    expected: 1
-  -
-    vol_str: 1µL
-    expected: 1
+    parsed: Q('1 uL')
+    converted:
+      uL: 1
+      mL: 1e-3
   -
     vol_str: 1 µL
-    expected: 1
+    parsed: Q('1 µL')
+    converted:
+      uL: 1
+      mL: 1e-3
   -
     vol_str: 1 mL
-    expected: 1000
+    parsed: Q('1 mL')
+    converted:
+      uL: 1000
+      mL: 1
   -
-    vol_str: 100 nL
-    expected: 0.1
+    vol_str: 1
+    kwargs:
+      default_unit: 'mL'
+    parsed: Q('1 mL')
+    converted:
+      uL: 1000
+      mL: 1
   -
     vol_str:
     error:
@@ -245,30 +399,51 @@ test_parse_volume_uL:
       type: ParseError
       message: can't interpret '1' as a volume
   -
-    vol_str: 1 xL
+    vol_str: 1 µg
     error:
       type: ParseError
-      message: can't interpret '1 xL' as a volume
+      message: can't interpret '1 µg' as a volume, did you mean '1 µL'\?
 
-test_parse_mass_ug:
+test_parse_mass:
+  -
+    mass_str: 1 ng
+    parsed: Q('1 ng')
+    converted:
+      ug: 1e-3
+      mg: 1e-6
   -
     mass_str: 1ug
-    expected: 1
+    parsed: Q('1 ug')
+    converted:
+      ug: 1
+      mg: 1e-3
   -
     mass_str: 1 ug
-    expected: 1
-  -
-    mass_str: 1µg
-    expected: 1
+    parsed: Q('1 ug')
+    converted:
+      ug: 1
+      mg: 1e-3
   -
     mass_str: 1 µg
-    expected: 1
+    parsed: Q('1 µg')
+    converted:
+      ug: 1
+      mg: 1e-3
   -
     mass_str: 1 mg
-    expected: 1000
+    parsed: Q('1 mg')
+    converted:
+      ug: 1000
+      mg: 1
   -
-    mass_str: 100 ng
-    expected: 0.1
+    mass_str: 1
+    kwargs:
+      default_unit: 'mg'
+    parsed: Q('1 mg')
+    converted:
+      ug: 1000
+      mg: 1
+
   -
     mass_str:
     error:
@@ -280,109 +455,179 @@ test_parse_mass_ug:
       type: ParseError
       message: can't interpret '1' as a mass
   -
-    mass_str: 1 xg
+    mass_str: 1 µL
     error:
       type: ParseError
-      message: can't interpret '1 xg' as a mass
+      message: can't interpret '1 µL' as a mass, did you mean '1 µg'\?
 
 test_parse_conc:
   -
+    conc_str: 4nM
+    mw: 1e6
+    parsed: Quantity(4, 'nM')
+    converted:
+      nM: 4
+      ng/uL: 4
+  -
     conc_str: 4 nM
     mw: 1e6
-    expected_nM: 4
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'nM')
+    converted:
+      nM: 4
+      ng/uL: 4
   -
     conc_str: 4nM
     mw: 2e6
-    expected_nM: 4
-    expected_ng_uL: 8
+    parsed: Quantity(4, 'nM')
+    converted:
+      nM: 4
+      ng/uL: 8
   -
     conc_str: 4 nM
     mw: 2e6
-    expected_nM: 4
-    expected_ng_uL: 8
+    parsed: Quantity(4, 'nM')
+    converted:
+      nM: 4
+      ng/uL: 8
+  -
+    conc_str: 4
+    kwargs:
+      default_unit: 'nM'
+    mw: 2e6
+    parsed: Quantity(4, 'nM')
+    converted:
+      nM: 4
+      ng/uL: 8
   -
     conc_str: 4uM
     mw: 1e6
-    expected_nM: 4000
-    expected_ng_uL: 4000
+    parsed: Quantity(4, 'uM')
+    converted:
+      nM: 4000
+      ng/uL: 4000
   -
     conc_str: 4 uM
     mw: 1e6
-    expected_nM: 4000
-    expected_ng_uL: 4000
+    parsed: Quantity(4, 'uM')
+    converted:
+      nM: 4000
+      ng/uL: 4000
   -
     conc_str: 4µM
     mw: 1e6
-    expected_nM: 4000
-    expected_ng_uL: 4000
+    parsed: Quantity(4, 'µM')
+    converted:
+      nM: 4000
+      ng/uL: 4000
   -
     conc_str: 4 µM
     mw: 1e6
-    expected_nM: 4000
-    expected_ng_uL: 4000
+    parsed: Quantity(4, 'µM')
+    converted:
+      nM: 4000
+      ng/uL: 4000
   -
     conc_str: 4uM
     mw: 2e6
-    expected_nM: 4000
-    expected_ng_uL: 8000
+    parsed: Quantity(4, 'uM')
+    converted:
+      nM: 4000
+      ng/uL: 8000
   -
     conc_str: 4 uM
     mw: 2e6
-    expected_nM: 4000
-    expected_ng_uL: 8000
+    parsed: Quantity(4, 'uM')
+    converted:
+      nM: 4000
+      ng/uL: 8000
   -
     conc_str: 4µM
     mw: 2e6
-    expected_nM: 4000
-    expected_ng_uL: 8000
+    parsed: Quantity(4, 'µM')
+    converted:
+      nM: 4000
+      ng/uL: 8000
   -
     conc_str: 4 µM
     mw: 2e6
-    expected_nM: 4000
-    expected_ng_uL: 8000
+    parsed: Quantity(4, 'µM')
+    converted:
+      nM: 4000
+      ng/uL: 8000
+  -
+    conc_str: 4
+    kwargs:
+      default_unit: 'µM'
+    mw: 2e6
+    parsed: Quantity(4, 'µM')
+    converted:
+      nM: 4000
+      ng/uL: 8000
   -
     conc_str: 4ng/uL
     mw: 1e6
-    expected_nM: 4
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/uL')
+    converted:
+      nM: 4
+      ng/uL: 4
   -
     conc_str: 4 ng/uL
     mw: 1e6
-    expected_nM: 4
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/uL')
+    converted:
+      nM: 4
+      ng/uL: 4
   -
     conc_str: 4ng/µL
     mw: 1e6
-    expected_nM: 4
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/µL')
+    converted:
+      nM: 4
+      ng/uL: 4
   -
     conc_str: 4 ng/µL
     mw: 1e6
-    expected_nM: 4
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/µL')
+    converted:
+      nM: 4
+      ng/uL: 4
   -
     conc_str: 4ng/uL
     mw: 2e6
-    expected_nM: 2
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/uL')
+    converted:
+      nM: 2
+      ng/uL: 4
   -
     conc_str: 4 ng/uL
     mw: 2e6
-    expected_nM: 2
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/uL')
+    converted:
+      nM: 2
+      ng/uL: 4
   -
     conc_str: 4ng/µL
     mw: 2e6
-    expected_nM: 2
-    expected_ng_uL: 4
+    parsed: Quantity(4, 'ng/µL')
+    converted:
+      nM: 2
+      ng/uL: 4
   -
     conc_str: 4 ng/µL
     mw: 2e6
-    expected_nM: 2
-    expected_ng_uL: 4
-
-test_parse_conc_err:
+    parsed: Quantity(4, 'ng/µL')
+    converted:
+      nM: 2
+      ng/uL: 4
+  -
+    conc_str: 4
+    kwargs:
+      default_unit: 'ng/µL'
+    mw: 2e6
+    parsed: Quantity(4, 'ng/µL')
+    converted:
+      nM: 2
+      ng/uL: 4
   -
     conc_str:
     mw: 1e6
@@ -395,26 +640,66 @@ test_parse_conc_err:
     error:
       type: ParseError
       message: can't interpret '4' as a concentration
+  -
+    conc_str: 4 µL
+    mw: 1e6
+    error:
+      type: ParseError
+      message: can't interpret '4 µL' as a concentration, did you mean '4 .g/µL'\?
 
-test_parse_size_bp:
+test_parse_size:
   -
     size_str: 100bp
-    expected: 100
+    parsed: Quantity(100, 'bp')
+    converted:
+      bp: 100
+      kb: 0.1
   -
     size_str: 100 bp
-    expected: 100
+    parsed: Quantity(100, 'bp')
+    converted:
+      bp: 100
+      kb: 0.1
+  -
+    size_str: 100
+    kwargs:
+      default_unit: 'bp'
+    parsed: Quantity(100, 'bp')
+    converted:
+      bp: 100
+      kb: 0.1
   -
     size_str: 1kb
-    expected: 1000
+    parsed: Quantity(1, 'kb')
+    converted:
+      bp: 1000
+      kb: 1
   -
     size_str: 1 kb
-    expected: 1000
+    parsed: Quantity(1, 'kb')
+    converted:
+      bp: 1000
+      kb: 1
+  -
+    size_str: 1
+    kwargs:
+      default_unit: 'kb'
+    parsed: Quantity(1, 'kb')
+    converted:
+      bp: 1000
+      kb: 1
   -
     size_str: 1.5kb
-    expected: 1500
+    parsed: Quantity(1.5, 'kb')
+    converted:
+      bp: 1500
+      kb: 1.5
   -
     size_str: 1.5 kb
-    expected: 1500
+    parsed: Quantity(1.5, 'kb')
+    converted:
+      bp: 1500
+      kb: 1.5
   -
     size_str:
     error:
@@ -426,10 +711,10 @@ test_parse_size_bp:
       type: ParseError
       message: can't interpret '100' as a size
   -
-    size_str: 1.5 bp
+    size_str: 100 µL
     error:
       type: ParseError
-      message: can't interpret '1.5 bp' as a size
+      message: can't interpret '100 µL' as a size, did you mean '100 bp'\?
 
 test_parse_stranded_molecule:
   -

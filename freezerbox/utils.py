@@ -4,9 +4,68 @@ import re, os
 from stepwise import Quantity
 from more_itertools import split_when
 from contextlib import contextmanager
+from inform import did_you_mean
 from .errors import ParseError, only_raise
 
-no_default = object()
+NO_DEFAULT = object()
+
+TIME_CONVERSION_FACTORS = {
+    's':        60*60,
+    'sec':      60*60,
+    'second':   60*60,
+    'seconds':  60*60,
+    'm':        60,
+    'min':      60,
+    'minute':   60,
+    'minutes':  60,
+    'h':        1,
+    'hr':       1,
+    'hour':     1,
+    'hours':    1,
+}
+TEMP_CONVERSION_FACTORS = {
+        '°C': 1,
+         'C': 1,
+}
+VOLUME_CONVERSION_FACTORS = {
+        'nL': 1e9,
+        'uL': 1e6,
+        'µL': 1e6,
+        'mL': 1e3,
+         'L': 1,
+}
+MASS_CONVERSION_FACTORS = {
+        'pg': 1e12,
+        'ng': 1e9,
+        'ug': 1e6,
+        'µg': 1e6,
+        'mg': 1e3,
+         'g': 1,
+        'kg': 1e-3,
+}
+CONC_CONVERSION_FACTORS_MOLARITY = {
+        'pM': 1e12,
+        'nM': 1e9,
+        'uM': 1e6,
+        'µM': 1e6,
+        'mM': 1e3,
+         'M': 1,
+}
+CONC_CONVERSION_FACTORS_DENSITY = {
+        'ng/uL': 1e3,
+        'ng/µL': 1e3,
+        'µg/µL': 1,
+        'ug/uL': 1,
+        'mg/mL': 1,
+}
+CONC_UNITS = {
+        *CONC_CONVERSION_FACTORS_MOLARITY,
+        *CONC_CONVERSION_FACTORS_DENSITY,
+}
+SIZE_CONVERSION_FACTORS = {
+        'bp': 1e3,
+        'kb': 1,
+}
 
 def normalize_seq(raw_seq):
     # Ignore nonstandard nucleotides; they're too hard to deal with properly.
@@ -63,169 +122,158 @@ def parse_bool(bool_str):
     raise ParseError(f"can't interpret {bool_str!r} as a bool")
 
 @only_raise(ParseError)
-def parse_time_s(time_str):
-    time_units = {
-            's':        1,
-            'sec':      1,
-            'second':   1,
-            'seconds':  1,
-            'm':        60,
-            'min':      60,
-            'minute':   60,
-            'minutes':  60,
-            'h':        60*60,
-            'hr':       60*60,
-            'hour':     60*60,
-            'hours':    60*60,
-    }
-    time_pattern_1 = fr'(?P<time>\d+)\s*(?P<unit>{"|".join(time_units)})'
-    time_pattern_2 = fr'(?P<min>\d+)m(?P<sec>\d+)'
+def parse_time(time_str, default_unit=None):
 
-    if m := re.fullmatch(time_pattern_1, time_str):
-        return int(m.group('time')) * time_units[m.group('unit')]
-    if m := re.fullmatch(time_pattern_2, time_str):
-        return 60 * int(m.group('min')) + int(m.group('sec'))
+    # First, try parsing the time using a custom syntax, e.g. '1m30':
+    time_pattern = r'(\d+)([hm])(\d+)'
+    if m := re.fullmatch(time_pattern, time_str):
+        value = 60 * int(m.group(1)) + int(m.group(3))
+        unit = {'h': 'm', 'm': 's'}[m.group(2)]
+        return Quantity(value, unit)
 
-    raise ParseError(f"can't interpret {time_str!r} as a time, did you forget a unit?")
+    # If that doesn't work, try parsing the time normally, e.g. '1 min'
+    return _parse_quantity(
+            time_str, TIME_CONVERSION_FACTORS, default_unit, 'time')
 
 @only_raise(ParseError)
-def parse_time_m(time_str):
-    return parse_time_s(time_str) / 60
+def parse_time_s(time_str, default_unit=None):
+    time = parse_time(time_str, default_unit)
+    time = time.convert_unit('s', TIME_CONVERSION_FACTORS)
+    return time.value
 
 @only_raise(ParseError)
-def parse_time_h(time_str):
-    return parse_time_s(time_str) / 3600
+def parse_time_m(time_str, default_unit=None):
+    time = parse_time(time_str, default_unit)
+    time = time.convert_unit('m', TIME_CONVERSION_FACTORS)
+    return time.value
 
 @only_raise(ParseError)
-def parse_temp_C(temp_str):
-    temp_pattern = fr'(?P<temp>[0-9.]+)\s*°?C'
+def parse_time_h(time_str, default_unit=None):
+    time = parse_time(time_str, default_unit)
+    time = time.convert_unit('h', TIME_CONVERSION_FACTORS)
+    return time.value
 
-    if m := re.fullmatch(temp_pattern, temp_str):
-        return float(m.group('temp'))
+def format_time_s(x):
+    if x < 60:
+        return f'{x}s'
 
-    raise ParseError(f"can't interpret {temp_str!r} as a temperature, did you forget a unit?")
+    min = x // 60
+    sec = x % 60
 
-@only_raise(ParseError)
-def parse_volume_uL(vol_str):
-    vol_pattern = fr'(?P<vol>\d+)\s*(?P<si_prefix>[nµum])L'
-    si_prefixes = {
-            'n': 1e-3,
-            'u': 1,
-            'µ': 1,
-            'm': 1e3,
-    }
+    return f'{min}m{f"{sec:02}" if sec else ""}'
 
-    if m := re.fullmatch(vol_pattern, vol_str):
-        return float(m.group('vol')) * si_prefixes[m.group('si_prefix')]
+def format_time_m(x):
+    if x < 60:
+        return f'{x}m'
 
-    raise ParseError(f"can't interpret {vol_str!r} as a volume, did you forget a unit?")
+    hr = x // 60
+    min = x % 60
 
-@only_raise(ParseError)
-def parse_mass_ug(mass_str):
-    mass_pattern = fr'(?P<mass>\d+)\s*(?P<si_prefix>[nµum])g'
-    si_prefixes = {
-            'n': 1e-3,
-            'u': 1,
-            'µ': 1,
-            'm': 1e3,
-    }
-
-    if m := re.fullmatch(mass_pattern, mass_str):
-        return float(m.group('mass')) * si_prefixes[m.group('si_prefix')]
-
-    raise ParseError(f"can't interpret {mass_str!r} as a mass, did you forget a unit?")
+    return f'{hr}h{f"{min:02}" if min else ""}'
 
 @only_raise(ParseError)
-def parse_conc_nM(conc_str, mw):
-    conc_pattern = r'(?P<conc>\d+)\s?(?P<unit>[nuµ]M|ng/[uµ]L)'
-    unit_conversion = {
-            'nM': 1,
-            'uM': 1e3,
-            'µM': 1e3,
-            'ng/uL': 1e6 / mw,
-            'ng/µL': 1e6 / mw,
-    }
-
-    if m := re.match(conc_pattern, conc_str):
-        return float(m.group('conc')) * unit_conversion[m.group('unit')]
-    else:
-        raise ParseError(f"can't interpret {conc_str!r} as a concentration, did you forget a unit?")
+def parse_temp(temp_str, default_unit=None):
+    return _parse_quantity(
+            temp_str, TEMP_CONVERSION_FACTORS, default_unit, 'temperature')
 
 @only_raise(ParseError)
-def parse_conc_uM(conc_str, mw):
-    return parse_conc_nM(conc_str, mw) / 1000
+def parse_temp_C(temp_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            temp_str, TEMP_CONVERSION_FACTORS, default_unit, '°C', 'temperature')
 
 @only_raise(ParseError)
-def parse_conc_ng_uL(conc_str, mw):
-    conc_pattern = r'(?P<conc>\d+)\s?(?P<unit>[nuµ]M|ng/[uµ]L)'
-    unit_conversion = {
-            'ng/uL': 1,
-            'ng/µL': 1,
-            'nM': mw / 1e6,
-            'uM': mw / 1e3,
-            'µM': mw / 1e3,
-    }
+def parse_volume(vol_str, default_unit=None):
+    return _parse_quantity(
+            vol_str, VOLUME_CONVERSION_FACTORS, default_unit, 'volume')
 
-    if m := re.match(conc_pattern, conc_str):
-        return float(m.group('conc')) * unit_conversion[m.group('unit')]
-    else:
-        raise ParseError(f"can't interpret {conc_str!r} as a concentration, did you forget a unit?")
+@only_raise(ParseError)
+def parse_volume_uL(vol_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            vol_str, VOLUME_CONVERSION_FACTORS, default_unit, 'µL', 'volume')
+
+@only_raise(ParseError)
+def parse_volume_mL(vol_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            vol_str, VOLUME_CONVERSION_FACTORS, default_unit, 'mL', 'volume')
+
+@only_raise(ParseError)
+def parse_mass(mass_str, default_unit=None):
+    return _parse_quantity(
+            mass_str, MASS_CONVERSION_FACTORS, default_unit, 'mass')
+
+@only_raise(ParseError)
+def parse_mass_ug(mass_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            mass_str, MASS_CONVERSION_FACTORS, default_unit, 'µg', 'mass')
+
+@only_raise(ParseError)
+def parse_mass_mg(mass_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            mass_str, MASS_CONVERSION_FACTORS, default_unit, 'mg', 'mass')
+
+@only_raise(ParseError)
+def parse_conc(conc_str, default_unit=None):
+    return _parse_quantity(conc_str, CONC_UNITS, default_unit, 'concentration')
+
+@only_raise(ParseError)
+def parse_conc_nM(conc_str, mw, default_unit=None):
+    conc = parse_conc(conc_str, default_unit)
+    conc = convert_conc_unit(conc, mw, 'nM')
+    return conc.value
+
+@only_raise(ParseError)
+def parse_conc_uM(conc_str, mw, default_unit=None):
+    conc = parse_conc(conc_str, default_unit)
+    conc = convert_conc_unit(conc, mw, 'µM')
+    return conc.value
+
+@only_raise(ParseError)
+def parse_conc_ng_uL(conc_str, mw, default_unit=None):
+    conc = parse_conc(conc_str, default_unit)
+    conc = convert_conc_unit(conc, mw, 'ng/µL')
+    return conc.value
+
+@only_raise(ParseError)
+def parse_conc_ug_uL(conc_str, mw, default_unit=None):
+    conc = parse_conc(conc_str, default_unit)
+    conc = convert_conc_unit(conc, mw, 'µg/µL')
+    return conc.value
 
 @only_raise(ParseError)
 def convert_conc_unit(conc, mw, new_unit):
-    molar_conversion_factors = {
-            'pM': 1e12,
-            'nM': 1e9,
-            'uM': 1e6,
-            'µM': 1e6,
-            'mM': 1e3,
-            'M': 1,
-    }
-    mass_volume_conversion_factors = {
-            'ng/uL': 1e3,
-            'ng/µL': 1e3,
-            'µg/µL': 1,
-            'ug/uL': 1,
-            'mg/mL': 1,
-    }
-
     def pick_conversion_factors():
         if mw is not None:
             return {
-                    **molar_conversion_factors,
+                    **CONC_CONVERSION_FACTORS_MOLARITY,
                     **{
                         k: mw * v
-                        for k, v in mass_volume_conversion_factors.items()
+                        for k, v in CONC_CONVERSION_FACTORS_DENSITY.items()
                     },
             }
 
-        if conc.unit in molar_conversion_factors:
-            return molar_conversion_factors
+        if conc.unit in CONC_CONVERSION_FACTORS_MOLARITY:
+            return CONC_CONVERSION_FACTORS_MOLARITY
 
-        if conc.unit in mass_volume_conversion_factors:
-            return mass_volume_conversion_factors
+        if conc.unit in CONC_CONVERSION_FACTORS_DENSITY:
+            return CONC_CONVERSION_FACTORS_DENSITY
 
         return {}
 
     return conc.convert_unit(new_unit, pick_conversion_factors())
 
 @only_raise(ParseError)
-def parse_size_bp(size_str):
-    bp_parsers = [
-            (
-                fr'(?P<size>\d+)\s*bp',
-                int,
-            ), (
-                fr'(?P<size>\d+.?\d*)\s*kb',
-                lambda x: int(float(x) * 1000),
-            ),
-    ]
+def parse_size(size_str, default_unit=None):
+    return _parse_quantity(size_str, SIZE_CONVERSION_FACTORS, default_unit, 'size')
 
-    for pattern, size_from_str in bp_parsers:
-        if m := re.fullmatch(pattern, size_str):
-            return size_from_str(m.group('size'))
+@only_raise(ParseError)
+def parse_size_bp(size_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            size_str, SIZE_CONVERSION_FACTORS, default_unit, 'bp', 'size')
 
-    raise ParseError(f"can't interpret {size_str!r} as a size in base pairs, did you forget a unit?")
+@only_raise(ParseError)
+def parse_size_kb(size_str, default_unit=None):
+    return _parse_and_convert_quantity(
+            size_str, SIZE_CONVERSION_FACTORS, default_unit, 'kb', 'size')
 
 def parse_stranded_molecule(molecule, default_strandedness=None):
     """
@@ -305,4 +353,37 @@ def cd(dir):
 
     finally:
         os.chdir(prev_cwd)
+
+
+def _parse_quantity(quantity_str, expected_units, default_unit, unit_type):
+    try:
+        if default_unit:
+            quantity = Quantity.from_string_or_float(quantity_str, default_unit)
+        else:
+            quantity = Quantity.from_string(quantity_str)
+
+    except ValueError:
+        raise ParseError(
+                "can't interpret {quantity_str!r} as a {unit_type}",
+                quantity_str=quantity_str,
+                unit_type=unit_type,
+        ) from None
+
+    if quantity.unit not in expected_units:
+        raise ParseError(
+                lambda e: f"can't interpret {e.quantity_str!r} as a {unit_type}, did you mean '{Quantity(e.quantity.value, did_you_mean(e.quantity.unit, e.expected_units))}'?",
+                quantity=quantity,
+                quantity_str=quantity_str,
+                expected_units=expected_units,
+                unit_type=unit_type,
+        )
+
+    return quantity
+
+def _parse_and_convert_quantity(quantity_str, conversion_factors, default_unit, desired_unit, unit_type):
+    quantity = _parse_quantity(
+            quantity_str, conversion_factors, default_unit, unit_type)
+    converted = quantity.convert_unit(desired_unit, conversion_factors)
+    return converted.value
+
 

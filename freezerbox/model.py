@@ -180,7 +180,7 @@ class Reagent:
     def get_dependencies(self):
         return set(self.synthesis_maker.dependencies)
 
-    def get_maker_attr(self, attr, default=no_default):
+    def get_maker_attr(self, attr, default=NO_DEFAULT):
         try:
             makers = [self.synthesis_maker, *self.cleanup_makers]
         except QueryError:
@@ -192,12 +192,12 @@ class Reagent:
                 except AttributeError:
                     continue
 
-        if default is not no_default:
+        if default is not NO_DEFAULT:
             return default
         else:
             raise QueryError(attr)
 
-    def get_synthesis_attr(self, attr, default=no_default):
+    def get_synthesis_attr(self, attr, default=NO_DEFAULT):
         try:
             maker = self.synthesis_maker
         except QueryError:
@@ -208,7 +208,7 @@ class Reagent:
             except AttributeError:
                 pass
 
-        if default is not no_default:
+        if default is not NO_DEFAULT:
             return default
         else:
             raise QueryError(attr)
