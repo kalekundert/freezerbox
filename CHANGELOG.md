@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.13.0 (2021-06-03)
+### Feature
+* Parse quantities with or without units ([`c6251d5`](https://github.com/kalekundert/freezerbox/commit/c6251d531e61220eb952bc5e75c2160cc52c0bcc))
+
 ## v0.12.0 (2021-06-02)
 ### Feature
 * Infer molecular weight from length ([`94a2d80`](https://github.com/kalekundert/freezerbox/commit/94a2d801523a8f4833a77266dfd09bbb5abec3d2))
