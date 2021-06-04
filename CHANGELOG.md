@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.14.0 (2021-06-04)
+### Feature
+* Add the *keys* argument to `iter_combos()` ([`d93d239`](https://github.com/kalekundert/freezerbox/commit/d93d239dfd07099a472e92efa63c29ada3ff5fe3))
+
 ## v0.13.0 (2021-06-03)
 ### Feature
 * Parse quantities with or without units ([`c6251d5`](https://github.com/kalekundert/freezerbox/commit/c6251d531e61220eb952bc5e75c2160cc52c0bcc))
