@@ -16,7 +16,8 @@ def iter_combo_makers(
         factory,
         solo_makers, *,
         group_by={},
-        merge_by={}
+        merge_by={},
+        keys={},
     ):
     combos = iter_combos(
             solo_makers,
@@ -24,7 +25,8 @@ def iter_combo_makers(
             merge_by={
                 'products': join_lists,
                 **merge_by,
-            }
+            },
+            keys=keys,
     )
     for attrs, items in combos:
         combo_maker = factory()
@@ -32,7 +34,10 @@ def iter_combo_makers(
             setattr(combo_maker, k, v)
         yield combo_maker
 
-def iter_combos(items, *, group_by={}, merge_by={}):
+def iter_combos(items, *, group_by={}, merge_by={}, keys={}):
+
+    def get_key(attr):
+        return keys.get(attr, attrgetter(attr))
 
     def do_iter_combos(items, group_by, attrs):
         if not items:
@@ -42,7 +47,8 @@ def iter_combos(items, *, group_by={}, merge_by={}):
             items = list(items)
 
             for attr, merge in merge_by.items():
-                values = map(attrgetter(attr), items)
+                key = get_key(attr)
+                values = map(key, items)
                 attrs[attr] = merge(values)
 
             yield attrs, items
@@ -53,7 +59,7 @@ def iter_combos(items, *, group_by={}, merge_by={}):
 
         attr, grouper = head
         group_by_tail = dict(tail)
-        key = attrgetter(attr)
+        key = get_key(attr)
 
         for group_value, group_items in grouper(items, key=key):
             yield from do_iter_combos(

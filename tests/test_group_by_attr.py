@@ -45,19 +45,21 @@ def test_group_by(grouper, items, key, expected):
             'items': empty_ok([eval_with(DummyItem=DummyItem)]),
             'group_by': empty_ok({str: eval_freezerbox}),
             'merge_by': empty_ok({str: eval_freezerbox}),
+            Optional('keys', default={}): empty_ok({str: eval_freezerbox}),
             'expected': empty_ok([{
                 'attrs': empty_ok({str: eval_pytest}),
                 'items': [eval_with(DummyItem=DummyItem)],
             }]),
         }),
 )
-def test_iter_combos(items, group_by, merge_by, expected):
+def test_iter_combos(items, group_by, merge_by, keys, expected):
     actual = [
             (attrs, list(items))
             for attrs, items in freezerbox.iter_combos(
                 items,
                 group_by=group_by,
                 merge_by=merge_by,
+                keys=keys,
             )
     ]
     expected = [

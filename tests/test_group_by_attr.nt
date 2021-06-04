@@ -247,6 +247,23 @@ test_iter_combos:
         items:
           - DummyItem(a=3)
           - DummyItem(a=4)
+  -
+    id: group-keys
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    group_by:
+      a: freezerbox.group_by_identity
+    merge_by:
+    keys:
+      a: lambda x: 3
+    expected:
+      -
+        attrs:
+          a: 3
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
 
   -
     id: merge-1
@@ -303,6 +320,23 @@ test_iter_combos:
       -
         attrs:
           a: 2
+        items:
+          - DummyItem(a=1)
+          - DummyItem(a=2)
+  -
+    id: merge-keys
+    items:
+      - DummyItem(a=1)
+      - DummyItem(a=2)
+    group_by:
+    merge_by:
+      a: list
+    keys:
+      a: lambda item: -item.a
+    expected:
+      -
+        attrs:
+          a: [-1, -2]
         items:
           - DummyItem(a=1)
           - DummyItem(a=2)
@@ -382,3 +416,4 @@ test_iter_combos:
         items:
           - DummyItem(a=1, b=2, c=2)
           - DummyItem(a=1, b=2, c=4)
+
