@@ -37,7 +37,7 @@ def iter_combo_makers(
 def iter_combos(items, *, group_by={}, merge_by={}, keys={}):
 
     def get_key(attr):
-        return keys.get(attr, attrgetter(attr))
+        return keys.get(attr, lambda x: getattr(x, attr))
 
     def do_iter_combos(items, group_by, attrs):
         if not items:
