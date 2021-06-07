@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.14.1 (2021-06-07)
+### Fix
+* Allow non-string keys ([`e41378e`](https://github.com/kalekundert/freezerbox/commit/e41378e2fe17e59266d685401e59eadb127f33a5))
+
 ## v0.14.0 (2021-06-04)
 ### Feature
 * Add the *keys* argument to `iter_combos()` ([`d93d239`](https://github.com/kalekundert/freezerbox/commit/d93d239dfd07099a472e92efa63c29ada3ff5fe3))
