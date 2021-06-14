@@ -44,6 +44,9 @@ class MockSoloMaker:
         if 'conc' in args:
             self.product_conc = stepwise.Quantity.from_string(args['conc'])
 
+        if 'volume' in args:
+            self.product_volume = stepwise.Quantity.from_string(args['volume'])
+
         if 'circular' in args:
             self.is_product_circular = freezerbox.parse_bool(args['circular'])
 

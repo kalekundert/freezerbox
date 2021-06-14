@@ -9,7 +9,7 @@ from freezerbox.model import *
 from schema_helpers import *
 from mock_model import *
 
-kwargs_schema = lambda expected=eval: Schema({
+kwargs_schema = lambda expected=eval_freezerbox: Schema({
     Optional('kwargs', {}): empty_ok({str: eval_freezerbox}),
     **error_or(**{
         'expected': expected,
@@ -340,6 +340,18 @@ def test_molecule_conc(kwargs, expected, error, mock_plugins):
             assert x1.get_conc(q.unit).unit == q.unit
         with error:
             assert get_by_unit[q.unit]() == pytest.approx(q.value)
+
+@parametrize_from_file(
+        schema=kwargs_schema({str: eval_freezerbox}),
+)
+def test_molecule_volume(kwargs, expected, error, mock_plugins):
+    db = Database()
+    db['x1'] = x1 = MockMolecule(**kwargs)
+
+    with error:
+        assert x1.volume == expected['quantity']
+    with error:
+        assert x1.volume_uL == expected['uL']
 
 
 def test_protein_mw():

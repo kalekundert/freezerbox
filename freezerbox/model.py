@@ -352,6 +352,25 @@ class Molecule(Reagent):
     def get_conc_mg_mL(self):
         return self.get_conc('mg/mL').value
 
+    def get_volume(self):
+        volume = self._attrs.get('volume')
+
+        if volume is None:
+            volume = self.get_maker_attr('product_volume', None)
+
+        if volume is None:
+            raise QueryError("no volume specified", culprit=self)
+
+        # Allow parsing to be deferred until the volume is accessed, so errors 
+        # don't prevent the rest of the database from loading.
+        if callable(volume):
+            volume = volume()
+
+        return volume
+
+    def get_volume_uL(self):
+        return self.volume.convert_unit('µL', VOLUME_CONVERSION_FACTORS).value
+
     def _check_seq(self):
         from Bio import pairwise2
         from Bio.pairwise2 import format_alignment

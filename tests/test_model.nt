@@ -174,6 +174,50 @@ test_molecule_conc:
       type: QueryError
       message: x1: no concentration specified
 
+test_molecule_volume:
+  -
+    id: kwargs
+    kwargs:
+      volume: Quantity(10, 'µL')
+    expected:
+      quantity: Quantity(10, 'µL')
+      uL: 10
+  -
+    id: synthesis
+    kwargs:
+      synthesis: Fields(['m'], {'volume': '20 µL'})
+    expected:
+      quantity: Quantity(20, 'µL')
+      uL: 20
+  -
+    id: redundant
+    kwargs:
+      volume: Quantity(10, 'µL')
+      synthesis: Fields(['m'], {'volume': '20 µL'})
+    expected:
+      quantity: Quantity(10, 'µL')
+      uL: 10
+  -
+    id: convert
+    kwargs:
+      volume: Quantity(1, 'mL')
+    expected:
+      quantity: Quantity(1, 'mL')
+      uL: 1000
+  -
+    id: err
+    kwargs:
+    error:
+      type: QueryError
+      message: x1: no volume specified
+  -
+    id: err
+    kwargs:
+      synthesis: Fields(['m'], {})
+    error:
+      type: QueryError
+      message: x1: no volume specified
+
 test_nucleic_acid_molecule:
   -
     id: default
