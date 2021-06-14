@@ -92,7 +92,10 @@ class Reagent:
         self._intermediates = {}
 
     def __repr__(self):
-        attr_strs = ', '.join(f'{k}={v!r}' for k, v in self._attrs.items())
+        attrs = list(self._attrs.items())
+        if isinstance(self, IntermediateMixin):
+            attrs.insert(0, ('step', self.step))
+        attr_strs = ', '.join(f'{k}={v!r}' for k, v in attrs)
         return f'{self.__class__.__qualname__}({attr_strs})'
 
     def check(self):

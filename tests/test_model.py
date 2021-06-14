@@ -126,6 +126,16 @@ def test_reagent_repr(kwargs, expected, error):
     with error:
         assert repr(x1) == expected
 
+def test_reagent_intermediate_repr():
+    db = Database()
+    db['x1'] = x1 = MockReagent(
+            synthesis=Fields(['m'], {}),
+    )
+    i1 = x1.make_intermediate(0)
+
+    assert repr(x1) == "MockReagent(synthesis=Fields(['m'], {}))"
+    assert repr(i1) == "MockReagentIntermediate(step=0, synthesis=Fields(['m'], {}))"
+
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_name(kwargs, expected, error):
     db = Database()
