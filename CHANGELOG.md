@@ -2,6 +2,12 @@
 
 <!--next-version-placeholder-->
 
+## v0.15.0 (2021-06-14)
+### Feature
+* Teach make how to find dependencies ([`92cac73`](https://github.com/kalekundert/freezerbox/commit/92cac7336d3c571cdaa11a81469031940242e7cb))
+* Show the step number for intermediate reagents ([`e3f2546`](https://github.com/kalekundert/freezerbox/commit/e3f2546fa4da5382aa61aaf1de245b62876fd89a))
+* Add a volume field to molecules ([`2f8b702`](https://github.com/kalekundert/freezerbox/commit/2f8b7027f8df6abc674efbd902de1239f85cde31))
+
 ## v0.14.1 (2021-06-07)
 ### Fix
 * Allow non-string keys ([`e41378e`](https://github.com/kalekundert/freezerbox/commit/e41378e2fe17e59266d685401e59eadb127f33a5))
