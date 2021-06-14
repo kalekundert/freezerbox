@@ -86,6 +86,15 @@ test_parse_bool:
     bool_str: 1
     expected: True
   -
+    bool_str: +
+    expected: True
+  -
+    bool_str: x
+    expected: True
+  -
+    bool_str: X
+    expected: True
+  -
     bool_str: y
     expected: True
   -
@@ -103,8 +112,15 @@ test_parse_bool:
   -
     bool_str: True
     expected: True
+
   -
     bool_str: 0
+    expected: False
+  -
+    bool_str: -
+    expected: False
+  -
+    bool_str:
     expected: False
   -
     bool_str: n
@@ -124,16 +140,12 @@ test_parse_bool:
   -
     bool_str: False
     expected: False
+
   -
-    bool_str:
+    bool_str: ?
     error:
       type: ParseError
-      message: can't interpret '' as a bool
-  -
-    bool_str: x
-    error:
-      type: ParseError
-      message: can't interpret 'x' as a bool
+      message: can't interpret '\?' as a bool
 
 test_parse_time:
   -

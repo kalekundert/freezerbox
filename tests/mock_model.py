@@ -26,14 +26,13 @@ class MockSoloMaker:
         args = product.maker_args
 
         self.products = [product]
+        self.dependencies = args.get('deps', [])
+
+        if isinstance(self.dependencies, str):
+            self.dependencies = ','.split(self.dependencies)
 
         if 'protocol' in args:
             self.protocol = stepwise.Protocol(steps=args['protocol'])
-
-        if 'deps' in args:
-            self.dependencies = args['deps']
-        else:
-            self.dependencies = []
 
         if 'seq' in args:
             self.product_seqs = [args['seq']]

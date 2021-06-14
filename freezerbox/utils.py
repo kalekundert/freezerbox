@@ -114,9 +114,9 @@ def parse_tag(tag_str):
 
 @only_raise(ParseError)
 def parse_bool(bool_str):
-    if bool_str.lower() in ('1', 'y', 'yes', 'true'):
+    if bool_str.lower() in ('1', '+', 'x', 'y', 'yes', 'true'):
         return True
-    if bool_str.lower() in ('0', 'n', 'no', 'false'):
+    if bool_str.lower() in ('0', '-',  '', 'n', 'no', 'false'):
         return False
 
     raise ParseError(f"can't interpret {bool_str!r} as a bool")

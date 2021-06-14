@@ -99,6 +99,30 @@ test_make:
       - Label the product: x2
       - 5
       - 6
+  -
+    id: pending
+    db:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['1']}),
+        >         pending=True,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'protocol': ['2']}),
+        >         pending=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['c'], {'protocol': ['3'], 'deps': ['x1', 'x2']}),
+        > )
+    tags:
+      - x3
+    expected:
+      - 1
+      - Label the product: x1
+      - 3
+      - Label the product: x3
 
   -
     id: sw

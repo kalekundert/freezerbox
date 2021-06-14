@@ -164,6 +164,13 @@ def test_reagent_desc(kwargs, expected, error):
     with error:
         assert x1.desc == expected
 
+@parametrize_from_file(schema=kwargs_schema())
+def test_reagent_pending(kwargs, expected, error):
+    db = Database()
+    db['x1'] = x1 = MockReagent(**kwargs)
+    with error:
+        assert x1.pending == expected
+
 def test_reagent_maker_args_1():
     db = Database()
     db['x1'] = x1 = MockReagent(

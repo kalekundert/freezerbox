@@ -7,6 +7,8 @@ from more_itertools import pairwise
 from ..utils import parse_tag
 
 def group_by_synthesis(products):
+    products = list(products)
+
     # Sort groups by order of appearance:
 
     group_from_arg0 = {}
@@ -51,11 +53,11 @@ def group_by_synthesis(products):
         yield arg0, intermediates
 
 def group_by_cleanup(products):
+    products = list(products)
 
     # Construct a dependency graph:
 
     deps = nx.DiGraph()
-    products = list(products)
 
     for i, product in enumerate(products):
         for j, cleanup in enumerate(product.cleanup_args):

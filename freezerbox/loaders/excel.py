@@ -15,8 +15,8 @@ schema = {
         'type': 'excel',
         Required('dir'): All(str, Coerce(Path)),
         'columns': {str: Any(
-            'seq', 'molecule', 'synthesis', 'cleanups', 'name', 'alt_names', 
-            'date', 'desc', 'length', 'conc', 'mw', 'circular',
+            'seq', 'molecule', 'synthesis', 'cleanups', 'pending', 'name',
+            'alt_names', 'date', 'desc', 'length', 'conc', 'mw', 'circular',
         )},
 }
 default_config = {
@@ -25,6 +25,7 @@ default_config = {
             'Molecule': 'molecule',
             'Synthesis': 'synthesis',
             'Cleanups': 'cleanups',
+            'Pending': 'pending',
             'Name': 'name',
             'Cross-refs': 'alt_names',
             'Date': 'date',
@@ -90,6 +91,8 @@ def load(config):
                 kwargs['cleanups'] = _defer(parse_fields_list, x)
             if x := kwargs.get('circular'):
                 kwargs['circular'] = _defer(parse_bool, x)
+            if x := kwargs.get('pending'):
+                kwargs['pending'] = _defer(parse_bool, x)
 
             db[tag] = cls(**kwargs)
 

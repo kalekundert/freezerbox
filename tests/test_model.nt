@@ -46,6 +46,23 @@ test_reagent_desc:
       desc: 'Dummy'
     expected: 'Dummy'
 
+test_reagent_pending:
+  -
+    kwargs:
+    expected: False
+  -
+    kwargs:
+      pending: True
+    expected: True
+  -
+    kwargs:
+      pending: lambda: False
+    expected: False
+  -
+    kwargs:
+      pending: lambda: True
+    expected: True
+
 test_molecule_seq:
   -
     id: seq

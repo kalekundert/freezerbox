@@ -12,6 +12,7 @@ from freezerbox import (
 )
 from stepwise import Quantity
 from more_itertools import one, first
+from operator import not_
 from inform import plural
 from os import getcwd
 from os.path import expanduser
@@ -22,11 +23,18 @@ class Make(appcli.App):
 Display a protocol for making the given reagents.
 
 Usage:
-    make <tags>...
+    make <tags>... [-P]
 
 Arguments:
     <tags>
         The name of a reagent in the freezerbox database, e.g. p01 or f01.
+
+Options:
+
+    -P --no-pending
+        Only make the reagents specified on the command line; don't 
+        automatically include dependencies that are marked as "pending" in the 
+        database.
 
 Protocols are derived from the "Synthesis" and "Cleanups" columns of the 
 FreezerBox database.  There is an important distinction between these two 
@@ -158,6 +166,7 @@ not correspond to any stepwise commands, but are documented below:
     ]
 
     tags = appcli.param('<tags>')
+    include_deps = appcli.param('--no-pending', cast=not_, default=True)
 
     def __init__(self, db, tags=None):
         self.db = db
@@ -165,9 +174,12 @@ not correspond to any stepwise commands, but are documented below:
 
     def get_protocol(self):
         protocol = stepwise.Protocol()
-        products = [self.db[x] for x in self.tags]
+        targets = iter_targets(
+                self.db, self.tags,
+                include_deps=self.include_deps,
+        )
 
-        for key, group in group_by_synthesis(products):
+        for key, group in group_by_synthesis(targets):
             for maker in iter_makers(self.db, key, group):
                 protocol += maker.protocol
                 if getattr(maker, 'label_products', True):
@@ -297,9 +309,25 @@ class OrderMaker:
         p += f"Order {one(self.products).tag} from {self.vendor}."
         return p
 
-def iter_makers(db, key, products):
+def iter_makers(db, key, targets):
     factory = load_maker_factory(key)
-    yield from factory(db, products)
+    yield from factory(db, targets)
+
+def iter_targets(db, tags, include_deps=True):
+    for tag in tags:
+        target = db[tag]
+        yield target
+
+        if include_deps:
+            try:
+                dep_tags = target.dependencies
+            except QueryError:
+                continue
+            else:
+                yield from iter_targets(
+                        db, filter(lambda x: db[x].pending, dep_tags),
+                        include_deps=include_deps,
+                )
 
 def label_products(products):
     tags = ', '.join(str(x.tag) for x in products)

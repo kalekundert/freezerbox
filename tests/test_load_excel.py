@@ -54,6 +54,7 @@ def test_f2(db, tag='f2'):
     assert db[tag].molecule == 'DNA'
     assert db[tag].is_double_stranded == True
     assert db[tag].is_circular == False
+    assert db[tag].pending == False
 
 def test_f3(db, tag='f3'):
     assert isinstance(db[tag], NucleicAcid)
@@ -128,6 +129,11 @@ def test_f15(db, tag='f15'):
     assert db[tag].desc == "circular from synthesis"
     assert db[tag].synthesis_args == Fields(['mock'], {'circular': 'y'})
     assert db[tag].is_circular == True
+
+def test_f16(db, tag='f16'):
+    assert isinstance(db[tag], NucleicAcid)
+    assert db[tag].desc == "pending from db"
+    assert db[tag].pending == True
 
 
 def test_o2(db, tag='o2'):
