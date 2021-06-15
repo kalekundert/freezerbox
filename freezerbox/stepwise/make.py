@@ -23,18 +23,21 @@ class Make(appcli.App):
 Display a protocol for making the given reagents.
 
 Usage:
-    make <tags>... [-P]
+    make <tags>... [-R]
 
 Arguments:
     <tags>
-        The name of a reagent in the freezerbox database, e.g. p01 or f01.
+        The names of any number of reagents in the FreezerBox database, e.g. 
+        p01 or f01.  By default, any other reagents that are needed to make the 
+        named reagents and that are marked as "not ready" (e.g. "n", "no", "0" 
+        in the "Ready" column) will also be included in the resulting protocol.
 
 Options:
 
-    -P --no-pending
+    -R --no-recurse
         Only make the reagents specified on the command line; don't 
-        automatically include dependencies that are marked as "pending" in the 
-        database.
+        automatically include dependencies that are marked as "not ready" in 
+        the database.
 
 Protocols are derived from the "Synthesis" and "Cleanups" columns of the 
 FreezerBox database.  There is an important distinction between these two 
@@ -166,7 +169,7 @@ not correspond to any stepwise commands, but are documented below:
     ]
 
     tags = appcli.param('<tags>')
-    include_deps = appcli.param('--no-pending', cast=not_, default=True)
+    include_deps = appcli.param('--no-recurse', cast=not_, default=True)
 
     def __init__(self, db, tags=None):
         self.db = db
@@ -325,7 +328,7 @@ def iter_targets(db, tags, include_deps=True):
                 continue
             else:
                 yield from iter_targets(
-                        db, filter(lambda x: db[x].pending, dep_tags),
+                        db, filter(lambda x: not db[x].ready, dep_tags),
                         include_deps=include_deps,
                 )
 

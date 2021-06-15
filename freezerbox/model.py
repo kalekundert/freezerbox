@@ -183,13 +183,13 @@ class Reagent:
     def get_dependencies(self):
         return set(self.synthesis_maker.dependencies)
 
-    def get_pending(self):
-        pending = self._attrs.get('pending', False)
+    def get_ready(self):
+        ready = self._attrs.get('ready', True)
 
-        if callable(pending):
-            pending = pending()
+        if callable(ready):
+            ready = ready()
 
-        return pending
+        return ready
 
     def get_maker_attr(self, attr, default=NO_DEFAULT):
         try:

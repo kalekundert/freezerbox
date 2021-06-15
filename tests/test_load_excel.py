@@ -54,7 +54,7 @@ def test_f2(db, tag='f2'):
     assert db[tag].molecule == 'DNA'
     assert db[tag].is_double_stranded == True
     assert db[tag].is_circular == False
-    assert db[tag].pending == False
+    assert db[tag].ready == True
 
 def test_f3(db, tag='f3'):
     assert isinstance(db[tag], NucleicAcid)
@@ -132,8 +132,8 @@ def test_f15(db, tag='f15'):
 
 def test_f16(db, tag='f16'):
     assert isinstance(db[tag], NucleicAcid)
-    assert db[tag].desc == "pending from db"
-    assert db[tag].pending == True
+    assert db[tag].desc == "ready from db"
+    assert db[tag].ready == False
 
 
 def test_o2(db, tag='o2'):
