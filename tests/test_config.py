@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 
 import freezerbox, pytest
-from pathlib import Path
-from freezerbox import load_config, ReagentConfig, MakerArgsConfig, Fields, cd
-from more_itertools import one, first
+import parametrize_from_file
 
+from pathlib import Path
+from freezerbox import load_config, ReagentConfig, MakerConfig, Fields, cd
+from appcli.model import Log
+from more_itertools import one, first, zip_equal
 from test_model import MockReagent
+from re_assert import Matches
+from operator import attrgetter
+from mock_model import mock_plugins
+from pprint import pprint
+from schema_helpers import *
 
 MOCK_CONFIG = Path(__file__).parent / 'mock_config'
 
@@ -39,262 +46,95 @@ def test_config():
 
     load_config.cache_clear()
 
-
-def test_reagent_config_tags_1():
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = 'x1'
-
-    assert layer.values['name'] == ['1']
-    assert layer.location == 'a'
-
-def test_reagent_config_tags_2():
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-    db['x2'] = MockReagent(name='2')
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = 'x1', 'x2'
-
-    assert layer.values['name'] == ['1', '2']
-    assert layer.location == 'a'
-
-def test_reagent_config_tags_not_found():
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = 'x2'
-
-    with pytest.raises(KeyError):
-        layer.values['name']
-
-    assert layer.location == 'a'
-
-def test_reagent_config_tags_not_parseable():
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = 'not-a-tag'
-
-    with pytest.raises(KeyError):
-        layer.values['name']
-
-    assert layer.location == 'a'
-
-def test_reagent_config_key_not_found():
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = 'x1'
-
-    with pytest.raises(KeyError):
-        layer.values['not-a-key']
-
-    assert layer.location == 'a'
-
-def test_reagent_config_transform():
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-    db['x2'] = MockReagent(name='2')
-
-    obj = MockObj()
-    config = ReagentConfig(transform=first)
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = ['x1', 'x2']
-
-    assert layer.values['name'] == '1'
-    assert layer.location == 'a'
-
-def test_reagent_config_db_autoload(monkeypatch):
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
-    monkeypatch.setattr(freezerbox.model, 'load_db', lambda: db)
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.tag = 'x1'
-
-    assert layer.values['name'] == ['1']
-    assert layer.location == 'a'
-
-def test_reagent_config_db_not_found():
-    obj = MockObj()
-    config = ReagentConfig(autoload_db=False)
-    layer = one(config.load(obj))
-
-    obj.tag = 'x1'
-
-    with pytest.raises(KeyError, match="no freezerbox database found"):
-        layer.values['name']
-
-    assert layer.location == '*no database loaded*'
-
-def test_reagent_config_empty_db():
-    db = freezerbox.Database(name='a')
-
-    obj = MockObj()
-    config = ReagentConfig()
-    layer = one(config.load(obj))
-
-    obj.db = db
-    obj.tag = []
-
-    assert layer.values['x'] == []
-    assert layer.values.db is db
-    assert layer.location == 'a'
-
-def reagent_config_from_ctor():
-    return ReagentConfig(
-            db_getter=lambda self: self.my_db,
-            tag_getter=lambda self: self.my_tag,
-    )
-
-def reagent_config_from_subclass():
-
-    class MyConfig(ReagentConfig):
-        db_getter = lambda self: self.my_db
-        tag_getter = lambda self: self.my_tag
-
-    return MyConfig()
-
-@pytest.mark.parametrize(
-        'config_factory', [
-            reagent_config_from_ctor,
-            reagent_config_from_subclass,
-        ]
+@parametrize_from_file(
+        schema=Schema({
+            'db': eval_db,
+            'obj': exec_with(
+                'obj',
+                MockObj=MockObj,
+            ),
+            Optional('config_cls', default='class MockConfig(ReagentConfig): pass'): exec_with(
+                'MockConfig',
+                ReagentConfig=freezerbox.ReagentConfig,
+                attrgetter=attrgetter,
+            ),
+            Optional('db_access', default='cache'): str,
+            'key': eval_with(
+                attrgetter=attrgetter,
+            ),
+            'expected': empty_ok([eval_python]),
+            'info': [str],
+    }),
 )
-def test_reagent_config_getters(config_factory):
-    db = freezerbox.Database(name='a')
-    db['x1'] = MockReagent(name='1')
+def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, monkeypatch, mock_plugins):
+    db.name = '/path/to/db'
+    config = config_cls(obj)
+    layer = one(config.load())
 
-    obj = MockObj()
-    config = config_factory()
-    layer = one(config.load(obj))
+    if db_access == 'cache':
+        layer.db = db
 
-    obj.my_db = db
-    obj.my_tag = 'x1'
+    if db_access.startswith('obj'):
+        attr = db_access.split('.')[1] if '.' in db_access else 'db'
+        setattr(obj, attr, db)
 
-    assert layer.values['name'] == ['1']
-    assert layer.location == 'a'
+    if db_access == 'load':
+        monkeypatch.setattr(freezerbox.model, 'load_db', lambda: db)
+    else:
+        monkeypatch.setattr(freezerbox.model, 'load_db', lambda: NotImplemented)
 
+    log = Log()
+    values = list(layer.iter_values(key, log))
 
-def test_maker_args_config_synthesis():
-    db = freezerbox.Database(name='loc')
-    db['x1'] = x1 = MockReagent(
-            synthesis=Fields(['a'], {'b': 'c'}),
-    )
-    i1 = x1.make_intermediate(0)
+    assert values == expected
 
-    obj = MockObj()
-    config = MakerArgsConfig()
-    layer = one(config.load(obj))
+    for actual, pattern in zip_equal(log.err.info_strs, info):
+        Matches(pattern).assert_matches(actual)
 
-    obj.products = [i1]
-
-    assert layer.values[0] == 'a'
-    assert layer.values['b'] == 'c'
-    assert layer.values.product is i1
-    assert layer.location == 'loc'
-
-def test_maker_args_config_cleanup():
-    db = freezerbox.Database(name='loc')
-    db['x1'] = x1 = MockReagent(
-            synthesis=Fields(['a'], {'b': 'c'}),
-            cleanups=[Fields(['d'], {'e': 'f'})],
-    )
-    i1 = x1.make_intermediate(1)
-
-    obj = MockObj()
-    config = MakerArgsConfig()
-    layer = one(config.load(obj))
-
-    obj.products = [i1]
-
-    assert layer.values[0] == 'd'
-    assert layer.values['e'] == 'f'
-    assert layer.values.product is i1
-    assert layer.values.precursor is i1.precursor
-    assert layer.location == 'loc'
-
-def maker_args_config_from_ctor():
-    return MakerArgsConfig(
-            products_getter=lambda self: self.my_products,
-    )
-
-def maker_args_config_from_subclass():
-
-    class MyConfig(MakerArgsConfig):
-        products_getter = lambda self: self.my_products
-
-    return MyConfig()
-
-@pytest.mark.parametrize(
-        'config_factory', [
-            maker_args_config_from_ctor,
-            maker_args_config_from_subclass,
-        ]
+@parametrize_from_file(
+        schema=Schema({
+            'db': eval_db,
+            'config_cls': exec_with(
+                'MockConfig',
+                ProductConfig=freezerbox.ProductConfig,
+                MakerConfig=freezerbox.MakerConfig,
+                PrecursorConfig=freezerbox.PrecursorConfig,
+                attrgetter=attrgetter,
+            ),
+            'products': {str: Coerce(int)},
+            Optional('products_attr', default='products'): str,
+            'key': eval_with(
+                attrgetter=attrgetter,
+            ),
+            **error_or({
+                'expected': empty_ok([eval_freezerbox]),
+                'info': [str],
+            }),
+    }),
 )
-def test_maker_args_config_getters_inherit(config_factory):
-    db = freezerbox.Database(name='loc')
-    db['x1'] = x1 = MockReagent(
-            synthesis=Fields(['a'], {'b': 'c'}),
-            cleanups=[Fields(['d'], {'e': 'f'})],
-    )
-    i1 = x1.make_intermediate(0)
+def test_product_configs(db, config_cls, products, products_attr, key, expected, info, error, mock_plugins):
+    db.name = 'path/to/db'
+    if not products:
+        products = db.keys()
 
     obj = MockObj()
-    config = config_factory()
-    layer = one(config.load(obj))
 
-    obj.my_products = [i1]
+    if products_attr:
+        setattr(obj, products_attr, [
+            db[k].make_intermediate(i)
+            for k,i in products.items()
+        ])
 
-    assert layer.values[0] == 'a'
-    assert layer.values['b'] == 'c'
-    assert layer.values.product is i1
-    assert layer.location == 'loc'
+    config = config_cls(obj)
+    layer = one(config.load())
 
-def test_maker_args_config_err():
-    db = freezerbox.Database(name='loc')
-    db['x1'] = x1 = MockReagent(
-            synthesis=Fields(['a'], {'b': 'c'}),
-    )
-    i1 = x1.make_intermediate(0)
+    with error:
+        log = Log()
+        values = list(layer.iter_values(key, log))
+        pprint(log.err.info_strs)
 
-    obj = MockObj()
-    config = MakerArgsConfig()
-    layer = one(config.load(obj))
+        assert values == expected
 
-    obj.products = []
-
-    with pytest.raises(KeyError, match="expected 1 product, found 0"):
-        layer.values[0]
+        for actual, pattern in zip_equal(log.err.info_strs, info):
+            Matches(pattern).assert_matches(actual)
 

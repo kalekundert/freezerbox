@@ -9,7 +9,7 @@ from mock_model import *
         schema=Schema({
             'nodes': empty_ok({eval: eval}),
             'edges': empty_ok([And(eval, tuple)]),
-            **error_or(**{
+            **error_or({
                 'expected': empty_ok([And(eval, tuple)]),
             }),
         }),

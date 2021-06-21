@@ -82,7 +82,7 @@ def eval_db(reagents):
 def empty_ok(x):
     return Or(x, And('', lambda y: type(x)()))
 
-def error_or(**expected):
+def error_or(expected):
     schema = {}
 
     # Either specify an error or an expected value, not both.
@@ -176,6 +176,7 @@ eval_freezerbox = eval_with(
         TEST_DIR=TEST_DIR,
 ).all(freezerbox)
 eval_pytest = eval_with().all(pytest)
+eval_python = eval_with()
 
 
 class Params:

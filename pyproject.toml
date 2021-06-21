@@ -56,6 +56,7 @@ test = [
   'pytest-cov',
   'coveralls',
   'parametrize_from_file',
+  're_assert',
 ]
 doc = [
   'sphinx',

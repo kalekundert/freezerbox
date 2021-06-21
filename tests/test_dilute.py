@@ -14,13 +14,13 @@ from math import inf
 
 given_expected_error = Schema({
     'given': eval,
-     **error_or(**{
+     **error_or({
          'expected': eval_with(Stock=Stock, Q=Q, approx=approx),
      }),
 })
 app_expected_error=Schema({
     'app': exec_with('app', Dilute=Dilute, Stock=Stock, Q=Q),
-    **error_or(**{
+    **error_or({
         'expected': eval_with(
             Q=Q,
             approx=approx,

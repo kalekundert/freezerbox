@@ -165,7 +165,7 @@ not correspond to any stepwise commands, but are documented below:
 """
 
     __config__ = [
-            appcli.DocoptConfig(),
+            appcli.DocoptConfig,
     ]
 
     tags = appcli.param('<tags>')

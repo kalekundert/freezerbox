@@ -31,7 +31,7 @@ class PrefixParams(Params):
 parse_schema = lambda input_name, schema={}: Schema({
     input_name: str,
     Optional('kwargs', default={}): eval_freezerbox,
-    **error_or(**{
+    **error_or({
         'parsed': eval_freezerbox,
         'converted': {str: eval},
     }),
@@ -56,7 +56,7 @@ def test_get_tag_pattern(args, expected):
 @parametrize_from_file(
         schema=Schema({
             'tag_str': str,
-            **error_or(**{
+            **error_or({
                 'expected': {
                     'type': str,
                     'id': Coerce(int),
@@ -71,7 +71,7 @@ def test_parse_tag(tag_str, expected, error):
 @parametrize_from_file(
         schema=Schema({
             'bool_str': str,
-            **error_or(**{
+            **error_or({
                 'expected': eval,
             }),
         }),
@@ -176,7 +176,7 @@ def test_parse_size(size_str, kwargs, parsed, converted, error):
         schema=Schema({
             'molecule': eval,
             Optional('default_strandedness', default='None'): eval,
-            **error_or(**{
+            **error_or({
                 'expected': eval,
             }),
         })
@@ -199,7 +199,7 @@ def test_mw_from_length(len, molecule, expected):
 @parametrize_from_file(
         schema=Schema({
             'items': eval,
-            **error_or(**{
+            **error_or({
                 'expected': eval,
             }),
         }),

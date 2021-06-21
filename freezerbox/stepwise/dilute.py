@@ -10,7 +10,7 @@ import pandas as pd
 
 from stepwise import Quantity, pl, oxford_comma
 from freezerbox import (
-        MakerArgsConfig, QueryError, convert_conc_unit, join_lists,
+        MakerConfig, QueryError, convert_conc_unit, join_lists,
         iter_combo_makers, group_by_identity, unanimous,
 )
 from appcli import Key, Method, DocoptConfig
@@ -228,8 +228,8 @@ Database:
 
 """
     __config__ = [
-            DocoptConfig(),
-            MakerArgsConfig(),
+            DocoptConfig,
+            MakerConfig,
     ]
 
     stocks = appcli.param(
@@ -239,7 +239,7 @@ Database:
     )
     target_conc = appcli.param(
             Key(DocoptConfig, '--conc'),
-            Key(MakerArgsConfig, 'conc'),
+            Key(MakerConfig, 'conc'),
             cast=parse_conc,
             default=None,
     )
@@ -270,7 +270,7 @@ Database:
     )
     diluent = appcli.param(
             Key(DocoptConfig, '--diluent'),
-            Key(MakerArgsConfig, 'diluent'),
+            Key(MakerConfig, 'diluent'),
             default=None,
     )
     show_stub = appcli.param(
@@ -305,7 +305,7 @@ Database:
     def from_product(cls, product):
         app = cls.from_params()
         app.products = [product]
-        app.load(MakerArgsConfig)
+        app.load(MakerConfig)
         return app
 
     def get_db(self):

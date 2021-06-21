@@ -2,11 +2,14 @@
 
 import appdirs
 import appcli
+import autoprop
 
 from pathlib import Path
 from configurator import Config
 from functools import lru_cache
+from appcli import unbind_method
 from more_itertools import one, always_iterable
+from operator import attrgetter
 
 from .utils import parse_tag
 from .errors import QueryError, ParseError, only_raise
@@ -31,7 +34,106 @@ def load_config():
 
     return config.data
 
-class ReagentConfig:
+@autoprop
+class ReagentConfig(appcli.Config):
+    autoload = True
+    autoload_db = True
+    db_getter = attrgetter('db')
+    tag_getter = attrgetter('tag')
+    transform = None
+
+    @autoprop
+    class Layer(appcli.Layer):
+
+        def __init__(self, *, db_getter, tag_getter, transform_func, autoload_db):
+            self.db_getter = db_getter
+            self.tag_getter = tag_getter
+            self.transform_func = transform_func
+            self.autoload_db = autoload_db
+            self.db = None
+
+        def iter_values(self, key, log):
+            # First: See if the object has a database attribute.  If it does, 
+            # it costs nothing to access it, and it will allow us to log the 
+            # path to the database before any subsequent steps fail.
+
+            if self.db:
+                log.info("using cached database: {db.name}", db=self.db)
+
+            if self.db is None:
+                try:
+                    self.db = self.db_getter()
+                except AttributeError as err:
+                    if not self.autoload_db:
+                        log.info("no value found: {err}", err=err)
+                        return
+                    else:
+                        log.info("no database provided: {err}", err=err)
+                else:
+                    log.info("found database: {db.name}", db=self.db)
+
+            # Second: Parse the tags before loading the database.  Loading the 
+            # database is expensive, and if the tags won't be in the database 
+            # anyways, there's no reason to waste the time.
+            
+            try:
+                tag = self.tag_getter()
+            except AttributeError as err:
+                log.info("no value found: {err}", err=err)
+                return
+            else:
+                log.info("found tag: {tag!r}", tag=tag)
+
+            try:
+                tag = parse_tag(tag)
+            except ParseError as err:
+                log.info("no value found: not a valid FreezerBox tag")
+                return
+
+            # Third: Load the database, if necessary.
+
+            if self.db is None:
+                from .model import load_db
+                self.db = load_db()
+                log.info("loaded database: {db.name}", db=self.db)
+
+            # Fourth: Lookup the key as an attribute of the selected reagents.
+
+            try:
+                reagent = self.db[tag]
+            except QueryError:
+                log.info("no value found: tag not in database")
+                return
+            else:
+                log.info("found reagent: {reagent!r}", reagent=reagent)
+
+            if self.transform_func:
+                try:
+                    reagent = self.transform_func(reagent)
+                except (QueryError, AttributeError) as err:
+                    log.info("no value found: {err}", err=err)
+                    return
+                else:
+                    log.info("called: {transform!r}\nreturned: {reagent}", transform=self.transform_func, reagent=reagent)
+
+            yield from getattr_or_call(reagent, key, log)
+
+    def load(self):
+        yield self.Layer(
+                db_getter=self.get_db,
+                tag_getter=self.get_tag,
+                transform_func=unbind_method(self.transform),
+                autoload_db=self.autoload_db,
+        )
+
+    def get_db(self):
+        return unbind_method(self.db_getter)(self.obj)
+
+    def get_tag(self):
+        return unbind_method(self.tag_getter)(self.obj)
+
+
+class DeprecatedReagentConfig:
     autoload = True
     autoload_db = True
     db_getter = lambda obj: obj.db
@@ -87,7 +189,7 @@ class ReagentConfig:
 
             try:
                 values = [
-                        getattr(self.db[x], key)
+                        key(self.db[x]) if callable(key) else getattr(self.db[x], key)
                         for x in tags
                 ]
 
@@ -119,52 +221,82 @@ class ReagentConfig:
         )
 
 
-class MakerArgsConfig:
+
+@autoprop
+class ProductConfig(appcli.Config):
     autoload = False
     products_getter = lambda obj: obj.products
 
-    class QueryHelper:
+    class Layer(appcli.Layer):
 
-        def __init__(self, config, obj):
-            self.config = config
-            self.obj = obj
+        def __init__(self, products_getter):
+            self.products_getter = products_getter
 
-        @only_raise(KeyError)
-        def __getitem__(self, key):
-            return self.product.maker_args[key]
-
-        @property
-        def product(self):
-            products = self.config.products_getter(self.obj)
+        def iter_values(self, key, log):
             try:
-                return one(products)
+                products = self.products_getter()
+            except AttributeError as err:
+                log.info("no products found: {err}", err=err)
+                return
+
+            try:
+                product = one(products)
             except ValueError:
                 err = QueryError(
                         lambda e: f"expected 1 product, found {len(products)}",
                         products=products,
                 )
                 raise err from None
+            else:
+                log.info("found product: {product!r}", product=product)
 
-        @property
-        def precursor(self):
-            return self.product.precursor
+            yield from self.iter_product_values(product, key, log)
 
-        def get_location(self):
-            return self.product.db.name
+        def iter_product_values(self, product, key, log):
+            yield from getattr_or_call(product, key, log)
+
+    def load(self):
+        yield self.Layer(self.get_products)
+
+    def get_products(self):
+        return unbind_method(self.products_getter)(self.obj)
 
 
-    def __init__(self, db_getter=None, products_getter=None):
-        cls = self.__class__
+class MakerConfig(ProductConfig):
 
-        # Access the getter through the class.  If accessed via the instance, 
-        # it would become bound and would require a self argument. 
+    class Layer(ProductConfig.Layer):
 
-        self.products_getter = products_getter or cls.products_getter
+        def iter_product_values(self, product, key, log):
+            dict_layer = appcli.DictLayer(product.maker_args)
+            yield from dict_layer.iter_values(key, log)
 
-    def load(self, obj):
-        helper = self.QueryHelper(self, obj)
-        yield appcli.Layer(
-                values=helper,
-                location=helper.get_location,
-        )
 
+class PrecursorConfig(ProductConfig):
+
+    class Layer(ProductConfig.Layer):
+
+        def iter_product_values(self, product, key, log):
+            precursor = product.precursor
+            yield from getattr_or_call(precursor, key, log)
+
+def getattr_or_call(obj, key, log):
+
+    if callable(key):
+        try:
+            value = key(obj)
+        except (QueryError, AttributeError) as err:
+            log.info("no value found: {err}", err=err)
+            return
+        else:
+            log.info("called: {key!r}\nreturned: {value!r}", key=key, value=value)
+
+    else:
+        try:
+            value = getattr(obj, key)
+        except (QueryError, AttributeError) as err:
+            log.info("no value found: {err}", err=err)
+            return
+        else:
+            log.info("found {key!r}: {value!r}", key=key, value=value)
+
+    yield value

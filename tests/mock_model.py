@@ -29,22 +29,24 @@ class MockSoloMaker:
         self.dependencies = args.get('deps', [])
 
         if isinstance(self.dependencies, str):
-            self.dependencies = ','.split(self.dependencies)
+            self.dependencies = self.dependencies.split(',')
 
         if 'protocol' in args:
             self.protocol = stepwise.Protocol(steps=args['protocol'])
 
-        if 'seq' in args:
-            self.product_seqs = [args['seq']]
-
-        if 'molecule' in args:
-            self.product_molecule = args['molecule']
-
+        # Maker attributes:
         if 'conc' in args:
             self.product_conc = stepwise.Quantity.from_string(args['conc'])
 
         if 'volume' in args:
             self.product_volume = stepwise.Quantity.from_string(args['volume'])
+
+        # Synthesis attributes:
+        if 'seq' in args:
+            self.product_seqs = [args['seq']]
+
+        if 'molecule' in args:
+            self.product_molecule = args['molecule']
 
         if 'circular' in args:
             self.is_product_circular = freezerbox.parse_bool(args['circular'])

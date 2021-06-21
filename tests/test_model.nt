@@ -1,13 +1,3 @@
-test_reagent_repr:
-  -
-    kwargs:
-    expected: 'MockReagent()'
-
-  -
-    kwargs:
-      a: 'b'
-    expected: "MockReagent(a='b')"
-
 test_reagent_name:
   -
     kwargs:

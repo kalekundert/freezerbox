@@ -11,7 +11,7 @@ from mock_model import *
 
 kwargs_schema = lambda expected=eval_freezerbox: Schema({
     Optional('kwargs', {}): empty_ok({str: eval_freezerbox}),
-    **error_or(**{
+    **error_or({
         'expected': expected,
     }),
 })
@@ -119,16 +119,26 @@ def test_tag():
     assert str(tag) == 'p1'
 
 
-@parametrize_from_file(schema=kwargs_schema())
-def test_reagent_repr(kwargs, expected, error):
+def test_reagent_repr():
+    x1 = MockReagent()
+    x2 = MockReagent(a='b')
+    x3 = MockReagent(a='b', c='d')
+
+    assert repr(x1) == "MockReagent()"
+    assert repr(x2) == "MockReagent(a='b')"
+    assert repr(x3) == "MockReagent(a='b', c='d')"
+
     db = Database()
-    db['x1'] = x1 = MockReagent(**kwargs)
-    with error:
-        assert repr(x1) == expected
+    db['x1'] = x1
+    db['x2'] = x2
+    db['x3'] = x3
+
+    assert repr(x1) == "MockReagent('x1')"
+    assert repr(x2) == "MockReagent('x2', a='b')"
+    assert repr(x3) == "MockReagent('x3', a='b', c='d')"
 
 def test_reagent_intermediate_repr():
-    db = Database()
-    db['x1'] = x1 = MockReagent(
+    x1 = MockReagent(
             synthesis=Fields(['m'], {}),
     )
     i1 = x1.make_intermediate(0)
