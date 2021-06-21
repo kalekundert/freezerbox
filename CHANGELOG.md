@@ -2,6 +2,11 @@
 
 <!--next-version-placeholder-->
 
+## v0.16.0 (2021-06-21)
+### Feature
+* Migrate to new Config architecture (logging) ([`acbc1e6`](https://github.com/kalekundert/freezerbox/commit/acbc1e62868bf9d2c70823bbaf92604b60b2d37d))
+* Rename the 'pending' column to 'ready' ([`dd309ac`](https://github.com/kalekundert/freezerbox/commit/dd309ac815a1add0923cf9b1173c981dda952cc4))
+
 ## v0.15.0 (2021-06-14)
 ### Feature
 * Teach make how to find dependencies ([`92cac73`](https://github.com/kalekundert/freezerbox/commit/92cac7336d3c571cdaa11a81469031940242e7cb))
