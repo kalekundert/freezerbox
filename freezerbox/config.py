@@ -270,11 +270,16 @@ class ProductConfig(appcli.Config):
         def iter_product_values(self, product, key, log):
             yield from getattr_or_call(product, key, log)
 
+    def __init__(self, obj, *, products_getter=None):
+        super().__init__(obj)
+        self.products_getter = \
+                products_getter or unbind_method(self.products_getter) 
+
     def load(self):
         yield self.Layer(self.get_products)
 
     def get_products(self):
-        return unbind_method(self.products_getter)(self.obj)
+        return self.products_getter(self.obj)
 
 
 class MakerConfig(ProductConfig):

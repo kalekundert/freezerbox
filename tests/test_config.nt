@@ -385,7 +385,7 @@ test_product_configs:
       type: QueryError
       message: expected 1 product, found 2
   -
-    id: product-getter
+    id: product-getter-class-attr
     db:
       x1:
         > MockReagent(
@@ -395,6 +395,27 @@ test_product_configs:
     config_cls:
       > class MockConfig(ProductConfig):
       >     products_getter = attrgetter('my_products')
+    products:
+      x1: 0
+    products_attr: my_products
+    key: 'name'
+    expected:
+      - 'x'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      - found 'name': 'x'
+  -
+    id: product-getter-setup
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig.setup(
+      >     products_getter=attrgetter('my_products'),
+      > )
     products:
       x1: 0
     products_attr: my_products
