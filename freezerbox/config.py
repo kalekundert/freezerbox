@@ -118,19 +118,34 @@ class ReagentConfig(appcli.Config):
 
             yield from getattr_or_call(reagent, key, log)
 
+    def __init__(self, obj, *,
+            autoload_db=None,
+            db_getter=None,
+            tag_getter=None,
+            transform=None,
+    ):
+        super().__init__(obj)
+
+        self.db_getter = db_getter or unbind_method(self.db_getter) 
+        self.tag_getter = tag_getter or unbind_method(self.tag_getter) 
+        self.transform = transform or unbind_method(self.transform) 
+
+        self.autoload_db = (
+                autoload_db if autoload_db is not None else self.autoload_db)
+
     def load(self):
         yield self.Layer(
                 db_getter=self.get_db,
                 tag_getter=self.get_tag,
-                transform_func=unbind_method(self.transform),
+                transform_func=self.transform,
                 autoload_db=self.autoload_db,
         )
 
     def get_db(self):
-        return unbind_method(self.db_getter)(self.obj)
+        return self.db_getter(self.obj)
 
     def get_tag(self):
-        return unbind_method(self.tag_getter)(self.obj)
+        return self.tag_getter(self.obj)
 
 
 class DeprecatedReagentConfig:

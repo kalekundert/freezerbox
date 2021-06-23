@@ -195,6 +195,52 @@ test_reagent_config:
       - no value found: x1: no synthesis specified
 
   -
+    id: setup
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields("m deps=x2")
+        > )
+    config_cls:
+      > MockConfig = ReagentConfig.setup(
+      >     db_getter=attrgetter('my_db'),
+      >     tag_getter=attrgetter('my_tag'),
+      >     transform=lambda r: r.synthesis_maker,
+      > )
+      >
+    obj:
+      > obj = MockObj()
+      > obj.my_tag = 'x1'
+    db_access: obj.my_db
+    key:
+      > 'dependencies'
+    expected:
+      - ['x2']
+    info:
+      - found database: /path/to/db
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', synthesis=Fields\(\['m'\], \{'deps': 'x2'\}\)\)
+      -
+        > called: <function <lambda> at .*>
+        > returned: <mock_model.MockSoloMaker object at .*>
+      - found 'dependencies': \['x2'\]
+  -
+    id: setup-autoload-db
+    db:
+      x1: MockReagent(name='a')
+    db_access: 'load'
+    config_cls:
+      > MockConfig = ReagentConfig.setup(autoload_db=False)
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+    info:
+      - no value found: 'MockObj' object has no attribute 'db'
+
+  -
     id: key-not-found
     db:
       x1: MockReagent(name='a')
