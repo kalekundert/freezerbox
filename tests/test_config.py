@@ -86,7 +86,6 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
     log = Log()
     values = list(layer.iter_values(key, log))
 
-    debug(log.err.info_strs)
     assert values == expected
 
     for actual, pattern in zip_equal(log.err.info_strs, info):

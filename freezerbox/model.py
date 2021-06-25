@@ -19,7 +19,7 @@ INTERMEDIATE_SUBCLASSES = {}
 
 class Database:
 
-    def __init__(self, name=None):
+    def __init__(self, name='*unnamed database*'):
         self.name = name
         self._reagents = {}
 
