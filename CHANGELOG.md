@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.17.0 (2021-06-28)
+### Feature
+* Give database a default name ([`6ebbecd`](https://github.com/kalekundert/freezerbox/commit/6ebbecd09ba661baa019a4a0b48f0f15f6caada0))
+* Add setup arguments to ProductConfig ([`1d5bb5e`](https://github.com/kalekundert/freezerbox/commit/1d5bb5e12672c2ed951f1eed3aa0c63e6c486129))
+* Add setup arguments to ReagentConfig ([`1f88626`](https://github.com/kalekundert/freezerbox/commit/1f8862629c43c886d5b0aa2ba51982b5e7a4bebe))
+* Assign the stepwise plugin a priority ([`d28a0dc`](https://github.com/kalekundert/freezerbox/commit/d28a0dc2444b5090243ebe4a06651d345690029e))
+
 ## v0.16.0 (2021-06-21)
 ### Feature
 * Migrate to new Config architecture (logging) ([`acbc1e6`](https://github.com/kalekundert/freezerbox/commit/acbc1e62868bf9d2c70823bbaf92604b60b2d37d))
