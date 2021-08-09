@@ -233,9 +233,8 @@ Database:
     ]
 
     stocks = appcli.param(
-            Key(DocoptConfig, '<stocks>'),
-            Method(lambda self: [Stock(x, None, None) for x in self.products]),
-            cast=parse_stocks,
+            Key(DocoptConfig, '<stocks>', cast=parse_stocks),
+            Method(lambda self: [Stock(x.tag, None, None) for x in self.products]),
     )
     target_conc = appcli.param(
             Key(DocoptConfig, '--conc'),
