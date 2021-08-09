@@ -54,6 +54,8 @@ CONC_CONVERSION_FACTORS_MOLARITY = {
 CONC_CONVERSION_FACTORS_DENSITY = {
         'ng/uL': 1e3,
         'ng/µL': 1e3,
+        'µg/mL': 1e3,
+        'ug/mL': 1e3,
         'µg/µL': 1,
         'ug/uL': 1,
         'mg/mL': 1,
