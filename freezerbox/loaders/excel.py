@@ -69,6 +69,11 @@ def load(config):
                     category=UserWarning,
                     message="Workbook contains no default style, apply openpyxl's default",
             )
+            filterwarnings(
+                    'ignore',
+                    category=DeprecationWarning,
+                    message="`np.float` is a deprecated alias for the builtin `float`.",
+            )
             df = pd.read_excel(path)
 
         df = df.set_index(df.index + 2)
