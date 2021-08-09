@@ -185,7 +185,10 @@ class Reagent:
         return self._attrs.get('desc', '')
 
     def get_dependencies(self):
-        return set(self.synthesis_maker.dependencies)
+        try:
+            return frozenset(self.synthesis_maker.dependencies)
+        except QueryError:
+            return frozenset()
 
     def get_ready(self):
         ready = self._attrs.get('ready', True)

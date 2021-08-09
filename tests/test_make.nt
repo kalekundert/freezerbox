@@ -294,3 +294,179 @@ test_builtin_maker_attrs:
     maker: order vendor=IDT molecule=dsDNA
     expected:
       product_molecule: 'dsDNA'
+
+test_iter_targets:
+  -
+    id: indep
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+    tags:
+      - x1
+    expected:
+      - x1
+  -
+    id: indep
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+    tags:
+      - x2
+    expected:
+      - x2
+  -
+    id: indep
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+    tags:
+      - x1
+      - x2
+    expected:
+      - x1
+      - x2
+  -
+    id: recurse
+    db:
+      x1:
+        > MockReagent(
+        >         ready=False,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        > )
+    tags:
+      - x2
+    kwargs:
+      recurse_deps: False
+    expected:
+      - x2
+  -
+    id: recurse
+    db:
+      x1:
+        > MockReagent(
+        >         ready=True,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        > )
+    tags:
+      - x2
+    kwargs:
+      recurse_deps: True
+    expected:
+      - x2
+  -
+    id: recurse
+    db:
+      x1:
+        > MockReagent(
+        >         ready=False,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        > )
+    tags:
+      - x2
+    kwargs:
+      recurse_deps: True
+    expected:
+      - x1
+      - x2
+  -
+    id: recurse
+    db:
+      x1:
+        > MockReagent(
+        >         ready=False,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        >         ready=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['c'], {'deps': ['x2']}),
+        > )
+    tags:
+      - x3
+    kwargs:
+      recurse_deps: True
+    expected:
+      - x1
+      - x2
+      - x3
+  -
+    id: exclude
+    db:
+      x1:
+        > MockReagent(
+        >         ready=False,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        >         ready=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['c'], {'deps': ['x2']}),
+        > )
+    tags:
+      - x3
+    kwargs:
+      exclude_deps: []
+    expected:
+      - x1
+      - x2
+      - x3
+  -
+    id: exclude
+    db:
+      x1:
+        > MockReagent(
+        >         ready=False,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        >         ready=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['c'], {'deps': ['x2']}),
+        > )
+    tags:
+      - x3
+    kwargs:
+      exclude_deps: ['x1']
+    expected:
+      - x2
+      - x3
+  -
+    id: exclude
+    db:
+      x1:
+        > MockReagent(
+        >         ready=False,
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['x1']}),
+        >         ready=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['c'], {'deps': ['x2']}),
+        > )
+    tags:
+      - x3
+    kwargs:
+      exclude_deps: ['x2']
+    expected:
+      - x3

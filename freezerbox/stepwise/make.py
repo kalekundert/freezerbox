@@ -17,7 +17,7 @@ from inform import plural
 from os import getcwd
 from os.path import expanduser
 
-@autoprop
+@autoprop.cache
 class Make(appcli.App):
     """\
 Display a protocol for making the given reagents.
@@ -33,11 +33,15 @@ Arguments:
         in the "Ready" column) will also be included in the resulting protocol.
 
 Options:
-
     -R --no-recurse
         Only make the reagents specified on the command line; don't 
         automatically include dependencies that are marked as "not ready" in 
         the database.
+
+    -x --exclude <tags>
+        A comma-separated list of tags to exclude from the protocol, i.e. 
+        dependencies that would normally be included in the protocol but should 
+        be excluded for some idiosyncratic reason.
 
 Protocols are derived from the "Synthesis" and "Cleanups" columns of the 
 FreezerBox database.  There is an important distinction between these two 
@@ -169,7 +173,8 @@ not correspond to any stepwise commands, but are documented below:
     ]
 
     tags = appcli.param('<tags>')
-    include_deps = appcli.param('--no-recurse', cast=not_, default=True)
+    recurse_deps = appcli.param('--no-recurse', cast=not_, default=True)
+    exclude_deps = appcli.param('--exclude', cast=lambda x: x.split(','), default=frozenset())
 
     def __init__(self, db, tags=None):
         self.db = db
@@ -179,7 +184,8 @@ not correspond to any stepwise commands, but are documented below:
         protocol = stepwise.Protocol()
         targets = iter_targets(
                 self.db, self.tags,
-                include_deps=self.include_deps,
+                recurse_deps=self.recurse_deps,
+                exclude_deps=self.exclude_deps,
         )
 
         for key, group in group_by_synthesis(targets):
@@ -316,12 +322,15 @@ def iter_makers(db, key, targets):
     factory = load_maker_factory(key)
     yield from factory(db, targets)
 
-def iter_targets(db, tags, include_deps=True):
+def iter_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
     for tag in tags:
+        if tag in exclude_deps:
+            continue
+
         target = db[tag]
         yield target
 
-        if include_deps:
+        if recurse_deps:
             try:
                 dep_tags = target.dependencies
             except QueryError:
@@ -329,7 +338,8 @@ def iter_targets(db, tags, include_deps=True):
             else:
                 yield from iter_targets(
                         db, filter(lambda x: not db[x].ready, dep_tags),
-                        include_deps=include_deps,
+                        recurse_deps=recurse_deps,
+                        exclude_deps=exclude_deps,
                 )
 
 def label_products(products):

@@ -30,6 +30,19 @@ def test_make(db, tags, expected, disable_capture, mock_plugins):
 
 @parametrize_from_file(
         schema=Schema({
+            'db': eval_db,
+            'tags': [str],
+            Optional('kwargs', default={}): {str: eval_pytest},
+            'expected': [str],
+        }),
+)
+def test_iter_targets(db, tags, kwargs, expected, mock_plugins):
+    from freezerbox.stepwise.make import iter_targets
+    targets = {str(x.tag) for x in iter_targets(db, tags, **kwargs)}
+    assert targets == set(expected)
+
+@parametrize_from_file(
+        schema=Schema({
             'maker': str,
             'expected': {str: eval_freezerbox},
         }),
