@@ -5,8 +5,13 @@ A simple format for extracting fields from a string.
 """
 
 from .errors import ParseError
-from parsy import ParseError as ParsyError, generate, regex, string
+from parsy import (
+        ParseError as ParsyError,
+        generate, regex, string, alt, test_char,
+)
 from contextlib import contextmanager
+
+QUOTES = {'"': '"', "'": "'", '“': '”'}
 
 class Fields:
 
@@ -106,16 +111,17 @@ def key_value():
 
 @generate
 def word():
-    quote_char = yield regex('[\'"]').optional()
+    open_quote_char = yield alt(*map(string, QUOTES)).desc("quote").optional()
 
-    if quote_char is None:
+    if open_quote_char is None:
         return unquoted_word
 
     else:
-        escape = regex(fr'\\[\\{quote_char}]').map(lambda x: x[-1])
-        value_char = escape | regex(fr'[^\\{quote_char}]+')
+        close_quote_char = QUOTES[open_quote_char]
+        escape = regex(fr'\\[\\{close_quote_char}]').map(lambda x: x[-1]).desc("escaped quote")
+        value_char = escape | regex(fr'[^\\{close_quote_char}]+')
         word = yield value_char.many().concat()
-        yield string(quote_char).desc("quote")
+        yield string(close_quote_char).desc("quote")
         return word
 
 unquoted_word = regex(r'''[^=;\s'"]+''').desc('word')

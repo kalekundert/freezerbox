@@ -35,6 +35,36 @@ test_word:
   -
     given: "\\"
     expected: \
+  -
+    given: 'a'
+    expected: a
+  -
+    given: 'a b'
+    expected: a b
+  -
+    given: '"'
+    expected: "
+  -
+    given: '\''
+    expected: '
+  -
+    given: '\\'
+    expected: \
+  -
+    given: “a”
+    expected: a
+  -
+    given: “a b”
+    expected: a b
+  -
+    given: “'"”
+    expected: '"
+  -
+    given: ““\””
+    expected: “”
+  -
+    given: “\\”
+    expected: \
 
 test_word_err:
   -
@@ -165,7 +195,7 @@ test_fields_err:
     messages:
       - can't parse fields
       - parsing:  ''
-      - expected:  ^ ['"] or word
+      - expected:  ^ quote or word
   -
     given: a=b c
     messages:
@@ -307,7 +337,7 @@ test_fields_list_err:
     messages:
       - can't parse fields
       - parsing:  ';'
-      - expected:  ^ EOF or ['"] or word
+      - expected:  ^ EOF or quote or word
   -
     given: a;
     messages:
@@ -319,7 +349,7 @@ test_fields_list_err:
     messages:
       - can't parse fields
       - parsing:  ';a'
-      - expected:  ^ EOF or ['"] or word
+      - expected:  ^ EOF or quote or word
 
 test_fields_repr:
   -
