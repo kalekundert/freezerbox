@@ -78,7 +78,7 @@ def load(config):
 
         df = df.set_index(df.index + 2)
         df = df.rename(columns=config['columns'])
-        df = df.where(pd.notnull(df), None)
+        df = df.astype(object).where(pd.notnull(df), None)
 
         for i, row in df.iterrows():
             tag = Tag(cls.tag_prefix, i)
