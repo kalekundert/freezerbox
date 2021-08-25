@@ -9,7 +9,7 @@ import stepwise
 from stepwise import Quantity, Q
 from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
 from unittest.mock import MagicMock
-from mock_model import MockReagent, MockMolecule
+from mock_model import *
 from contextlib import nullcontext
 from pathlib import Path
 
@@ -173,6 +173,7 @@ eval_freezerbox = eval_with(
         approx_Q=approx_Q,
         MockReagent=MockReagent,
         MockMolecule=MockMolecule,
+        MockNucleicAcid=MockNucleicAcid,
         TEST_DIR=TEST_DIR,
 ).all(freezerbox)
 eval_pytest = eval_with().all(pytest)

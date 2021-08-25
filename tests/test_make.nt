@@ -218,95 +218,147 @@ test_builtin_maker_attrs:
   -
     id: sw-seq
     maker: sw step A seq=GATTACA
-    expected:
-      product_seqs: ['GATTACA']
+    maker_attrs:
+      0.product_seqs: ['GATTACA']
+    reagent_attrs:
+      seq: 'GATTACA'
   -
     id: sw-deps
     maker: sw step A
-    expected:
-      dependencies: set()
+    maker_attrs:
+      0.dependencies: set()
   -
     id: sw-deps
     maker: sw step A deps=x2
-    expected:
-      dependencies: {'x2'}
+    maker_attrs:
+      0.dependencies: {'x2'}
   -
     id: sw-deps
     maker: sw step A deps=x2,x3
-    expected:
-      dependencies: {'x2', 'x3'}
+    maker_attrs:
+      0.dependencies: {'x2', 'x3'}
   -
     id: sw-deps
     maker: sw step A deps='x2, x3'
-    expected:
-      dependencies: {'x2', 'x3'}
+    maker_attrs:
+      0.dependencies: {'x2', 'x3'}
   -
     id: sw-deps
     maker: sw step A deps=x2,x2
-    expected:
-      dependencies: {'x2'}
+    maker_attrs:
+      0.dependencies: {'x2'}
   -
     id: sw-conc
     maker: sw step A conc=75nM
-    expected:
-      product_conc: Quantity(75, 'nM')
+    maker_attrs:
+      0.product_conc: Quantity(75, 'nM')
+    reagent_attrs:
+      conc: Quantity(75, 'nM')
   -
     id: sw-conc
     maker: sw step A conc='75 nM'
-    expected:
-      product_conc: Quantity(75, 'nM')
+    maker_attrs:
+      0.product_conc: Quantity(75, 'nM')
+    reagent_attrs:
+      conc: Quantity(75, 'nM')
+  -
+    id: sw-conc-shadow
+    db:
+      x1:
+        > MockMolecule(
+        >         synthesis=parse_fields('sw step A conc=75nM'),
+        >         cleanups=parse_fields_list('sw step B'),
+        > )
+    maker_attrs:
+      0.product_conc: Quantity(75, 'nM')
+    reagent_attrs:
+      conc: Quantity(75, 'nM')
   -
     id: sw-volume
     maker: sw step A volume=10µL
-    expected:
-      product_volume: Quantity(10, 'µL')
+    maker_attrs:
+      0.product_volume: Quantity(10, 'µL')
+    reagent_attrs:
+      volume: Quantity(10, 'µL')
   -
     id: sw-volume
     maker: sw step A volume='10 µL'
-    expected:
-      product_volume: Quantity(10, 'µL')
+    maker_attrs:
+      0.product_volume: Quantity(10, 'µL')
+    reagent_attrs:
+      volume: Quantity(10, 'µL')
+  -
+    id: sw-volume-shadow
+    db:
+      x1:
+        > MockMolecule(
+        >         synthesis=parse_fields('sw step A volume=10µL'),
+        >         cleanups=parse_fields_list('sw step B'),
+        > )
+    maker_attrs:
+      0.product_volume: Quantity(10, 'µL')
+    reagent_attrs:
+      volume: Quantity(10, 'µL')
   -
     id: sw-molecule
-    maker: sw step A molecule=dsDNA
-    expected:
-      product_molecule: 'dsDNA'
+    db:
+      x1:
+        > MockNucleicAcid(
+        >         synthesis=parse_fields('sw step A molecule=dsDNA'),
+        > )
+    maker_attrs:
+      0.product_molecule: 'dsDNA'
+    reagent_attrs:
+      molecule: 'DNA'
+      is_double_stranded: True
+  -
+    id: sw-molecule-shadow
+    db:
+      x1:
+        > MockNucleicAcid(
+        >         synthesis=parse_fields('sw step A molecule=dsDNA'),
+        >         cleanups=parse_fields_list('sw step B'),
+        > )
+    reagent_attrs:
+      molecule: 'DNA'
+      is_double_stranded: True
   -
     id: order
     maker: order vendor=IDT
-    expected:
-      vendor: 'IDT'
-      dependencies: set()
-      label_products: False
+    maker_attrs:
+      0.vendor: 'IDT'
+      0.dependencies: set()
+      0.label_products: False
   -
     id: order-seq
     maker: order vendor=IDT seq=GATTACA
-    expected:
-      product_seqs: ['GATTACA']
+    maker_attrs:
+      0.product_seqs: ['GATTACA']
   -
     id: order-conc
     maker: order vendor=IDT conc=75nM
-    expected:
-      product_conc: Quantity(75, 'nM')
+    maker_attrs:
+      0.product_conc: Quantity(75, 'nM')
   -
     id: order-conc
     maker: order vendor=IDT conc='75 nM'
-    expected:
-      product_conc: Quantity(75, 'nM')
+    maker_attrs:
+      0.product_conc: Quantity(75, 'nM')
   -
     id: order-volume
     maker: order vendor=IDT volume=10µL
-    expected:
-      product_volume: Quantity(10, 'µL')
+    maker_attrs:
+      0.product_volume: Quantity(10, 'µL')
   -
     id: order-volume
     maker: order vendor=IDT volume='10 µL'
-    expected:
-      product_volume: Quantity(10, 'µL')
+    maker_attrs:
+      0.product_volume: Quantity(10, 'µL')
   -
     id: order-molecule
     maker: order vendor=IDT molecule=dsDNA
-    expected:
-      product_molecule: 'dsDNA'
+    maker_attrs:
+      0.product_molecule: 'dsDNA'
 
 test_iter_targets:
   -

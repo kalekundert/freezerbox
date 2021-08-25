@@ -273,17 +273,24 @@ class StepwiseMaker:
     def get_product_seqs(self):
         return self._product_seqs
 
-    @only_raise(QueryError)
+    @only_raise(QueryError, AttributeError)
     def get_product_conc(self):
-        return unanimous(self._product_concs)
+        return self._unanimous_or_undef(self._product_concs, 'product_conc')
 
-    @only_raise(QueryError)
+    @only_raise(QueryError, AttributeError)
     def get_product_volume(self):
-        return unanimous(self._product_volumes)
+        return self._unanimous_or_undef(self._product_volumes, 'product_volume')
 
-    @only_raise(QueryError)
+    @only_raise(QueryError, AttributeError)
     def get_product_molecule(self):
-        return unanimous(self._product_molecules)
+        return self._unanimous_or_undef(self._product_molecules, 'product_molecule')
+
+    def _unanimous_or_undef(self, values, attr):
+        return unanimous(
+                values,
+                err_empty=AttributeError(f"{self!r} object has no attribute {attr!r}"),
+                err_multiple=lambda x1, x2: QueryError(f"{self!r} object has multiple values for {attr!r}: {x1!r}, {x2!r}")
+        )
 
 
 @autoprop
