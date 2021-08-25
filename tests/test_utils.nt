@@ -657,7 +657,7 @@ test_parse_conc:
     mw: 1e6
     error:
       type: ParseError
-      message: can't interpret '4 µL' as a concentration, did you mean '4 .g/µL'\?
+      message: can't interpret '4 µL' as a concentration, did you mean '4 .g/.L'\?
 
 test_parse_size:
   -
