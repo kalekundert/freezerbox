@@ -156,6 +156,19 @@ test_make:
       - B
       - C
   -
+    id: sw-quoted-arg
+    db:
+      x1:
+        > MockReagent(
+        >         synthesis=parse_fields('sw step "A B"'),
+        >         cleanups=parse_fields_list('sw step "C D"; sw step "E F"'),
+        > )
+    expected:
+      - A B
+      - Label the product: x1
+      - C D
+      - E F
+  -
     id: sw-cwd
     db:
       x1:

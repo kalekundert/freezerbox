@@ -4,6 +4,7 @@ import appcli
 import autoprop
 import stepwise
 import freezerbox
+import shlex
 
 from freezerbox import (
         load_maker_factory, group_by_synthesis, group_by_cleanup,
@@ -23,7 +24,7 @@ class Make(appcli.App):
 Display a protocol for making the given reagents.
 
 Usage:
-    make <tags>... [-R]
+    make <tags>... [-R] [-x <tags>]
 
 Arguments:
     <tags>
@@ -258,7 +259,7 @@ class StepwiseMaker:
         else:
             cwd = getcwd()
 
-        load_cmd = ' '.join(args.by_index[1:])
+        load_cmd = shlex.join(args.by_index[1:])
         if not load_cmd:
             raise QueryError("no stepwise command specified", culprit=product)
 
