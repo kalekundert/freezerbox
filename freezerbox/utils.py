@@ -321,17 +321,25 @@ def mw_from_length(len, molecule='dna'):
     m, b = params[molecule]
     return (m * len + b) * strandedness
 
-def unanimous(items):
+def unanimous(
+        items,
+        default=NO_DEFAULT,
+        err_empty=ValueError("empty iterable"),
+        err_multiple=lambda v1, v2: ValueError(f"found multiple values: {v1!r}, {v2!r}"),
+    ):
     it = iter(items)
 
     try:
         value = next(it)
     except StopIteration:
-        raise ValueError("empty iterable")
+        if default is not NO_DEFAULT:
+            return default
+        else:
+            raise err_empty
 
     for next_value in it:
         if next_value != value:
-            raise ValueError(f"found multiple values: {value!r}, {next_value!r}")
+            raise err_multiple(value, next_value)
 
     return value
 

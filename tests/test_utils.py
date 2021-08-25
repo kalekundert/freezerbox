@@ -199,14 +199,15 @@ def test_mw_from_length(len, molecule, expected):
 @parametrize_from_file(
         schema=Schema({
             'items': eval,
+            Optional('kwargs', default={}): {str: eval},
             **error_or({
                 'expected': eval,
             }),
         }),
 )
-def test_unanimous(items, expected, error):
+def test_unanimous(items, kwargs, expected, error):
     with error:
-        assert unanimous(items) == expected
+        assert unanimous(items, **kwargs) == expected
 
 @parametrize_from_file(schema=Schema({str: eval}))
 def test_join_lists(given, expected):

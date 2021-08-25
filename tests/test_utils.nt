@@ -870,6 +870,17 @@ test_unanimous:
       type: ValueError
       message: empty iterable
   -
+    items: []
+    kwargs:
+      err_empty: ZeroDivisionError
+    error:
+      type: ZeroDivisionError
+  -
+    items: []
+    kwargs:
+      default: 0
+    expected: 0
+  -
     items: [1]
     expected: 1
   -
@@ -881,10 +892,22 @@ test_unanimous:
       type: ValueError
       message: found multiple values: 1, 2
   -
+    items: [1, 2]
+    kwargs:
+      err_multiple: lambda v1,v2: ZeroDivisionError
+    error:
+      type: ZeroDivisionError
+  -
     items: [2, 1]
     error:
       type: ValueError
       message: found multiple values: 2, 1
+  -
+    items: [2, 1]
+    kwargs:
+      err_multiple: lambda v1,v2: ZeroDivisionError
+    error:
+      type: ZeroDivisionError
   -
     items: [2, 2]
     expected: 2
