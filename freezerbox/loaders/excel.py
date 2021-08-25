@@ -120,7 +120,15 @@ def _defer(f, *args, **kwargs):
     More information: 
     https://stackoverflow.com/questions/10452770/python-lambdas-binding-to-local-values
     """
-    return lambda: f(*args, **kwargs)
+    class defer:
+
+        def __repr__(self):
+            return '<deferred>'
+
+        def __call__(self):
+            return f(*args, **kwargs)
+
+    return defer()
 
 def _seq_from_tag(dir, tag):
     if path := _path_from_tag(dir, tag):
