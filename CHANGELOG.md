@@ -2,6 +2,21 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.0 (2021-08-25)
+### Feature
+* Add default and error arguments to unanimous() ([`b3c9612`](https://github.com/kalekundert/freezerbox/commit/b3c96123efd6bd32b9dbb2ccf9b02af23343b583))
+* Add option to exclude tags from make protocol ([`aa6d056`](https://github.com/kalekundert/freezerbox/commit/aa6d0561b8622ebc9573d9c51d22c94ed46883d5))
+* Allow µg/mL as a concentration unit ([`cc16e97`](https://github.com/kalekundert/freezerbox/commit/cc16e976f45010175886c97aa4e01358a6bb4ced))
+
+### Fix
+* Bug caused by new pandas version ([`e91f400`](https://github.com/kalekundert/freezerbox/commit/e91f400c1c786a23af990f4513a3780fcc1a5d3d))
+* Prevent the stepwise maker from shadowing attributes ([`fa2460e`](https://github.com/kalekundert/freezerbox/commit/fa2460eb3cf5a1f796a13a226ce92c93c0aae551))
+* Improve the repr for deferred values ([`86eda4b`](https://github.com/kalekundert/freezerbox/commit/86eda4b5521455168ef4f6e01083944dbab877ac))
+* Correctly handle quoted stepwise commands ([`5b0dfd1`](https://github.com/kalekundert/freezerbox/commit/5b0dfd1b31fa0181ef22665c11c99f0d7dd0805c))
+* Correctly parse unicode quotes ([`583e191`](https://github.com/kalekundert/freezerbox/commit/583e191a219281437352c10c697a69f28e4ed625))
+* Ignore openpyxl/numpy warning ([`9a2ab5b`](https://github.com/kalekundert/freezerbox/commit/9a2ab5b88871d0ffbb4f4212f63eb084370dcd94))
+* Correctly initialize dilute from products ([`4d9d2ca`](https://github.com/kalekundert/freezerbox/commit/4d9d2ca1f06d9ef443e806da55e12918e421ce97))
+
 ## v0.17.0 (2021-06-28)
 ### Feature
 * Give database a default name ([`6ebbecd`](https://github.com/kalekundert/freezerbox/commit/6ebbecd09ba661baa019a4a0b48f0f15f6caada0))
