@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.1 (2021-08-26)
+### Fix
+* Sort the list of targets passed to each maker ([`28ce569`](https://github.com/kalekundert/freezerbox/commit/28ce569ca04d6d414b981b15938e7a3123ea53b1))
+
 ## v0.18.0 (2021-08-25)
 ### Feature
 * Add default and error arguments to unanimous() ([`b3c9612`](https://github.com/kalekundert/freezerbox/commit/b3c96123efd6bd32b9dbb2ccf9b02af23343b583))
