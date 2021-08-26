@@ -125,6 +125,130 @@ test_make:
       - Label the product: x3
 
   -
+    id: order-cli
+    db:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['merge'], {'protocol': ['1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['2']}),
+        >             Fields(['c'], {'protocol': ['3']}),
+        >         ],
+        > )
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['merge'], {'protocol': ['4']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['5']}),
+        >             Fields(['c'], {'protocol': ['6']}),
+        >         ],
+        > )
+    tags:
+      - x2
+      - x1
+    expected:
+      - 4
+      - 1
+      - Label the products: x2, x1
+      - 5
+      - 2
+      - 6
+      - 3
+  -
+    id: order-deps
+    db:
+      # Specify x2 before x1, to make sure that the resulting output is 
+      # actually natsorted and not just somehow copying the order in this 
+      # dictionary.
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['merge'], {'protocol': ['4']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['5']}),
+        >             Fields(['c'], {'protocol': ['6']}),
+        >         ],
+        >         ready=False,
+        > )
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['merge'], {'protocol': ['1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['2']}),
+        >             Fields(['c'], {'protocol': ['3']}),
+        >         ],
+        >         ready=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['7'], 'deps': ['x1', 'x2']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['8']}),
+        >             Fields(['c'], {'protocol': ['9']}),
+        >         ],
+        > )
+    tags:
+      - x3
+    expected:
+      - 1
+      - 4
+      - Label the products: x1, x2
+      - 2
+      - 5
+      - 3
+      - 6
+      - 7
+      - Label the product: x3
+      - 8
+      - 9
+  -
+    id: order-deps
+    db:
+      # Specify x2 before x1, to make sure that the resulting output is 
+      # actually natsorted and not just somehow copying the order in this 
+      # dictionary.
+      x2:
+        > MockReagent(
+        >         synthesis=Fields(['d'], {'protocol': ['4']}),
+        >         cleanups=[
+        >             Fields(['e'], {'protocol': ['5']}),
+        >             Fields(['f'], {'protocol': ['6']}),
+        >         ],
+        >         ready=False,
+        > )
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['1']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['2']}),
+        >             Fields(['c'], {'protocol': ['3']}),
+        >         ],
+        >         ready=False,
+        > )
+      x3:
+        > MockReagent(
+        >         synthesis=Fields(['a'], {'protocol': ['7'], 'deps': ['x1', 'x2']}),
+        >         cleanups=[
+        >             Fields(['b'], {'protocol': ['8']}),
+        >             Fields(['c'], {'protocol': ['9']}),
+        >         ],
+        > )
+    tags:
+      - x3
+    expected:
+      - 1
+      - Label the product: x1
+      - 2
+      - 3
+      - 4
+      - Label the product: x2
+      - 5
+      - 6
+      - 7
+      - Label the product: x3
+      - 8
+      - 9
+
+  -
     id: sw
     db:
       x1:
@@ -360,7 +484,7 @@ test_builtin_maker_attrs:
     maker_attrs:
       0.product_molecule: 'dsDNA'
 
-test_iter_targets:
+test_collect_targets:
   -
     id: indep
     db:

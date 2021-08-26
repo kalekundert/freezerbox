@@ -39,8 +39,7 @@ def _guess_tag(x):
 def test_make(db, tags, expected, disable_capture, mock_plugins):
     cwd = getcwd()
 
-    # Reverse to check that `Make()` puts the tags back in sorted order.
-    tags = tags or list(reversed(db.keys()))
+    tags = tags or list(db.keys())
     app = Make(db, tags)
 
     with disable_capture:
@@ -56,9 +55,9 @@ def test_make(db, tags, expected, disable_capture, mock_plugins):
             'expected': [str],
         }),
 )
-def test_iter_targets(db, tags, kwargs, expected, mock_plugins):
-    from freezerbox.stepwise.make import iter_targets
-    targets = {str(x.tag) for x in iter_targets(db, tags, **kwargs)}
+def test_collect_targets(db, tags, kwargs, expected, mock_plugins):
+    from freezerbox.stepwise.make import collect_targets
+    targets = {str(x.tag) for x in collect_targets(db, tags, **kwargs)}
     assert targets == set(expected)
 
 @parametrize_from_file(

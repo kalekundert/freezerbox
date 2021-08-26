@@ -12,7 +12,7 @@ from freezerbox import (
         join_lists, join_sets, unanimous, only_raise, QueryError, cd
 )
 from stepwise import Quantity
-from natsort import natsorted
+from natsort import natsort_key
 from more_itertools import one, first
 from operator import not_
 from inform import plural
@@ -184,21 +184,21 @@ not correspond to any stepwise commands, but are documented below:
 
     def get_protocol(self):
         protocol = stepwise.Protocol()
-        targets = iter_targets(
+        targets = collect_targets(
                 self.db, self.tags,
                 recurse_deps=self.recurse_deps,
                 exclude_deps=self.exclude_deps,
         )
 
         for key, group in group_by_synthesis(targets):
-            for maker in iter_makers(self.db, key, group):
+            for maker in build_makers(self.db, key, group):
                 protocol += maker.protocol
                 if getattr(maker, 'label_products', True):
                     protocol += label_products(maker.products)
 
             parents = [x.parent for x in group]
             for key, subgroup in group_by_cleanup(parents):
-                for maker in iter_makers(self.db, key, subgroup):
+                for maker in build_makers(self.db, key, subgroup):
                     protocol += maker.protocol
 
         return protocol
@@ -327,34 +327,57 @@ class OrderMaker:
         p += f"Order {one(self.products).tag} from {self.vendor}."
         return p
 
-def iter_makers(db, key, targets):
-    # It currently doesn't make sense to use `natsorted()`, because the tag 
-    # attribute is basically a tuple to begin with.  But I know that I want 
-    # tags to become raw strings in the near future, so using `natsorted()` is 
-    # a more future-proof approach.
-    targets = natsorted(targets, key=lambda x: str(x.tag))
+def build_makers(db, key, targets):
     factory = load_maker_factory(key)
     yield from factory(db, targets)
 
-def iter_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
-    for tag in tags:
-        if tag in exclude_deps:
-            continue
 
-        target = db[tag]
-        yield target
+def collect_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
+    # I'm not totally sure that `grouped_topological_sort()` is stable, and if 
+    # it's not I'd need to handle sorting differently.  But this approach 
+    # passes all the tests I can come up with, so I'm going to run with it 
+    # until it becomes a problem.
 
-        if recurse_deps:
-            try:
-                dep_tags = target.dependencies
-            except QueryError:
+    def inner_collect(db, tags, recurse_deps, exclude_deps):
+        for tag in tags:
+            if tag in exclude_deps:
                 continue
-            else:
-                yield from iter_targets(
-                        db, filter(lambda x: not db[x].ready, dep_tags),
-                        recurse_deps=recurse_deps,
-                        exclude_deps=exclude_deps,
-                )
+
+            target = db[tag]
+            yield target
+
+            if recurse_deps:
+                try:
+                    dep_tags = target.dependencies
+                except QueryError:
+                    continue
+                else:
+                    yield from inner_collect(
+                            db, filter(lambda x: not db[x].ready, dep_tags),
+                            recurse_deps=recurse_deps,
+                            exclude_deps=exclude_deps,
+                    )
+
+    targets = inner_collect(
+            db, tags,
+            recurse_deps=recurse_deps,
+            exclude_deps=exclude_deps,
+    )
+    stable_order = {
+            str(tag): i
+            for i, tag in enumerate(tags)
+    }
+
+    # It doesn't really make sense to use `natsorted()` at the moment, because 
+    # the tag attribute is basically a tuple to begin with.  But I know that I 
+    # want tags to become raw strings in the near future, so using `natsort` is 
+    # how this algorithm will eventually need to be written.
+
+    def by_stable_then_natsort(target):
+        tag = str(target.tag)
+        return (stable_order.get(tag, len(tags)), natsort_key(tag))
+
+    return sorted(targets, key=by_stable_then_natsort)
 
 def label_products(products):
     tags = ', '.join(str(x.tag) for x in products)
