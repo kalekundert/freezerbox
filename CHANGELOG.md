@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.18.2 (2021-08-26)
+### Fix
+* Control the sort order of all `make` targets ([`2dd79fb`](https://github.com/kalekundert/freezerbox/commit/2dd79fb9d1b172b48f08fa08c828c6bffe8a3e8d))
+
 ## v0.18.1 (2021-08-26)
 ### Fix
 * Sort the list of targets passed to each maker ([`28ce569`](https://github.com/kalekundert/freezerbox/commit/28ce569ca04d6d414b981b15938e7a3123ea53b1))
