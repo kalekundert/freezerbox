@@ -21,6 +21,7 @@ requires = [
   'exmemo',
   'inform~=1.21',
   'more_itertools~=8.0',
+  'natsort',
   'networkx',
   'numpy',
   'pandas',

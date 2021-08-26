@@ -39,7 +39,8 @@ def _guess_tag(x):
 def test_make(db, tags, expected, disable_capture, mock_plugins):
     cwd = getcwd()
 
-    tags = tags or list(db.keys())
+    # Reverse to check that `Make()` puts the tags back in sorted order.
+    tags = tags or list(reversed(db.keys()))
     app = Make(db, tags)
 
     with disable_capture:

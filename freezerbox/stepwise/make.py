@@ -12,6 +12,7 @@ from freezerbox import (
         join_lists, join_sets, unanimous, only_raise, QueryError, cd
 )
 from stepwise import Quantity
+from natsort import natsorted
 from more_itertools import one, first
 from operator import not_
 from inform import plural
@@ -327,6 +328,11 @@ class OrderMaker:
         return p
 
 def iter_makers(db, key, targets):
+    # It currently doesn't make sense to use `natsorted()`, because the tag 
+    # attribute is basically a tuple to begin with.  But I know that I want 
+    # tags to become raw strings in the near future, so using `natsorted()` is 
+    # a more future-proof approach.
+    targets = natsorted(targets, key=lambda x: str(x.tag))
     factory = load_maker_factory(key)
     yield from factory(db, targets)
 
