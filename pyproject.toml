@@ -26,6 +26,7 @@ requires = [
   'numpy',
   'pandas',
   'parsy',
+  'rtoml',
   'sklearn',
   'stepwise~=0.23',
   'stringcase',
