@@ -908,7 +908,9 @@ test_group_by_synthesis:
   -
     id: empty
     db:
+      {}
     expected:
+      []
   -
     id: single
     db:
@@ -996,7 +998,9 @@ test_group_by_cleanup:
   -
     id: empty
     db:
+      {}
     expected:
+      []
   -
     id: empty
     db:
@@ -1006,6 +1010,7 @@ test_group_by_cleanup:
         >         cleanups=[]
         > )
     expected:
+      []
   -
     id: single
     db:

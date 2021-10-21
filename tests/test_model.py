@@ -16,70 +16,49 @@ kwargs_schema = lambda expected=eval_freezerbox: Schema({
     }),
 })
 
-def test_database_getitem_setitem():
-    db = Database()
+def test_database_init():
+    db = Database({})
+    assert db.name == None
+    assert db.config == {}
+
+    db = Database({'use': 'a'})
+    assert db.name == 'a'
+    assert db.config == {'use': 'a'}
+
+def test_database_getitem_setitem_delitem():
+    db = Database({'tag_pattern': r'x(\d+)'})
 
     x0 = MockReagent()
-    with pytest.raises(QueryError, match='not attached'): x0.db
-    with pytest.raises(QueryError, match='not attached'): x0.tag
-    with pytest.raises(QueryError, match="x0: not found in database"): db['x0']
+
+    with pytest.raises(QueryError, match="x0: not found in database"):
+        db['x0']
+    with pytest.raises(QueryError, match='not attached'):
+        x0.db
+    with pytest.raises(QueryError, match='not attached'):
+        x0.tag
 
     db['x1'] = x1 = MockReagent()
-    db['x02'] = x2 = MockReagent()
-    db['x', 3] = x3 = MockReagent()
-    db[Tag('x', 4)] = x4 = MockReagent()
+
+    assert x1.db is db
+    assert x1.tag == 'x1'
+    assert db['x1'] is x1
 
     with pytest.raises(LoadError, match="x1: already in database, cannot be replaced"):
         db['x1'] = MockReagent()
-    with pytest.raises(LoadError, match="MockReagent\\(\\) cannot have tag 'p1'\n. expected 'x' prefix"):
+    with pytest.raises(ParseError, match="tag doesn't match expected pattern"):
         db['p1'] = MockReagent()
-
-    assert x1.db is db
-    assert x2.db is db
-    assert x3.db is db
-    assert x4.db is db
-
-    assert x1.tag == Tag('x', 1)
-    assert x2.tag == Tag('x', 2)
-    assert x3.tag == Tag('x', 3)
-    assert x4.tag == Tag('x', 4)
-
-    assert db['x1'] is x1
-    assert db['x01'] is x1
-    assert db['x', 1] is x1
-    assert db[Tag('x', 1)] is x1
-
-    assert db['x2'] is x2
-    assert db['x02'] is x2
-    assert db['x', 2] is x2
-    assert db[Tag('x', 2)] is x2
-
-    assert db['x3'] is x3
-    assert db['x03'] is x3
-    assert db['x', 3] is x3
-    assert db[Tag('x', 3)] is x3
-
-    assert db['x4'] is x4
-    assert db['x04'] is x4
-    assert db['x', 4] is x4
-    assert db[Tag('x', 4)] is x4
-
-def test_database_delitem():
-    db = Database()
-    db['x1'] = x1 = MockReagent()
-
-    assert x1 in db
-    assert x1.db is db
-    assert x1.tag == Tag('x', 1)
 
     del db['x1']
 
-    assert x1 not in db
-    with pytest.raises(QueryError, match='not attached'): x1.db
-    with pytest.raises(QueryError, match='not attached'): x1.tag
+    with pytest.raises(QueryError, match="x1: not found in database"):
+        db['x1']
+    with pytest.raises(QueryError, match='not attached'):
+        x1.db
+    with pytest.raises(QueryError, match='not attached'):
+        x1.tag
 
 def test_database_contains():
-    db = Database()
+    db = Database({})
     x1 = MockReagent()
     assert x1 not in db
 
@@ -87,7 +66,7 @@ def test_database_contains():
     assert x1 in db
 
 def test_database_iter():
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent()
     db['x2'] = x2 = MockReagent()
 
@@ -101,7 +80,7 @@ def test_database_iter():
     assert set(db.items()) == items
 
 def test_database_len():
-    db = Database()
+    db = Database({})
     assert len(db) == 0
 
     db['x1'] = MockReagent()
@@ -109,14 +88,6 @@ def test_database_len():
 
     db['x2'] = MockReagent()
     assert len(db) == 2
-
-
-def test_tag():
-    tag = Tag('p', 1)
-
-    assert tag.type == 'p'
-    assert tag.id == 1
-    assert str(tag) == 'p1'
 
 
 def test_reagent_repr():
@@ -128,7 +99,7 @@ def test_reagent_repr():
     assert repr(x2) == "MockReagent(a='b')"
     assert repr(x3) == "MockReagent(a='b', c='d')"
 
-    db = Database()
+    db = Database({})
     db['x1'] = x1
     db['x2'] = x2
     db['x3'] = x3
@@ -148,41 +119,41 @@ def test_reagent_intermediate_repr():
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_name(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.name == expected
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_alt_names(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.alt_names == expected
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_date(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.date == expected
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_desc(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.desc == expected
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_reagent_ready(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.ready == expected
 
 def test_reagent_maker_args_1():
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
             cleanups=[
@@ -200,7 +171,7 @@ def test_reagent_maker_args_1():
     assert x1.cleanup_args[1]['conc'] == '3 nM'
 
 def test_reagent_maker_args_2():
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=lambda: Fields(['m'], {'conc': '1 nM'}),
             cleanups=lambda: [
@@ -218,7 +189,7 @@ def test_reagent_maker_args_2():
     assert x1.cleanup_args[1]['conc'] == '3 nM'
 
 def test_reagent_makers(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
             cleanups=[
@@ -240,7 +211,7 @@ def test_reagent_makers(mock_plugins):
     assert m3.product_conc == Quantity(3, 'nM')
 
 def test_reagent_maker_err_1():
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent()
     with pytest.raises(QueryError, match="no synthesis specified"):
         x1.synthesis_args
@@ -252,7 +223,7 @@ def test_reagent_maker_err_1():
         x1.cleanup_makers
 
 def test_reagent_maker_err_2(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             # no synthesis
             cleanups=[
@@ -266,7 +237,7 @@ def test_reagent_maker_err_2(mock_plugins):
         x1.cleanup_makers
 
 def test_reagent_get_maker_attr_1(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
             cleanups=[
@@ -278,7 +249,7 @@ def test_reagent_get_maker_attr_1(mock_plugins):
     assert x1.get_maker_attr('product_conc', None) == Quantity(3, 'nM')
 
 def test_reagent_get_maker_attr_2(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
             cleanups=[
@@ -290,7 +261,7 @@ def test_reagent_get_maker_attr_2(mock_plugins):
     assert x1.get_maker_attr('product_conc', None) == Quantity(2, 'nM')
 
 def test_reagent_get_maker_attr_3(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {'conc': '1 nM'}),
             cleanups=[
@@ -302,7 +273,7 @@ def test_reagent_get_maker_attr_3(mock_plugins):
     assert x1.get_maker_attr('product_conc', None) == Quantity(1, 'nM')
 
 def test_reagent_get_maker_attr_4(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent(
             synthesis=Fields(['m'], {}),
             cleanups=[
@@ -315,7 +286,7 @@ def test_reagent_get_maker_attr_4(mock_plugins):
     assert x1.get_maker_attr('product_conc', None) == None
 
 def test_reagent_get_maker_attr_5():
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockReagent()
     with pytest.raises(QueryError, match='product_conc'):
         x1.get_maker_attr('product_conc')
@@ -324,7 +295,7 @@ def test_reagent_get_maker_attr_5():
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_molecule_seq(kwargs, expected, error, mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
     with error:
         assert x1.seq == expected
@@ -335,7 +306,7 @@ def test_molecule_seq(kwargs, expected, error, mock_plugins):
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_molecule_length(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
     with error:
         assert x1.length == expected
@@ -344,7 +315,7 @@ def test_molecule_length(kwargs, expected, error):
         schema=kwargs_schema([eval_freezerbox]),
 )
 def test_molecule_conc(kwargs, expected, error, mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
 
     get_by_unit = {
@@ -372,7 +343,7 @@ def test_molecule_conc(kwargs, expected, error, mock_plugins):
         schema=kwargs_schema({str: eval_freezerbox}),
 )
 def test_molecule_volume(kwargs, expected, error, mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
 
     with error:
@@ -382,12 +353,12 @@ def test_molecule_volume(kwargs, expected, error, mock_plugins):
 
 
 def test_protein_mw():
-    db = Database()
+    db = Database({})
     db['r1'] = r1 = Protein(seq='DYKDDDDK')
     assert r1.mw == pytest.approx(1012.98, abs=0.1)
 
 def test_protein_mw_err():
-    db = Database()
+    db = Database({})
     db['r1'] = r1 = Protein(seq='X')
     with pytest.raises(QueryError, match="'X' is not a valid unambiguous letter for protein"):
         r1.mw
@@ -399,7 +370,7 @@ def test_protein_mw_err():
         }),
 )
 def test_nucleic_acid_molecule(kwargs, expected, error, mock_plugins):
-    db = Database()
+    db = Database({})
     db['f1'] = f1 = NucleicAcid(**kwargs)
     with error:
         assert f1.molecule == expected['molecule']
@@ -408,7 +379,7 @@ def test_nucleic_acid_molecule(kwargs, expected, error, mock_plugins):
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_nucleic_acid_circular(kwargs, expected, error, mock_plugins):
-    db = Database()
+    db = Database({})
     db['f1'] = f1 = NucleicAcid(**kwargs)
     with error:
         assert f1.is_circular == expected
@@ -420,24 +391,54 @@ def test_nucleic_acid_circular(kwargs, expected, error, mock_plugins):
 def test_nucleic_acid_mw(kwargs, expected, error):
     # 5'-phosphorylation assumed.
     # http://molbiotools.com/dnacalculator.html
-    db = Database()
+    db = Database({})
     db['f1'] = f1 = NucleicAcid(**kwargs)
     with error:
         assert f1.mw == pytest.approx(expected, abs=0.1)
 
 def test_plasmid_mw():
     # http://molbiotools.com/dnacalculator.html
-    db = Database()
+    db = Database({})
     db['p1'] = p1 = Plasmid(seq='ATCG')
 
     assert p1.is_circular == (not p1.is_linear) == True
     assert p1.is_double_stranded == (not p1.is_single_stranded) == True
     assert p1.mw == pytest.approx(2471.58, abs=0.1)
 
+@parametrize_from_file(
+        schema=Schema({
+            Optional('config', default={}): with_py.eval,
+            Optional('kwargs', default={}): with_py.eval,
+            **with_freeze.error_or({
+                'expected': str,
+            }),
+        }),
+)
+def test_plasmid_origin(config, kwargs, expected, error):
+    db = Database(config)
+    db['p1'] = p1 = Plasmid(**kwargs)
+    with error:
+        assert p1.origin == expected
+
+@parametrize_from_file(
+        schema=Schema({
+            Optional('config', default={}): with_py.eval,
+            Optional('kwargs', default={}): with_py.eval,
+            **with_freeze.error_or({
+                'expected': [str],
+            }),
+        }),
+)
+def test_plasmid_resistance(config, kwargs, expected, error):
+    db = Database(config)
+    db['p1'] = p1 = Plasmid(**kwargs)
+    with error:
+        assert p1.resistance == expected
+
 def test_oligo_mw():
     # 5'-OH assumed.
     # http://molbiotools.com/dnacalculator.html
-    db = Database()
+    db = Database({})
     db['o1'] = o1 = Oligo(seq='ATCG')
 
     assert o1.is_circular == (not o1.is_linear) == False
@@ -446,14 +447,14 @@ def test_oligo_mw():
 
 @parametrize_from_file(schema=kwargs_schema())
 def test_oligo_tm(kwargs, expected, error):
-    db = Database()
+    db = Database({})
     db['o1'] = o1 = Oligo(**kwargs)
     with error:
         assert o1.tm == pytest.approx(expected)
 
 
 def test_intermediate(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = x1 = MockMolecule(
             synthesis=Fields('m', {'conc': '1 nM'}),
             cleanups=[
@@ -505,4 +506,24 @@ def test_intermediate(mock_plugins):
     assert i1.conc == Quantity(1, 'nM')
     assert i2.conc == Quantity(2, 'nM')
     assert i3.conc == Quantity(3, 'nM')
+
+
+@parametrize_from_file(
+        schema=Schema({
+            'db': dict,
+            'tags': with_py.eval,
+            Optional('kwargs', default={}): dict,
+            **with_freeze.error_or({
+                'expected': str,
+            }),
+        })
+)
+def test_find(db, tags, kwargs, expected, error):
+    db = eval_db(db)
+    kwargs = with_freeze.eval(kwargs)
+    expected = Namespace(DB=db).eval(expected)
+
+    with error:
+        hits = freezerbox.find(db, tags, **kwargs)
+        assert hits == expected
 

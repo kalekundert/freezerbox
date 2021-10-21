@@ -80,39 +80,18 @@ def normalize_seq(raw_seq):
 
     return seq.upper()
 
-def get_tag_prefixes(*args):
-    from .model import Reagent
-
-    def add(prefixes, cls):
-        if cls.tag_prefix:
-            prefixes.add(cls.tag_prefix)
-        for subcls in cls.__subclasses__():
-            add(prefixes, subcls)
-
-    prefixes = set()
-    for cls in args or [Reagent]:
-        add(prefixes, cls)
-    
-    return prefixes
-
-def get_tag_pattern(*args):
-    prefix_chars = ''.join(sorted(get_tag_prefixes(*args)))
-    return fr'[{prefix_chars}]\d+'
-
 @only_raise(ParseError)
-def parse_tag(tag_str):
-    from .model import Tag, get_tag_prefixes
+def check_tag(db, tag):
+    tag_pattern = db.config.get('tag_pattern', '.*')
 
-    if isinstance(tag_str, Tag):
-        return tag_str
-    if isinstance(tag_str, tuple):
-        return Tag(*tag_str)
+    if m := re.fullmatch(tag_pattern, tag):
+        return m
 
-    pfo = get_tag_prefixes()
-    if m := re.fullmatch(fr'\s*(?P<type>[{pfo}])(?P<id>\d+)\s*', tag_str):
-        return Tag(m.group('type'), int(m.group('id')))
-    else:
-        raise ParseError(f"expected a tag (e.g. 'p100'), not {tag_str!r}")
+    err = ParseError(db=db, tag=tag, pattern=tag_pattern)
+    err.brief = "tag doesn't match expected pattern"
+    err.info += "relevant config: {db.config.paths[tag_pattern]}"
+    err.blame += "expected {tag!r} to match {pattern!r}"
+    raise err
 
 @only_raise(ParseError)
 def parse_bool(bool_str):

@@ -31,7 +31,7 @@ app_expected_error=Schema({
     }),
 })
 db_app_expected_error=Schema({
-    'db': eval_db,
+    Optional('db', default={}): eval_db,
     **app_expected_error.schema,
 })
 app_expected_error_stderr=Schema({
@@ -75,7 +75,7 @@ def test_dilute_dilutions(app, expected, error, stderr, capsys):
     informer = inform.Inform(stream_policy='header')
 
     # Don't accidentally use the database present on the testing system.
-    app.db = freezerbox.Database()
+    app.db = freezerbox.Database({})
 
     with error:
         dilutions = app.dilutions[['stock_uL', 'diluent_uL', 'final_conc']]
@@ -110,7 +110,7 @@ def test_dilute_protocol(db, app, expected, error):
         assert p.footnotes == expected['footnotes']
 
 def test_make(mock_plugins):
-    db = Database()
+    db = Database({})
     db['x1'] = MockMolecule(
             synthesis=parse_fields('a'),
             cleanups=parse_fields_list('dilute conc=10nM'),

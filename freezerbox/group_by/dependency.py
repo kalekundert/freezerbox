@@ -4,7 +4,6 @@ import networkx as nx
 from math import inf
 from copy import deepcopy
 from more_itertools import pairwise
-from ..utils import parse_tag
 
 def group_by_synthesis(products):
     products = list(products)
@@ -36,7 +35,6 @@ def group_by_synthesis(products):
 
     for product in products:
         for dep in product.dependencies:
-            dep = parse_tag(dep)
             if dep in deps:
                 deps.add_edge(dep, product.tag)
 

@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 
-import pandas as pd
-import autosnapgene as snap
-from pathlib import Path
-from voluptuous import Required, All, Any, Coerce
-from warnings import catch_warnings, filterwarnings
 from stepwise import Quantity
-from ..model import Database, Tag
-from ..model import NucleicAcid, Protein, Buffer, Plasmid, Oligo
+from pathlib import Path
+from voluptuous import Schema, Optional, Required, All, Any, Coerce
+from mako.template import Template
+from ..model import REAGENT_CLASSES, Database, Plasmid, find
+from ..utils import check_tag, parse_bool
 from ..fields import parse_fields, parse_fields_list
-from ..utils import *
+from ..errors import LoadError
 
-schema = {
-        'type': 'excel',
-        Required('dir'): All(str, Coerce(Path)),
+schema = Schema({
+        'format': 'excel',
+        Required('reagent'): Any(*REAGENT_CLASSES),
+        Required('path'): All(str, Coerce(Path)),
+        Optional('sequence'): str,
+        Optional('tag_template'): str,
         'columns': {str: Any(
-            'seq', 'molecule', 'synthesis', 'cleanups', 'ready', 'name',
+            'tag', 'seq', 'molecule', 'synthesis', 'cleanups', 'ready', 'name',
             'alt_names', 'date', 'desc', 'length', 'conc', 'mw', 'circular',
+            'resistance', 'origin', 'plasmids',
         )},
-}
+})
 default_config = {
         'columns': {
+            'Tag': 'tag',
             'Sequence': 'seq',
             'Molecule': 'molecule',
             'Synthesis': 'synthesis',
@@ -34,74 +37,94 @@ default_config = {
             'Conc': 'conc',
             'MW': 'mw',
             'Circular': 'circular',
+            'Resistance': 'resistance',
+            'Origin': 'origin',
+            'Plasmids': 'plasmids',
         }
 }
 
-def load(config):
-    root = config['dir']
+def load(db, config):
+    import pandas as pd
+    from warnings import catch_warnings, filterwarnings
 
-    db_xlsx = {
-            NucleicAcid: root / 'fragments.xlsx',
-            Plasmid:     root / 'plasmids.xlsx',
-            Oligo:       root / 'oligos.xlsx',
-            Protein:     root / 'proteins.xlsx',
-            Buffer:      root / 'buffers.xlsx',
-    }
-    seq_dirs = {
-            NucleicAcid: root / 'fragments',
-            Plasmid:     root / 'plasmids',
-            Oligo:       root / 'oligos',
-            Protein:     root / 'proteins',
-    }
+    path = config['path']
+    reagent = config['reagent']
+    columns = config['columns']
+    columns_user = {v: k for k, v in columns.items()}
+    
+    seq_path_template = config.get('sequence')
+    reagent_cls = REAGENT_CLASSES[reagent]
 
-    for dir in seq_dirs.values():
-        dir.mkdir(exist_ok=True, parents=True)
+    if not path.exists():
+        raise LoadError("database not found: {path}", path=path)
 
-    db = Database(str(root))
+    with catch_warnings():
+        filterwarnings(
+                'ignore',
+                category=UserWarning,
+                message="Workbook contains no default style, apply openpyxl's default",
+        )
+        filterwarnings(
+                'ignore',
+                category=DeprecationWarning,
+                message="`np.float` is a deprecated alias for the builtin `float`.",
+        )
+        df = pd.read_excel(path)
 
-    for cls, path in db_xlsx.items():
-        if not path.exists():
-            continue
+    df = df.rename(columns=columns)
+    df = df.astype(object).where(pd.notnull(df), None)
 
-        with catch_warnings():
-            filterwarnings(
-                    'ignore',
-                    category=UserWarning,
-                    message="Workbook contains no default style, apply openpyxl's default",
-            )
-            filterwarnings(
-                    'ignore',
-                    category=DeprecationWarning,
-                    message="`np.float` is a deprecated alias for the builtin `float`.",
-            )
-            df = pd.read_excel(path)
+    def _find_tag(kwargs, config):
+        try:
+            return kwargs.pop('tag')
+        except KeyError:
+            pass
 
-        df = df.set_index(df.index + 2)
-        df = df.rename(columns=config['columns'])
-        df = df.astype(object).where(pd.notnull(df), None)
+        try:
+            tag_template = config['tag_template']
+        except KeyError:
+            err = LoadError(tag_col=columns_user.get('tag', 'tag'))
+            err.brief = "reagent must have tag"
+            err.blame += "expected to find tag in {tag_col!r} column"
+            raise err from None
 
-        for i, row in df.iterrows():
-            tag = Tag(cls.tag_prefix, i)
-            kwargs = {k: v for k, v in row.items() if v is not None}
+        try:
+            return Template(tag_template).render(i=i, **row)
+        except Exception as err1:
+            err2 = LoadError(tag_template=tag_template, err=err1)
+            err2.brief = "can't create tag from template"
+            err2.info += "template: {tag_template}"
+            err2.blame += "{err.__class__.__name__}: {err}"
+            raise err2 from None
 
-            if not kwargs.get('seq') and cls is not Buffer:
-                kwargs['seq'] = _defer(_seq_from_tag, seq_dirs[cls], tag)
-            if x := kwargs.get('alt_names'):
-                kwargs['alt_names'] = [y.strip() for y in x.split(',')]
-            if x := kwargs.get('conc'):
-                kwargs['conc'] = _defer(Quantity.from_string, x)
-            if x := kwargs.get('synthesis'):
-                kwargs['synthesis'] = _defer(parse_fields, x)
-            if x := kwargs.get('cleanups'):
-                kwargs['cleanups'] = _defer(parse_fields_list, x)
-            if x := kwargs.get('circular'):
-                kwargs['circular'] = _defer(parse_bool, x)
-            if x := kwargs.get('ready'):
-                kwargs['ready'] = _defer(parse_bool, x)
+    for i, row in df.iterrows():
+        kwargs = {k: v for k, v in row.items() if v is not None}
 
-            db[tag] = cls(**kwargs)
+        with LoadError.add_info('path: {path}', 'row: {i}', path=path, row=row, i=i):
+            tag = _find_tag(kwargs, config)
 
-    return db
+        if not kwargs.get('seq') and hasattr(reagent_cls, 'seq'):
+            kwargs['seq'] = _defer(
+                    _load_seq_from_tag, db, tag, seq_path_template)
+        if x := kwargs.get('alt_names'):
+            kwargs['alt_names'] = _comma_list(x)
+        if x := kwargs.get('conc'):
+            kwargs['conc'] = _defer(Quantity.from_string, x)
+        if x := kwargs.get('synthesis'):
+            kwargs['synthesis'] = _defer(parse_fields, x)
+        if x := kwargs.get('cleanups'):
+            kwargs['cleanups'] = _defer(parse_fields_list, x)
+        if x := kwargs.get('ready'):
+            kwargs['ready'] = _defer(parse_bool, x)
+        if x := kwargs.get('circular'):
+            kwargs['circular'] = _defer(parse_bool, x)
+        if x := kwargs.get('resistance'):
+            kwargs['resistance'] = _comma_list(x)
+        if x := kwargs.get('plasmids'):
+            kwargs['plasmids'] = _defer(
+                    find, db, _comma_list(x), reagent_cls=Plasmid)
+
+        db[tag] = reagent_cls(**kwargs)
 
 def _defer(f, *args, **kwargs):
     """
@@ -130,14 +153,46 @@ def _defer(f, *args, **kwargs):
 
     return defer()
 
-def _seq_from_tag(dir, tag):
-    if path := _path_from_tag(dir, tag):
+def _load_seq_from_tag(db, tag, path_template):
+    path = _path_from_tag(db, tag, path_template)
+    return _load_seq(path)
+
+def _load_seq(path):
+    import autosnapgene as snap
+
+    if not path.exists():
+        return
+
+    if path.suffix == '.dna':
         return snap.parse(path).dna_sequence
 
-def _path_from_tag(dir, tag):
-    # Figure out the path to the actual file, allowing for several different 
-    # naming conventions.
-    for path in dir.iterdir():
-        if re.fullmatch(f'({tag.type})?0*{tag.id}([_-].*)?.dna', path.name):
-            return path
+    err = LoadError(path=path)
+    err.brief = "can't load sequence info from {path.suffix!r} files"
+    err.info += "path: {path}"
+    raise err
+
+def _path_from_tag(db, tag, path_template):
+    path_str = path_template.format(
+            tag=tag,
+            tag_match=_TagMatch(db, tag),
+    )
+    return Path(path_str)
+
+def _comma_list(list_str):
+    return [x.strip() for x in list_str.split(',')]
+
+class _TagMatch:
+
+    def __init__(self, db, tag):
+        self.db = db
+        self.tag = tag
+        self.match = None
+
+    def __getitem__(self, key):
+        # Defer matching the regular expression until we're asked for it, so 
+        # that we can raise a useful error message if it doesn't match.
+        if not self.match:
+            self.match = check_tag(self.db, self.tag)
+
+        return self.match.group(key)
 

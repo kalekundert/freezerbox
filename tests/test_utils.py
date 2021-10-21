@@ -3,30 +3,11 @@
 import pytest
 import parametrize_from_file
 
-from freezerbox import Tag
 from freezerbox.model import *
 from freezerbox.utils import *
 from stepwise import Quantity
 from schema_helpers import *
 from pytest import approx
-
-class PrefixParams(Params):
-    args = 'args, expected'
-    params = [
-            # 'x' is from the various mock reagents.
-            ([],                                    'xbrfpo'),
-            ([Reagent],                             'xbrfpo'),
-            ([Buffer],                              'b'),
-            ([Protein],                             'r'),
-            ([Protein, NucleicAcid],                'xrfpo'),
-            ([NucleicAcid],                         'xfpo'),
-            ([NucleicAcid, Plasmid],                'xfpo'),
-            ([NucleicAcid, Oligo],                  'xfpo'),
-            ([NucleicAcid, Plasmid, Oligo],         'xfpo'),
-            ([Plasmid],                             'p'),
-            ([Oligo],                               'o'),
-            ([Plasmid, Oligo],                      'po'),
-    ]
 
 parse_schema = lambda input_name, schema={}: Schema({
     input_name: str,
@@ -42,31 +23,20 @@ parse_schema = lambda input_name, schema={}: Schema({
 def test_normalize_seq(raw_seq, expected):
     assert normalize_seq(raw_seq) == expected
 
-@PrefixParams.parametrize
-def test_get_tag_prefixes(args, expected):
-    assert get_tag_prefixes(*args) == set(expected)
-
-@PrefixParams.parametrize
-def test_get_tag_pattern(args, expected):
-    assert re.fullmatch(
-            fr'\[[{expected}]+\]\\d\+',
-            get_tag_pattern(*args),
-    )
-
 @parametrize_from_file(
         schema=Schema({
-            'tag_str': str,
-            **error_or({
-                'expected': {
-                    'type': str,
-                    'id': Coerce(int),
-                },
+            Optional('db', default={}): dict,
+            'tag': with_py.eval,
+            **with_freeze.error_or({
+                'expected': partial(with_py.eval, eval_keys=True),
             }),
         }),
 )
-def test_parse_tag(tag_str, expected, error):
+def test_check_tag(db, tag, expected, error):
+    db = eval_db(db)
     with error:
-        assert parse_tag(tag_str) == Tag(**expected)
+        m = check_tag(db, tag)
+        assert {k: m.group(k) for k, v in expected.items()} == expected
 
 @parametrize_from_file(
         schema=Schema({

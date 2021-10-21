@@ -7,10 +7,13 @@ import networkx as nx
 import stepwise
 
 from stepwise import Quantity, Q
+from parametrize_from_file.voluptuous import Namespace
 from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
 from unittest.mock import MagicMock
 from mock_model import *
 from contextlib import nullcontext
+from operator import attrgetter
+from functools import partial
 from pathlib import Path
 
 TEST_DIR = Path(__file__).parent
@@ -67,15 +70,23 @@ class exec_with(do_with):
             return globals[self.get]
 
 def eval_db(reagents):
-    db = freezerbox.Database()
-    schema = Schema(
-            empty_ok({
-                str: eval_freezerbox,
-            }),
-    )
+    schema = Schema({
+            str: with_freeze.eval,
+    })
+    reagents = schema(reagents)
 
-    for tag, reagent in schema(reagents).items():
+    meta = reagents.pop('meta', {})
+    config = meta.get('config', {})
+    paths = meta.get('paths', {})
+
+    config = freezerbox.Config(config, paths)
+    db = freezerbox.Database(config)
+
+    for tag, reagent in reagents.items():
         db[tag] = reagent
+
+    if not db.name:
+        db.name = 'mock'
 
     return db
 
@@ -179,7 +190,6 @@ eval_freezerbox = eval_with(
 eval_pytest = eval_with().all(pytest)
 eval_python = eval_with()
 
-
 class Params:
 
     @classmethod
@@ -195,3 +205,28 @@ class Params:
 
         return pytest.mark.parametrize(args, params)(f)
 
+# I'm kinda half-way through converting to the new Namespace class provided by 
+# pff...
+
+with_py = Namespace(attrgetter=attrgetter)
+with_pytest = Namespace('from pytest import *')
+with_freeze = Namespace(
+        freezerbox=freezerbox,
+        nx=nx,
+        Quantity=Quantity,
+        Q=Q,
+        approx_Q=approx_Q,
+        MockReagent=MockReagent,
+        MockMolecule=MockMolecule,
+        MockNucleicAcid=MockNucleicAcid,
+        TEST_DIR=TEST_DIR,
+).all(freezerbox)
+
+@pytest.fixture
+def files(request, tmp_path):
+    for name, contents in request.param.items():
+        p = tmp_path / name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(contents)
+
+    return tmp_path

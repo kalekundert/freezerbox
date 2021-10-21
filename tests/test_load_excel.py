@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import pytest
-from freezerbox import load_db, parse_tag, Fields
+import pytest, rtoml
+from freezerbox import load_db, Fields
 from freezerbox.model import *
+from freezerbox.config import BUILTIN_CONF
 from pathlib import Path
 from schema_helpers import *
 from mock_model import *
@@ -12,38 +13,48 @@ MOCK_DB = Path(__file__).parent / 'mock_excel_db'
 
 @pytest.fixture(autouse=True)
 def db(mock_plugins):
+    # Load the real defaults, so we can test them.
+    defaults = rtoml.load(BUILTIN_CONF)
+
     MOCK_CONFIG = {
             'use': 'mock',
+            'tag_pattern': r'([pforsb])(\d+)',
             'database': {
-                'mock': {
-                    'type': 'excel',
-                    'dir': str(MOCK_DB),
-                }
-            }
+                'mock': [
+                    {
+                        'format': 'excel',
+                        'reagent': 'plasmid',
+                        'path': str(MOCK_DB / 'plasmids.xlsx'),
+                        'sequence': str(MOCK_DB / 'plasmids/{tag_match[1]}{tag_match[2]:0>3}.dna'),
+                        'tag_template': 'p${i+2}',
+                    }, {
+                        'format': 'excel',
+                        'reagent': 'nucleic_acid',
+                        'path': str(MOCK_DB / 'fragments.xlsx'),
+                        'sequence': str(MOCK_DB / 'fragments/{tag}.dna'),
+                    }, {
+                        'format': 'excel',
+                        'reagent': 'oligo',
+                        'path': str(MOCK_DB / 'oligos.xlsx'),
+                    }, {
+                        'format': 'excel',
+                        'reagent': 'protein',
+                        'path': str(MOCK_DB / 'proteins.xlsx'),
+                        'sequence': str(MOCK_DB / 'proteins/{tag}.prot'),
+                    }, {
+                        'format': 'excel',
+                        'reagent': 'strain',
+                        'path': str(MOCK_DB / 'strains.xlsx'),
+                    }, {
+                        'format': 'excel',
+                        'reagent': 'buffer',
+                        'path': str(MOCK_DB / 'buffers.xlsx'),
+                    },
+                ],
+            },
+            'features': defaults['features'],
     }
     return load_db(config=MOCK_CONFIG)
-
-
-@parametrize_from_file(
-        schema=Schema({
-            'path': str,
-            'tag': str,
-            'expected': eval,
-        }),
-)
-def test_path_from_tag(tmp_path, path, tag, expected):
-    from freezerbox.loaders.excel import _path_from_tag
-
-    path = tmp_path / path
-    path.touch()
-
-    tag = parse_tag(tag)
-    hit = _path_from_tag(tmp_path, tag)
-
-    if expected:
-        assert hit == path
-    else:
-        assert hit == None
 
 
 def test_f2(db, tag='f2'):
@@ -157,10 +168,25 @@ def test_p2(db, tag='p2'):
     assert isinstance(db[tag], Plasmid)
     assert db[tag].is_double_stranded
     assert db[tag].is_circular
+    assert db[tag].seq == 'TCGCGCGTTTCGGTGATGACGGTGAAAACCTCTGACACATGCAGCTCCCGGAGACGGTCACAGCTTGTCTGTAAGCGGATGCCGGGAGCAGACAAGCCCGTCAGGGCGCGTCAGCGGGTGTTGGCGGGTGTCGGGGCTGGCTTAACTATGCGGCATCAGAGCAGATTGTACTGAGAGTGCACCATATGCGGTGTGAAATACCGCACAGATGCGTAAGGAGAAAATACCGCATCAGGCGCCATTCGCCATTCAGGCTGCGCAACTGTTGGGAAGGGCGATCGGTGCGGGCCTCTTCGCTATTACGCCAGCTGGCGAAAGGGGGATGTGCTGCAAGGCGATTAAGTTGGGTAACGCCAGGGTTTTCCCAGTCACGACGTTGTAAAACGACGGCCAGTGAATTCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTTGGCGTAATCATGGTCATAGCTGTTTCCTGTGTGAAATTGTTATCCGCTCACAATTCCACACAACATACGAGCCGGAAGCATAAAGTGTAAAGCCTGGGGTGCCTAATGAGTGAGCTAACTCACATTAATTGCGTTGCGCTCACTGCCCGCTTTCCAGTCGGGAAACCTGTCGTGCCAGCTGCATTAATGAATCGGCCAACGCGCGGGGAGAGGCGGTTTGCGTATTGGGCGCTCTTCCGCTTCCTCGCTCACTGACTCGCTGCGCTCGGTCGTTCGGCTGCGGCGAGCGGTATCAGCTCACTCAAAGGCGGTAATACGGTTATCCACAGAATCAGGGGATAACGCAGGAAAGAACATGTGAGCAAAAGGCCAGCAAAAGGCCAGGAACCGTAAAAAGGCCGCGTTGCTGGCGTTTTTCCATAGGCTCCGCCCCCCTGACGAGCATCACAAAAATCGACGCTCAAGTCAGAGGTGGCGAAACCCGACAGGACTATAAAGATACCAGGCGTTTCCCCCTGGAAGCTCCCTCGTGCGCTCTCCTGTTCCGACCCTGCCGCTTACCGGATACCTGTCCGCCTTTCTCCCTTCGGGAAGCGTGGCGCTTTCTCATAGCTCACGCTGTAGGTATCTCAGTTCGGTGTAGGTCGTTCGCTCCAAGCTGGGCTGTGTGCACGAACCCCCCGTTCAGCCCGACCGCTGCGCCTTATCCGGTAACTATCGTCTTGAGTCCAACCCGGTAAGACACGACTTATCGCCACTGGCAGCAGCCACTGGTAACAGGATTAGCAGAGCGAGGTATGTAGGCGGTGCTACAGAGTTCTTGAAGTGGTGGCCTAACTACGGCTACACTAGAAGAACAGTATTTGGTATCTGCGCTCTGCTGAAGCCAGTTACCTTCGGAAAAAGAGTTGGTAGCTCTTGATCCGGCAAACAAACCACCGCTGGTAGCGGTGGTTTTTTTGTTTGCAAGCAGCAGATTACGCGCAGAAAAAAAGGATCTCAAGAAGATCCTTTGATCTTTTCTACGGGGTCTGACGCTCAGTGGAACGAAAACTCACGTTAAGGGATTTTGGTCATGAGATTATCAAAAAGGATCTTCACCTAGATCCTTTTAAATTAAAAATGAAGTTTTAAATCAATCTAAAGTATATATGAGTAAACTTGGTCTGACAGTTACCAATGCTTAATCAGTGAGGCACCTATCTCAGCGATCTGTCTATTTCGTTCATCCATAGTTGCCTGACTCCCCGTCGTGTAGATAACTACGATACGGGAGGGCTTACCATCTGGCCCCAGTGCTGCAATGATACCGCGAGACCCACGCTCACCGGCTCCAGATTTATCAGCAATAAACCAGCCAGCCGGAAGGGCCGAGCGCAGAAGTGGTCCTGCAACTTTATCCGCCTCCATCCAGTCTATTAATTGTTGCCGGGAAGCTAGAGTAAGTAGTTCGCCAGTTAATAGTTTGCGCAACGTTGTTGCCATTGCTACAGGCATCGTGGTGTCACGCTCGTCGTTTGGTATGGCTTCATTCAGCTCCGGTTCCCAACGATCAAGGCGAGTTACATGATCCCCCATGTTGTGCAAAAAAGCGGTTAGCTCCTTCGGTCCTCCGATCGTTGTCAGAAGTAAGTTGGCCGCAGTGTTATCACTCATGGTTATGGCAGCACTGCATAATTCTCTTACTGTCATGCCATCCGTAAGATGCTTTTCTGTGACTGGTGAGTACTCAACCAAGTCATTCTGAGAATAGTGTATGCGGCGACCGAGTTGCTCTTGCCCGGCGTCAATACGGGATAATACCGCGCCACATAGCAGAACTTTAAAAGTGCTCATCATTGGAAAACGTTCTTCGGGGCGAAAACTCTCAAGGATCTTACCGCTGTTGAGATCCAGTTCGATGTAACCCACTCGTGCACCCAACTGATCTTCAGCATCTTTTACTTTCACCAGCGTTTCTGGGTGAGCAAAAACAGGAAGGCAAAATGCCGCAAAAAAGGGAATAAGGGCGACACGGAAATGTTGAATACTCATACTCTTCCTTTTTCAATATTATTGAAGCATTTATCAGGGTTATTGTCTCATGAGCGGATACATATTTGAATGTATTTAGAAAAATAAACAAATAGGGGTTCCGCGCACATTTCCCCGAAAAGTGCCACCTGACGTCTAAGAAACCATTATTATCATGACATTAACCTATAAAAATAGGCGTATCACGAGGCCCTTTCGTC'
+    assert db[tag].origin == 'pUC'          # inferred from sequence
+    assert db[tag].resistance == ['AmpR']   # inferred from sequence
+
+def test_p3(db, tag='p3'):
+    assert isinstance(db[tag], Plasmid)
+    assert db[tag].is_double_stranded
+    assert db[tag].is_circular
+    assert db[tag].origin == 'p15A'
+    assert db[tag].resistance == ['AmpR', 'TetR']
 
 
 def test_r2(db, tag='r2'):
     assert isinstance(db[tag], Protein)
+
+
+def test_s2(db, tag='s2'):
+    assert isinstance(db[tag], Strain)
+    assert db[tag].plasmids == [db['p2'], db['p3']]
 
 
 def test_b2(db, tag='b2'):

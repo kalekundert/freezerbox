@@ -5,16 +5,16 @@ import freezerbox
 import stepwise
 
 class MockReagent(freezerbox.Reagent):
-    tag_prefix = 'x'
+    pass
 
 class MockMolecule(freezerbox.Molecule):
-    tag_prefix = 'x'
+    pass
 
     def _calc_mw(self):
         raise freezerbox.QueryError
 
 class MockNucleicAcid(freezerbox.NucleicAcid):
-    tag_prefix = 'x'
+    pass
 
 class MockSoloMaker:
 
@@ -73,6 +73,7 @@ class MockComboMaker:
         self.products = products
         self.protocol = stepwise.Protocol(steps=steps)
         self.dependencies = deps
+
 class MockEntryPoint:
 
     def __init__(self, plugin):
