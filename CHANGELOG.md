@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.19.0 (2021-10-21)
+### Feature
+* Refactor config, support plasmid features ([#22](https://github.com/kalekundert/freezerbox/issues/22)) ([`837f324`](https://github.com/kalekundert/freezerbox/commit/837f3248572b4178b443e461d20e7fc84a0a75b9))
+
 ## v0.18.2 (2021-08-26)
 ### Fix
 * Control the sort order of all `make` targets ([`2dd79fb`](https://github.com/kalekundert/freezerbox/commit/2dd79fb9d1b172b48f08fa08c828c6bffe8a3e8d))
