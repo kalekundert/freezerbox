@@ -13,7 +13,7 @@ from os import getcwd
 
 def _db_from_maker(x):
     if 'maker' in x:
-        x['db'] = db = Database()
+        x['db'] = db = Database({})
         x['tag'] = tag = 'x1'
 
         db[tag] = MockMolecule(

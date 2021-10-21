@@ -27,11 +27,13 @@ def test_grouped_topological_sort(nodes, edges, expected, error):
 
 @parametrize_from_file(
         schema=Schema({
-            'db': eval_db,
-            'expected': empty_ok([{'arg0': str, 'tags': str}]),
+            'db': dict,
+            'expected': [{'arg0': str, 'tags': str}],
         }),
 )
 def test_group_by_synthesis(db, expected, mock_plugins):
+    db = eval_db(db)
+
     actual = [
             (k, [str(v.tag) for v in vs])
             for k, vs in freezerbox.group_by_synthesis(db.values())
@@ -45,11 +47,13 @@ def test_group_by_synthesis(db, expected, mock_plugins):
 
 @parametrize_from_file(
         schema=Schema({
-            'db': eval_db,
-            'expected': empty_ok([{'arg0': str, 'ids': str}]),
+            'db': dict,
+            'expected': [{'arg0': str, 'ids': str}],
         }),
 )
 def test_group_by_cleanup(db, expected, mock_plugins):
+    db = eval_db(db)
+
     actual = [
             (k, [v.maker_args['id'] for v in vs])
             for k, vs in freezerbox.group_by_cleanup(db.values())

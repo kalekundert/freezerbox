@@ -5,22 +5,29 @@ import entrypoints
 from more_itertools import one, only
 from dataclasses import dataclass
 from collections import namedtuple
-from configurator import Config
 from voluptuous import Schema
 from inform import plural
-from Bio.SeqUtils import molecular_weight, MeltingTemp
-from .config import load_config
+from stringcase import snakecase, sentencecase
+from mergedeep import merge
+from Bio.Seq import Seq
+from Bio.SeqUtils import MeltingTemp, molecular_weight
+from .config import Config, load_config
 from .errors import LoadError, QueryError, CheckError, only_raise
 from .utils import *
 
 DB_PLUGINS = entrypoints.get_group_named('freezerbox.databases')
 MAKER_PLUGINS = entrypoints.get_group_named('freezerbox.make')
+REAGENT_CLASSES = {}
 INTERMEDIATE_SUBCLASSES = {}
 
 class Database:
 
-    def __init__(self, name='*unnamed database*'):
-        self.name = name
+    def __init__(self, config):
+        if isinstance(config, dict):
+            config = Config(config)
+
+        self.name = config.get('use')
+        self.config = config
         self._reagents = {}
 
     def __iter__(self):
@@ -30,31 +37,23 @@ class Database:
         return len(self._reagents)
 
     def __getitem__(self, tag):
-        tag = parse_tag(tag)
         try:
             return self._reagents[tag]
         except KeyError:
             raise QueryError(f"not found in database", culprit=tag) from None
 
     def __setitem__(self, tag, reagent):
-        tag = parse_tag(tag)
+        check_tag(self, tag)
+
         if tag in self._reagents:
             raise LoadError("already in database, cannot be replaced", culprit=tag)
-        if tag.type != reagent.tag_prefix:
-            err = LoadError(
-                    tag=tag,
-                    reagent=reagent,
-            )
-            err.brief = "{reagent} cannot have tag '{tag}'"
-            err.blame += "expected {reagent.tag_prefix!r} prefix"
-            raise err
 
         self._reagents[tag] = reagent
         reagent._db = self
         reagent._tag = tag
 
     def __delitem__(self, tag):
-        reagent = self._reagents.pop(parse_tag(tag))
+        reagent = self._reagents.pop(tag)
         reagent._db = None
         reagent._tag = None
         autoprop.clear_cache(reagent)
@@ -72,24 +71,30 @@ class Database:
         return self._reagents.items()
 
 
-@dataclass(frozen=True)
-class Tag:
-    type: str
-    id: int
-
-    def __str__(self):
-        return f'{self.type}{self.id}'
-
-
 @autoprop.immutable
 class Reagent:
-    tag_prefix = None
+    config_name = 'reagent'
+    pretty_name = 'reagent'
 
     def __init__(self, **kwargs):
+        # `self._db` and `self._tag` are set by `Database.__setitem__()`.
         self._db = None
         self._tag = None
         self._attrs = kwargs
         self._intermediates = {}
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+
+        if 'config_name' not in cls.__dict__:
+            cls.config_name = snakecase(cls.__name__)
+        if 'pretty_name' not in cls.__dict__:
+            cls.pretty_name = sentencecase(cls.__name__).lower()
+
+        # It is possible for one reagent class to overwrite another.  This 
+        # might be useful, e.g. if a user wants to replace a standard reagent 
+        # class with a personal variant.
+        REAGENT_CLASSES[cls.config_name] = cls
 
     def __repr__(self):
         attrs = list(self._attrs.items())
@@ -98,7 +103,7 @@ class Reagent:
 
         attr_strs = [f'{k}={v!r}' for k, v in attrs]
         if self._tag:
-            attr_strs.insert(0, repr(str(self._tag)))
+            attr_strs.insert(0, repr(self._tag))
 
         return f'{self.__class__.__qualname__}({", ".join(attr_strs)})'
 
@@ -275,8 +280,20 @@ class Reagent:
         return cleanups
 
 @autoprop.immutable
+class Strain(Reagent):
+
+    def get_plasmids(self):
+        plasmids = self._attrs.get('plasmids', [])
+
+        if callable(plasmids):
+            plasmids = plasmids()
+
+        return plasmids
+
+
+@autoprop.immutable
 class Buffer(Reagent):
-    tag_prefix = 'b'
+    pass
 
 
 @autoprop.immutable
@@ -412,7 +429,6 @@ class Molecule(Reagent):
 
 @autoprop.immutable
 class Protein(Molecule):
-    tag_prefix = 'r'
 
     def get_isoelectric_point(self):
         from Bio.SeqUtils.ProtParam import ProteinAnalysis
@@ -431,7 +447,6 @@ class Protein(Molecule):
 @autoprop.immutable
 class NucleicAcid(Molecule):
     # "f" for "fragment", i.e. non-plasmid/non-oligo DNA constructs.
-    tag_prefix = 'f'
     default_molecule = 'DNA'
     default_strandedness = None
 
@@ -543,10 +558,54 @@ class NucleicAcid(Molecule):
 
 @autoprop.immutable
 class Plasmid(NucleicAcid):
-    tag_prefix = 'p'
 
     def get_molecule(self):
         return 'DNA'
+
+    def get_origin(self):
+        """
+        Return the origin of replication for this plasmid.
+
+        The return value is the name of the origin as a string, e.g. ``"pUC"``.  
+        The origin can either be manually specified via the constructor, or 
+        inferred by comparing the list of features in the config file to the 
+        sequence of the plasmid.
+        """
+        try:
+            return self._attrs['origin']
+        except KeyError:
+            pass
+
+        return one(
+                self._find_features('ori'),
+                too_short=QueryError("no origin of replication found", culprit=self),
+                too_long=QueryError("multiple origins of replication found", culprit=self),
+        )
+
+    def get_resistance(self):
+        """
+        Return the resistance genes encoded by this plasmid.
+
+        The return value is a list of strings, where the strings are the names 
+        of the resistance genes, e.g. ``["AmpR"]``.  No distinction is 
+        currently made between bacterial and mammalian resistance genes.  Most 
+        plasmids only have one resistance gene, but the API always returns a 
+        list because it's possible (and not unheard of) for a plasmid to have 
+        multiple resistance genes.
+
+        The resistance genes can either be manually specified by passing a 
+        *resistance* argument to the constructor, or inferred by comparing the 
+        list of features in the config file to the sequence of the plasmid.
+        """
+        resistance = self._attrs.get('resistance', [])
+
+        if not resistance:
+            resistance = self._find_features('resistance')
+
+        if not resistance:
+            raise QueryError("no resistance genes found", culprit=self)
+
+        return resistance
 
     @property
     def is_double_stranded(self):
@@ -556,12 +615,51 @@ class Plasmid(NucleicAcid):
     def is_circular(self):
         return True
 
+    def _find_features(self, role=None):
+        hits = []
+
+        try:
+            plasmid_seq = Seq(self.seq.upper())
+        except QueryError:
+            return []
+
+        features = self.db.config.get('features', [])
+
+        for feat in features:
+            try:
+                feat_name = feat['name']
+                feat_seq = feat['seq'].upper()
+                feat_role = feat['role']
+            except KeyError as err1:
+                err2 = QueryError(db=self.db, feature=feat, key=err1.args[0])
+                err2.brief = "found feature without required key: {key!r}"
+                err2.info += "relevant config: {db.config.paths[features]}"
+                err2.info += "feature: {feature}"
+                raise err2 from None
+
+            if role and feat_role != role:
+                continue
+
+            # Checking for an exact substring match.  In the future, 
+            # I'd like to relax this, e.g. do a sequence alignment and 
+            # check for a certain percent identity.  I'd also like to 
+            # allow protein sequences to be specified.
+
+            # This will also fail if the resistance gene spans the ends 
+            # of the plasmid sequence string.  But I'll wait to worry 
+            # about that until I write a more comprehensive sequence 
+            # manipulation module.
+            if feat_seq in plasmid_seq or \
+                    feat_seq in plasmid_seq.reverse_complement():
+                hits.append(feat_name)
+
+        return hits
+
 @autoprop.immutable
 class Oligo(NucleicAcid):
-    tag_prefix = 'o'
     default_strandedness = 1
 
-    def get_melting_temp(self):
+    def get_melting_temp_C(self):
         from Bio.SeqUtils import MeltingTemp
 
         # If the Tm is encoded in the oligo name, use that.
@@ -576,7 +674,7 @@ class Oligo(NucleicAcid):
             return MeltingTemp.Tm_Wallace(self.seq)
 
     def get_tm(self):
-        return self.melting_temp
+        return self.melting_temp_C
 
 
 
@@ -696,7 +794,6 @@ class IntermediateMixin:
     def get_cleanup_args(self):
         return super().cleanup_args[:self.step]
 
-@only_raise(LoadError)
 def load_db(use=None, config=None):
     if not config:
         # Can't test this line, because it reads the real configuration files 
@@ -711,28 +808,32 @@ def load_db(use=None, config=None):
             raise LoadError("no database specified.") from None
 
     try:
-        config_use = config['database'][use]
+        loader_configs = config['database'][use]
     except KeyError as err:
         raise LoadError(f"unknown database {use!r}") from None
 
-    try:
-        type_use = config_use['type']
-    except KeyError as err:
-        raise LoadError(f"no 'type' specified for database {use!r}") from None
+    db = Database(config)
 
-    try:
-        plugin = DB_PLUGINS[type_use].load()
-    except KeyError as err:
-        raise LoadError(f"no {err} database plugin found") from None
+    for loader_config in loader_configs:
+        try:
+            loader_key = loader_config['format']
+        except KeyError as err:
+            raise LoadError(f"no 'format' specified for database {use!r}") from None
 
-    if defaults := getattr(plugin, 'default_config'):
-        config_use = (Config(defaults) + config_use).data
+        try:
+            loader_plugin = DB_PLUGINS[loader_key].load()
+        except KeyError as err:
+            raise LoadError(f"no {loader_key!r} database plugin found") from None
 
-    if hasattr(plugin, 'schema'):
-        schema = Schema(plugin.schema)
-        config_use = schema(config_use)
+        if defaults := getattr(loader_plugin, 'default_config'):
+            loader_config = merge({}, defaults, loader_config)
 
-    return plugin.load(config_use)
+        if hasattr(loader_plugin, 'schema'):
+            loader_config = loader_plugin.schema(loader_config)
+
+        loader_plugin.load(db, loader_config)
+
+    return db
 
 def load_maker_factory(key):
     try:
@@ -741,4 +842,25 @@ def load_maker_factory(key):
         raise QueryError(f"no {err.args[0]!r} maker plugins found")
 
     return plugin.make
+
+def find(db, tags, reagent_cls=None):
+    if isinstance(tags, str):
+        hits = find(db, [tags], reagent_cls=reagent_cls)
+        return hits[0]
+
+    hits = [db[x] for x in tags]
+
+    if reagent_cls:
+        for hit in hits:
+            if not isinstance(hit, reagent_cls):
+                err = QueryError(
+                        culprit=hit.tag,
+                        hit=hit,
+                        reagent_cls=reagent_cls,
+                )
+                err.brief = "wrong reagent type"
+                err.blame += "expected {reagent_cls.pretty_name!r}, found {hit.__class__.pretty_name!r}"
+                raise err
+
+    return hits
 

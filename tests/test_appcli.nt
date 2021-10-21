@@ -1,0 +1,563 @@
+test_reagent_config:
+  -
+    id: db-cache
+    db:
+      x1: MockReagent(name='a')
+    db_access: cache
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      - 'a'
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', name='a'\)
+      - found 'name': 'a'
+  -
+    id: db-obj
+    db:
+      x1: MockReagent(name='a')
+    db_access: obj
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      - 'a'
+    info:
+      - found database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', name='a'\)
+      - found 'name': 'a'
+  -
+    id: db-getter
+    db:
+      x1: MockReagent(name='a')
+    db_access: obj.my_db
+    config_cls:
+      > class MockConfig(ReagentConfig):
+      >     db_getter = attrgetter('my_db')
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      - 'a'
+    info:
+      - found database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', name='a'\)
+      - found 'name': 'a'
+  -
+    id: db-load
+    db:
+      x1: MockReagent(name='a')
+    db_access: load
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      - 'a'
+    info:
+      - no database provided: 'MockObj' object has no attribute 'db'
+      - found tag: 'x1'
+      - loaded database: mock
+      - found reagent: MockReagent\('x1', name='a'\)
+      - found 'name': 'a'
+  -
+    id: db-not-found
+    db:
+      x1: MockReagent(name='a')
+    db_access: 'load'
+    config_cls:
+      > class MockConfig(ReagentConfig):
+      >     autoload_db = False
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - no value found: 'MockObj' object has no attribute 'db'
+
+  -
+    id: tag-getter
+    db:
+      x1: MockReagent(name='a')
+    config_cls:
+      > class MockConfig(ReagentConfig):
+      >     tag_getter = attrgetter('my_tag')
+    obj:
+      > obj = MockObj()
+      > obj.my_tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      - 'a'
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', name='a'\)
+      - found 'name': 'a'
+  -
+    id: tag-not-found
+    db:
+      x1: MockReagent(name='a')
+    obj:
+      > obj = MockObj()
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - no value found: 'MockObj' object has no attribute 'tag'
+  -
+    id: tag-not-valid
+    db:
+      meta:
+        config:
+          tag_pattern: r'[a-z]\d+'
+      x1: MockReagent(name='a')
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'not-a-tag'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - found tag: 'not-a-tag'
+      - no value found: not a valid FreezerBox tag
+
+  -
+    id: reagent-not-found
+    db:
+      x1: MockReagent(name='a')
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x2'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - found tag: 'x2'
+      - no value found: tag not in database
+
+  -
+    id: transform
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields("m deps=x2")
+        > )
+    config_cls:
+      > class MockConfig(ReagentConfig):
+      >     transform = lambda r: r.synthesis_maker
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'dependencies'
+    expected:
+      - ['x2']
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', synthesis=Fields\(\['m'\], \{'deps': 'x2'\}\)\)
+      -
+        > called: <function MockConfig.<lambda> at .*>
+        > returned: <mock_model.MockSoloMaker object at .*>
+      - found 'dependencies': \['x2'\]
+  -
+    id: transform-err
+    db:
+      x1:
+        > MockReagent()
+    config_cls:
+      > class MockConfig(ReagentConfig):
+      >     transform = lambda r: r.synthesis_maker
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'dependencies'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1'\)
+      - no value found: x1: no synthesis specified
+
+  -
+    id: setup
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields("m deps=x2")
+        > )
+    config_cls:
+      > MockConfig = ReagentConfig.setup(
+      >     db_getter=attrgetter('my_db'),
+      >     tag_getter=attrgetter('my_tag'),
+      >     transform=lambda r: r.synthesis_maker,
+      > )
+      >
+    obj:
+      > obj = MockObj()
+      > obj.my_tag = 'x1'
+    db_access: obj.my_db
+    key:
+      > 'dependencies'
+    expected:
+      - ['x2']
+    info:
+      - found database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', synthesis=Fields\(\['m'\], \{'deps': 'x2'\}\)\)
+      -
+        > called: <function <lambda> at .*>
+        > returned: <mock_model.MockSoloMaker object at .*>
+      - found 'dependencies': \['x2'\]
+  -
+    id: setup-autoload-db
+    db:
+      x1: MockReagent(name='a')
+    db_access: 'load'
+    config_cls:
+      > MockConfig = ReagentConfig.setup(autoload_db=False)
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - no value found: 'MockObj' object has no attribute 'db'
+
+  -
+    id: key-not-found
+    db:
+      x1: MockReagent(name='a')
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'not_found'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', name='a'\)
+      - no value found: 'MockReagent' object has no attribute 'not_found'
+  -
+    id: key-callable
+    db:
+      x1: MockReagent(name='a')
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > attrgetter('name')
+    expected:
+      - 'a'
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1', name='a'\)
+      -
+        > called: operator.attrgetter\('name'\)
+        > returned: 'a'
+
+test_product_configs:
+  -
+    id: product-key-str
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig
+    products:
+      x1: 0
+    key: 'name'
+    expected:
+      - 'x'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      - found 'name': 'x'
+  -
+    id: product-key-callable
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig
+    products:
+      x1: 0
+    key: attrgetter('name')
+    expected:
+      - 'x'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      -
+        > called: operator.attrgetter\('name'\)
+        > returned: 'x'
+  -
+    id: product-missing-key-str
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        > )
+    config_cls:
+      > MockConfig = ProductConfig
+    products:
+      x1: 0
+    key: 'invalid_attr'
+    expected:
+      []
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\)
+      - no value found: 'MockReagentIntermediate' object has no attribute 'invalid_attr'
+  -
+    id: product-missing-key-callable
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        > )
+    config_cls:
+      > MockConfig = ProductConfig
+    products:
+      x1: 0
+    key: attrgetter('invalid_attr')
+    expected:
+      []
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\)
+      - no value found: 'MockReagentIntermediate' object has no attribute 'invalid_attr'
+  -
+    id: product-not-found
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig
+    products:
+      x1: 0
+    products_attr:
+    key: 'name'
+    expected:
+      []
+    info:
+      - no products found: 'MockObj' object has no attribute 'products'
+  -
+    id: product-found-multiple
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+      x2:
+        > MockReagent(
+        >     synthesis=parse_fields('b'),
+        >     name='y',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig
+    products:
+      x1: 0
+      x2: 0
+    key: 'seq'
+    error:
+      type: QueryError
+      message: expected 1 product, found 2
+  -
+    id: product-getter-class-attr
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > class MockConfig(ProductConfig):
+      >     products_getter = attrgetter('my_products')
+    products:
+      x1: 0
+    products_attr: my_products
+    key: 'name'
+    expected:
+      - 'x'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      - found 'name': 'x'
+  -
+    id: product-getter-setup
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig.setup(
+      >     products_getter=attrgetter('my_products'),
+      > )
+    products:
+      x1: 0
+    products_attr: my_products
+    key: 'name'
+    expected:
+      - 'x'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      - found 'name': 'x'
+
+  -
+    id: maker-key-str
+    db:
+      x1: MockReagent(synthesis=parse_fields('a b c=d'))
+    config_cls:
+      > MockConfig = MakerConfig
+    products:
+      x1: 0
+    key: 'c'
+    expected:
+      - 'd'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a', 'b'\], \{'c': 'd'\}\)\)
+      - found 'c': 'd'
+  -
+    id: maker-key-int
+    db:
+      x1: MockReagent(synthesis=parse_fields('a b c=d'))
+    config_cls:
+      > MockConfig = MakerConfig
+    products:
+      x1: 0
+    key: 1
+    expected:
+      - 'b'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a', 'b'\], \{'c': 'd'\}\)\)
+      - found 1: 'b'
+  -
+    id: maker-synthesis
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('x a=b'),
+        >     cleanups=parse_fields_list('y a=c'),
+        > )
+    config_cls:
+      > MockConfig = MakerConfig
+    products:
+      x1: 0
+    key: 'a'
+    expected:
+      - 'b'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['x'\], \{'a': 'b'\}\), cleanups=\[Fields\(\['y'\], \{'a': 'c'\}\)\]\)
+      - found 'a': 'b'
+  -
+    id: maker-cleanup
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('x a=b'),
+        >     cleanups=parse_fields_list('y a=c'),
+        > )
+    config_cls:
+      > MockConfig = MakerConfig
+    products:
+      x1: 1
+    key: 'a'
+    expected:
+      - 'c'
+    info:
+      - found product: MockReagentIntermediate\('x1', step=1, synthesis=Fields\(\['x'\], \{'a': 'b'\}\), cleanups=\[Fields\(\['y'\], \{'a': 'c'\}\)\]\)
+      - found 'a': 'c'
+
+  -
+    id: precursor-key-str
+    db:
+      x1:
+        > MockMolecule(
+        >     synthesis=parse_fields('a conc=10nM'),
+        >     cleanups=parse_fields_list('b conc=20nM; c conc=30nM'),
+        > )
+    config_cls:
+      > MockConfig = PrecursorConfig
+    products:
+      x1: 1
+    key: 'conc'
+    expected:
+      - Quantity(10, 'nM')
+    info:
+      - found product: MockMoleculeIntermediate\('x1', step=1, synthesis=Fields\(\['a'\], \{'conc': '10nM'\}\), cleanups=\[Fields\(\['b'\], \{'conc': '20nM'\}\), Fields\(\['c'\], \{'conc': '30nM'\}\)\]\)
+      - found 'conc': Quantity\(10, 'nM'\)
+  -
+    id: precursor-key-str
+    db:
+      x1:
+        > MockMolecule(
+        >     synthesis=parse_fields('a conc=10nM'),
+        >     cleanups=parse_fields_list('b conc=20nM; c conc=30nM'),
+        > )
+    config_cls:
+      > MockConfig = PrecursorConfig
+    products:
+      x1: 2
+    key: 'conc'
+    expected:
+      - Quantity(20, 'nM')
+    info:
+      - found product: MockMoleculeIntermediate\('x1', step=2, synthesis=Fields\(\['a'\], \{'conc': '10nM'\}\), cleanups=\[Fields\(\['b'\], \{'conc': '20nM'\}\), Fields\(\['c'\], \{'conc': '30nM'\}\)\]\)
+      - found 'conc': Quantity\(20, 'nM'\)
+  -
+    id: precursor-key-callable
+    db:
+      x1:
+        > MockMolecule(
+        >     synthesis=parse_fields('a conc=10nM'),
+        >     cleanups=parse_fields_list('b conc=20nM'),
+        > )
+    config_cls:
+      > MockConfig = PrecursorConfig
+    products:
+      x1: 1
+    key: attrgetter('conc')
+    expected:
+      - Quantity(10, 'nM')
+    info:
+      - found product: MockMoleculeIntermediate\('x1', step=1, synthesis=Fields\(\['a'\], \{'conc': '10nM'\}\), cleanups=\[Fields\(\['b'\], \{'conc': '20nM'\}\)\]\)
+      -
+        > called: operator.attrgetter\('conc'\)
+        > returned: Quantity\(10, 'nM'\)
+

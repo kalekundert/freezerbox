@@ -460,6 +460,152 @@ test_nucleic_acid_mw:
       type: QueryError
       message: need sequence or length to calculate molecular weight
 
+test_plasmid_origin:
+  -
+    id: kwargs
+    kwargs:
+      origin: 'pUC'
+    expected: pUC
+  -
+    id: seq
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'pMock'
+          seq: 'ATTAC'
+          role: 'ori'
+    expected: pMock
+  -
+    id: seq-reverse-complement
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'pMock'
+          seq: 'GTAAT'
+          role: 'ori'
+    expected: pMock
+  -
+    id: seq-err-wrong-role
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'pMock'
+          seq: 'ATTAC'
+          role: 'gene'
+    error:
+      type: QueryError
+      message: p1: no origin of replication found
+  -
+    id: seq-err-missing-feat-info
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'pMock'
+          role: 'ori'
+    error:
+      type: QueryError
+      message:
+        - found feature without required key: 'seq'
+        - relevant config: unspecified
+  -
+    id: seq-err-two-oris
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'pMock1'
+          seq: 'GATTA'
+          role: 'ori'
+        -
+          name: 'pMock2'
+          seq: 'TTACA'
+          role: 'ori'
+    error:
+      type: QueryError
+      message: p1: multiple origins of replication found
+  -
+    id: err-unspecified
+    kwargs:
+      {}
+    error:
+      type: QueryError
+      message: p1: no origin of replication found
+
+test_plasmid_resistance:
+  -
+    id: kwargs
+    kwargs:
+      resistance: ['AmpR']
+    expected:
+      - AmpR
+  -
+    id: seq
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'MockR'
+          seq: 'ATTAC'
+          role: 'resistance'
+    expected:
+      - MockR
+  -
+    id: seq-reverse-complement
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'MockR'
+          seq: 'GTAAT'
+          role: 'resistance'
+    expected:
+      - MockR
+  -
+    id: seq-err-wrong-role
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'Mock'
+          seq: 'ATTAC'
+          role: 'gene'
+    error:
+      type: QueryError
+      message: p1: no resistance genes found
+  -
+    id: seq-err-missing-feat-info
+    kwargs:
+      seq: 'GATTACA'
+    config:
+      features:
+        -
+          name: 'Mock'
+          role: 'origin'
+    error:
+      type: QueryError
+      message:
+        - found feature without required key: 'seq'
+        - relevant config: unspecified
+  -
+    id: err-unspecified
+    kwargs:
+      {}
+    error:
+      type: QueryError
+      message: p1: no resistance genes found
+
 test_oligo_tm:
   -
     kwargs:
@@ -500,4 +646,52 @@ test_oligo_tm:
       seq: 'GGTTATTGTCTCATGAGCGG'
       name: 'primer tm=63'
     expected: 63
+
+test_find:
+  -
+    id: find-one
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+    tags: 'x1'
+    expected: DB['x1']
+  -
+    id: find-two
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+      x3: MockReagent()
+    tags: ['x2', 'x3']
+    expected: [DB['x2'], DB['x3']]
+  -
+    id: find-two-order
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+      x3: MockReagent()
+    tags: ['x3', 'x2']
+    expected: [DB['x3'], DB['x2']]
+  -
+    id: err-not-found
+    db:
+      x1: MockReagent()
+      x2: MockReagent()
+    tags: ['x1', 'x2', 'x3']
+    error:
+      type: QueryError
+      message:
+        - x3: not found in database
+  -
+    id: err-wrong-type
+    db:
+      x1: MockMolecule()
+      x2: MockReagent()
+    tags: ['x1', 'x2']
+    kwargs:
+      reagent_cls: MockMolecule
+    error:
+      type: QueryError
+      message:
+        - x2: wrong reagent type
+        - expected 'mock molecule', found 'mock reagent'
 

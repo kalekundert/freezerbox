@@ -12,6 +12,43 @@ test_normalize_seq:
     raw_seq: /5Cy5/GATTACA/3Puro/
     expected: XGATTACAX
 
+test_check_tag:
+  -
+    id: match-no-config
+    tag: 'a1'
+    expected:
+      0: 'a1'
+  -
+    id: match-groups
+    db:
+      meta:
+        config:
+          tag_pattern: r'(?P<type>[a-z])(?P<id>\d+)'
+        paths:
+          tags: '/path/to/conf'
+    tag: 'a1'
+    expected:
+      0: 'a1'
+      1: 'a'
+      2: '1'
+      'type': 'a'
+      'id': '1'
+  -
+    id: no-match
+    db:
+      meta:
+        config:
+          tag_pattern: '[a-z]'
+        paths:
+          tag_pattern: '/path/to/conf'
+    tag: '1'
+    error:
+      type: ParseError
+      message:
+        - tag doesn't match expected pattern
+        - relevant config: /path/to/conf
+        - expected '1' to match '\[a-z\]'
+
 test_parse_tag:
   -
     tag_str: p1
