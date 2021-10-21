@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.20.0 (2021-10-21)
+### Feature
+* Refactor config, support plasmid features ([`9262f5e`](https://github.com/kalekundert/freezerbox/commit/9262f5e6c70fcb5d69f0d5a6107ccf3cd4855087))
+
 ## v0.19.0 (2021-10-21)
 ### Feature
 * Refactor config, support plasmid features ([#22](https://github.com/kalekundert/freezerbox/issues/22)) ([`837f324`](https://github.com/kalekundert/freezerbox/commit/837f3248572b4178b443e461d20e7fc84a0a75b9))
