@@ -197,25 +197,25 @@ def parse_conc(conc_str, default_unit=None):
     return _parse_quantity(conc_str, CONC_UNITS, default_unit, 'concentration')
 
 @only_raise(ParseError)
-def parse_conc_nM(conc_str, mw, default_unit=None):
+def parse_conc_nM(conc_str, mw=None, default_unit=None):
     conc = parse_conc(conc_str, default_unit)
     conc = convert_conc_unit(conc, mw, 'nM')
     return conc.value
 
 @only_raise(ParseError)
-def parse_conc_uM(conc_str, mw, default_unit=None):
+def parse_conc_uM(conc_str, mw=None, default_unit=None):
     conc = parse_conc(conc_str, default_unit)
     conc = convert_conc_unit(conc, mw, 'µM')
     return conc.value
 
 @only_raise(ParseError)
-def parse_conc_ng_uL(conc_str, mw, default_unit=None):
+def parse_conc_ng_uL(conc_str, mw=None, default_unit=None):
     conc = parse_conc(conc_str, default_unit)
     conc = convert_conc_unit(conc, mw, 'ng/µL')
     return conc.value
 
 @only_raise(ParseError)
-def parse_conc_ug_uL(conc_str, mw, default_unit=None):
+def parse_conc_ug_uL(conc_str, mw=None, default_unit=None):
     conc = parse_conc(conc_str, default_unit)
     conc = convert_conc_unit(conc, mw, 'µg/µL')
     return conc.value
