@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.20.2 (2021-10-28)
+### Fix
+* Don't shadow unintentional exceptions ([`baeee4c`](https://github.com/kalekundert/freezerbox/commit/baeee4c03a06f67f5eac7828677336bba74e5625))
+
 ## v0.20.1 (2021-10-23)
 ### Fix
 * Don't require mw argument ([`c805155`](https://github.com/kalekundert/freezerbox/commit/c805155d932fa3c985fa1fa947205a6992999725))
