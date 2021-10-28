@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.20.1 (2021-10-23)
+### Fix
+* Don't require mw argument ([`c805155`](https://github.com/kalekundert/freezerbox/commit/c805155d932fa3c985fa1fa947205a6992999725))
+
 ## v0.20.0 (2021-10-21)
 ### Feature
 * Refactor config, support plasmid features ([`9262f5e`](https://github.com/kalekundert/freezerbox/commit/9262f5e6c70fcb5d69f0d5a6107ccf3cd4855087))
