@@ -12,7 +12,7 @@ from mergedeep import merge
 from Bio.Seq import Seq
 from Bio.SeqUtils import MeltingTemp, molecular_weight
 from .config import Config, load_config
-from .errors import LoadError, QueryError, CheckError, only_raise
+from .errors import LoadError, QueryError, CheckError
 from .utils import *
 
 DB_PLUGINS = entrypoints.get_group_named('freezerbox.databases')
@@ -435,13 +435,13 @@ class Protein(Molecule):
         analysis = ProteinAnalysis(self.seq)
         return analysis.isoelectric_point()
 
-    @only_raise(QueryError)
     def _calc_mw(self):
         from Bio.SeqUtils import molecular_weight
-        return molecular_weight(
-                seq=self.seq,
-                seq_type='protein',
-        )
+        seq = self.seq
+        try:
+            return molecular_weight(seq, seq_type='protein')
+        except ValueError as err:
+            raise QueryError(str(err)) from err
 
 
 @autoprop.immutable
@@ -521,7 +521,6 @@ class NucleicAcid(Molecule):
             self._molecule, self._strandedness = parse_stranded_molecule(
                     molecule, self.default_strandedness)
 
-    @only_raise(QueryError)
     def _calc_mw(self):
         from Bio.SeqUtils import molecular_weight
 
@@ -545,12 +544,15 @@ class NucleicAcid(Molecule):
         except QueryError:
             pass
 
+        except ValueError as err:
+            raise QueryError(str(err)) from err
+
         try:
             self._cache_stranded_molecule()
             molecule = self._molecule, self._strandedness
             return mw_from_length(self.length, molecule)
 
-        except QueryError:
+        except QueryError as err:
             pass
 
         raise QueryError("need sequence or length to calculate molecular weight")
