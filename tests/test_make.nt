@@ -659,3 +659,14 @@ test_collect_targets:
       exclude_deps: ['x2']
     expected:
       - x3
+  -
+    id: ignore-unknown-tag
+    db:
+      x1:
+        > MockReagent(
+        >         synthesis=Fields(['b'], {'deps': ['z1']}),
+        > )
+    tags:
+      - x1
+    expected:
+      - x1

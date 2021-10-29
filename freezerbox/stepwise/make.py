@@ -331,7 +331,6 @@ def build_makers(db, key, targets):
     factory = load_maker_factory(key)
     yield from factory(db, targets)
 
-
 def collect_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
     # I'm not totally sure that `grouped_topological_sort()` is stable, and if 
     # it's not I'd need to handle sorting differently.  But this approach 
@@ -351,12 +350,22 @@ def collect_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
                     dep_tags = target.dependencies
                 except QueryError:
                     continue
-                else:
-                    yield from inner_collect(
-                            db, filter(lambda x: not db[x].ready, dep_tags),
-                            recurse_deps=recurse_deps,
-                            exclude_deps=exclude_deps,
-                    )
+
+                stale_dep_tags = []
+                for tag in dep_tags:
+                    try:
+                        dep = db[tag]
+                    except QueryError:
+                        continue
+                    
+                    if not dep.ready:
+                        stale_dep_tags.append(tag)
+
+                yield from inner_collect(
+                        db, stale_dep_tags,
+                        recurse_deps=recurse_deps,
+                        exclude_deps=exclude_deps,
+                )
 
     targets = inner_collect(
             db, tags,
