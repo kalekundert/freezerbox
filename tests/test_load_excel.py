@@ -178,6 +178,11 @@ def test_p3(db, tag='p3'):
     assert db[tag].is_circular
     assert db[tag].origin == 'p15A'
     assert db[tag].resistance == ['AmpR', 'TetR']
+    assert db[tag].antibiotics == ['Amp', 'Tet']
+
+def test_p4(db, tag='p4'):
+    assert isinstance(db[tag], Plasmid)
+    assert db[tag].antibiotics == ['Amp', 'Kan']
 
 
 def test_r2(db, tag='r2'):
@@ -186,7 +191,15 @@ def test_r2(db, tag='r2'):
 
 def test_s2(db, tag='s2'):
     assert isinstance(db[tag], Strain)
+    assert db[tag].parent_strain == 's0'
+
+def test_s3(db, tag='s3'):
+    assert isinstance(db[tag], Strain)
     assert db[tag].plasmids == [db['p2'], db['p3']]
+
+def test_s4(db, tag='s4'):
+    assert isinstance(db[tag], Strain)
+    assert db[tag].antibiotics == ['Amp', 'Kan']
 
 
 def test_b2(db, tag='b2'):

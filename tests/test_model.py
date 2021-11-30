@@ -108,6 +108,16 @@ def test_reagent_repr():
     assert repr(x2) == "MockReagent('x2', a='b')"
     assert repr(x3) == "MockReagent('x3', a='b', c='d')"
 
+def test_reagent_eq():
+    db = Database({})
+    db['x1'] = x1 = MockReagent()
+    db['x2'] = x2 = MockReagent()
+
+    assert x1 == x1
+    assert x2 == x2
+    assert x1 != x2
+    assert x2 != x1
+
 def test_reagent_intermediate_repr():
     x1 = MockReagent(
             synthesis=Fields(['m'], {}),
@@ -435,6 +445,21 @@ def test_plasmid_resistance(config, kwargs, expected, error):
     with error:
         assert p1.resistance == expected
 
+@parametrize_from_file(
+        schema=Schema({
+            Optional('config', default={}): with_py.eval,
+            Optional('kwargs', default={}): with_py.eval,
+            **with_freeze.error_or({
+                'expected': [str],
+            }),
+        }),
+)
+def test_plasmid_antibiotics(config, kwargs, expected, error):
+    db = Database(config)
+    db['p1'] = p1 = Plasmid(**kwargs)
+    with error:
+        assert p1.antibiotics == expected
+
 def test_oligo_mw():
     # 5'-OH assumed.
     # http://molbiotools.com/dnacalculator.html
@@ -451,6 +476,32 @@ def test_oligo_tm(kwargs, expected, error):
     db['o1'] = o1 = Oligo(**kwargs)
     with error:
         assert o1.tm == pytest.approx(expected)
+
+
+def test_strain_parent():
+    db = Database({})
+    db['s1'] = s1 = Strain(parent_strain='s0')
+    assert s1.parent_strain == 's0'
+
+@parametrize_from_file
+def test_strain_plasmids(db, kwargs, expected):
+    db = eval_db(db)
+    kwargs, expected = with_freeze.copy()\
+            .use(DB=db)\
+            .eval(kwargs, expected)
+
+    db['s1'] = s1 = Strain(**kwargs)
+    assert s1.plasmids == expected
+
+@parametrize_from_file
+def test_strain_antibiotics(db, kwargs, expected):
+    db = eval_db(db)
+    kwargs = with_freeze.copy()\
+            .use(DB=db)\
+            .eval(kwargs)
+
+    db['s1'] = s1 = Strain(**kwargs)
+    assert s1.antibiotics == expected
 
 
 def test_intermediate(mock_plugins):

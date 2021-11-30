@@ -18,7 +18,7 @@ schema = Schema({
         'columns': {str: Any(
             'tag', 'seq', 'molecule', 'synthesis', 'cleanups', 'ready', 'name',
             'alt_names', 'date', 'desc', 'length', 'conc', 'mw', 'circular',
-            'resistance', 'origin', 'plasmids',
+            'resistance', 'antibiotics', 'origin', 'parent_strain', 'plasmids',
         )},
 })
 default_config = {
@@ -38,7 +38,9 @@ default_config = {
             'MW': 'mw',
             'Circular': 'circular',
             'Resistance': 'resistance',
+            'Antibiotics': 'antibiotics',
             'Origin': 'origin',
+            'Strain': 'parent_strain',
             'Plasmids': 'plasmids',
         }
 }
@@ -120,6 +122,8 @@ def load(db, config):
             kwargs['circular'] = _defer(parse_bool, x)
         if x := kwargs.get('resistance'):
             kwargs['resistance'] = _comma_list(x)
+        if x := kwargs.get('antibiotics'):
+            kwargs['antibiotics'] = _comma_list(x)
         if x := kwargs.get('plasmids'):
             kwargs['plasmids'] = _defer(
                     find, db, _comma_list(x), reagent_cls=Plasmid)

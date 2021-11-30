@@ -606,6 +606,33 @@ test_plasmid_resistance:
       type: QueryError
       message: p1: no resistance genes found
 
+test_plasmid_antibiotics:
+  -
+    id: str
+    kwargs:
+      antibiotics: ['Amp']
+    expected:
+      - Amp
+  -
+    id: callable
+    kwargs:
+      antibiotics: lambda: ['Amp']
+    expected:
+      - Amp
+  -
+    id: resistance
+    kwargs:
+      resistance: ['AmpR']
+    expected:
+      - Amp
+  -
+    id: err-unspecified
+    kwargs:
+      {}
+    error:
+      type: QueryError
+      message: p1: no antibiotics specified
+
 test_oligo_tm:
   -
     kwargs:
@@ -646,6 +673,68 @@ test_oligo_tm:
       seq: 'GGTTATTGTCTCATGAGCGG'
       name: 'primer tm=63'
     expected: 63
+
+test_strain_plasmids:
+  -
+    id: unspecified
+    db:
+      {}
+    kwargs:
+      {}
+    expected:
+      []
+  -
+    id: given
+    db:
+      p1: Plasmid()
+    kwargs:
+      plasmids: [DB['p1']]
+    expected:
+      - DB['p1']
+  -
+    id: callable
+    db:
+      p1: Plasmid()
+    kwargs:
+      plasmids: lambda: [DB['p1']]
+    expected:
+      - DB['p1']
+
+test_strain_antibiotics:
+  -
+    id: explicit
+    db:
+      {}
+    kwargs:
+      antibiotics: ['Amp']
+    expected:
+      - Amp
+  -
+    id: callable
+    db:
+      {}
+    kwargs:
+      antibiotics: lambda: ['Amp']
+    expected:
+      - Amp
+  -
+    id: plasmids-1
+    db:
+      p1: Plasmid(antibiotics=['Amp'])
+    kwargs:
+      plasmids: [DB['p1']]
+    expected:
+      - Amp
+  -
+    id: plasmids-2
+    db:
+      p1: Plasmid(antibiotics=['Amp'])
+      p2: Plasmid(antibiotics=['Kan'])
+    kwargs:
+      plasmids: [DB['p1'], DB['p2']]
+    expected:
+      - Amp
+      - Kan
 
 test_find:
   -

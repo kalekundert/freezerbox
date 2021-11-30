@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from collections import namedtuple
 from voluptuous import Schema
 from inform import plural
+from more_itertools import flatten
 from stringcase import snakecase, sentencecase
 from mergedeep import merge
 from Bio.Seq import Seq
@@ -106,6 +107,12 @@ class Reagent:
             attr_strs.insert(0, repr(self._tag))
 
         return f'{self.__class__.__qualname__}({", ".join(attr_strs)})'
+
+    def __eq__(self, other):
+        return self.db is other.db and self.tag == other.tag
+
+    def __hash__(self):
+        return hash((id(self.db), self.tag))
 
     def check(self):
         pass
@@ -282,6 +289,10 @@ class Reagent:
 @autoprop.immutable
 class Strain(Reagent):
 
+    def get_parent_strain(self):
+        # Right now this is just a string.  But maybe it should be an object...
+        return self._attrs.get('parent_strain')
+
     def get_plasmids(self):
         plasmids = self._attrs.get('plasmids', [])
 
@@ -289,6 +300,20 @@ class Strain(Reagent):
             plasmids = plasmids()
 
         return plasmids
+
+    def get_antibiotics(self):
+        antibiotics = self._attrs.get('antibiotics', [])
+
+        if callable(antibiotics):
+            antibiotics = antibiotics()
+
+        if not antibiotics:
+            antibiotics = list(flatten(
+                x.antibiotics
+                for x in self.plasmids
+            ))
+
+        return antibiotics
 
 
 @autoprop.immutable
@@ -599,7 +624,7 @@ class Plasmid(NucleicAcid):
         *resistance* argument to the constructor, or inferred by comparing the 
         list of features in the config file to the sequence of the plasmid.
         """
-        resistance = self._attrs.get('resistance', [])
+        resistance = self._attrs.get('resistance')
 
         if not resistance:
             resistance = self._find_features('resistance')
@@ -608,6 +633,27 @@ class Plasmid(NucleicAcid):
             raise QueryError("no resistance genes found", culprit=self)
 
         return resistance
+
+    def get_antibiotics(self):
+
+        def strip_r(x):
+            return x[:-1] if x.endswith('R') else x
+
+        antibiotics = self._attrs.get('antibiotics')
+
+        if callable(antibiotics):
+            antibiotics = antibiotics()
+
+        if not antibiotics:
+            try:
+                antibiotics = [strip_r(x) for x in self.resistance]
+            except QueryError:
+                pass
+
+        if not antibiotics:
+            raise QueryError("no antibiotics specified", culprit=self)
+
+        return antibiotics
 
     @property
     def is_double_stranded(self):
@@ -702,6 +748,15 @@ class MakerInterface:
 
     @property
     def dependencies(self):
+        """
+        Return a iterable containing all the tags that this maker depends on.
+        
+        Most implementations return a set, since that is the most appropriate 
+        data structure semantically, but any iterable is acceptable.  For 
+        instance, in some cases it might be more convenient to write this 
+        method as a generator (e.g. to yield dependencies).  Any duplicates in 
+        the iterable will be ignored.
+        """
         raise AttributeError
 
     @property
