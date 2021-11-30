@@ -2,6 +2,15 @@
 
 <!--next-version-placeholder-->
 
+## v0.21.0 (2021-11-30)
+### Feature
+* Add antibiotic fields ([`e3c71e6`](https://github.com/kalekundert/freezerbox/commit/e3c71e67dc614c3320ec1517b0367b310d0795ed))
+* Allow ReagentConfig/ProductConfig to check reagent type ([`ff22066`](https://github.com/kalekundert/freezerbox/commit/ff220661f083feafdc654733b5b3751b1c5a32cd))
+
+### Fix
+* Maintain insertion order when merging dicts ([`abcf205`](https://github.com/kalekundert/freezerbox/commit/abcf205ec7a83829ef2798d8c2bbb72107d6ee51))
+* Don't require dependencies to exist ([`cf07f92`](https://github.com/kalekundert/freezerbox/commit/cf07f9246bc0beda8627ac01ceb6a63cedacabb1))
+
 ## v0.20.2 (2021-10-28)
 ### Fix
 * Don't shadow unintentional exceptions ([`baeee4c`](https://github.com/kalekundert/freezerbox/commit/baeee4c03a06f67f5eac7828677336bba74e5625))

@@ -4,7 +4,7 @@
 Database of DNA sequences.
 """
 
-__version__ = '0.20.2'
+__version__ = '0.21.0'
 
 from .config import *
 from .errors import *
