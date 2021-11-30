@@ -185,7 +185,10 @@ def test_join_lists(given, expected):
 
 @parametrize_from_file(schema=Schema({str: eval}))
 def test_join_dicts(given, expected):
-    assert join_dicts(given) == expected
+    actual = join_dicts(given)
+
+    assert actual == expected
+    assert list(actual.keys()) == list(expected.keys())
 
 @parametrize_from_file(schema=Schema({str: eval}))
 def test_join_sets(given, expected):

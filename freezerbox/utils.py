@@ -327,8 +327,14 @@ def join_lists(x):
     return list(chain(*x))
 
 def join_dicts(x):
-    from collections import ChainMap
-    return dict(ChainMap(*x))
+    # Originally I used `dict(ChainMap(*x))`, but I reimplemented it using 
+    # basic for-loops to maintain insertion order.
+    out = {}
+    for d in x:
+        for k, v in d.items():
+            if k not in out:
+                out[k] = v
+    return out
 
 def join_sets(x):
     return set.union(set(), *x)

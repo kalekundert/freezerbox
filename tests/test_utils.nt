@@ -977,17 +977,29 @@ test_join_dicts:
     given: [{}]
     expected: {}
   -
-    given: [{'a': 2}]
-    expected: {'a': 2}
+    given: [{'a': 1}]
+    expected: {'a': 1}
+  -
+    given: [{'a': 1}, {'a': 2}]
+    expected: {'a': 1}
   -
     given: [{'a': 1, 'b': 2}]
     expected: {'a': 1, 'b': 2}
   -
+    given: [{'b': 2, 'a': 1}]
+    expected: {'b': 2, 'a': 1}
+  -
     given: [{'a': 1}, {'b': 2}]
     expected: {'a': 1, 'b': 2}
   -
+    given: [{'b': 2}, {'a': 1}]
+    expected: {'b': 2, 'a': 1}
+  -
     given: [{'a': 1, 'b': 2}, {'c': 3, 'd': 4}]
     expected: {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+  -
+    given: [{'c': 3, 'd': 4}, {'a': 1, 'b': 2}]
+    expected: {'c': 3, 'd': 4, 'a': 1, 'b': 2}
 
 test_join_sets:
   -
