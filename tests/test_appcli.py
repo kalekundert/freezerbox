@@ -31,6 +31,7 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
     )
     with_reagent_config = Namespace(
         ReagentConfig=freezerbox.ReagentConfig,
+        MockMolecule=MockMolecule,
         attrgetter=attrgetter,
     )
 
@@ -81,15 +82,12 @@ def test_product_configs(db, config_cls, products, products_attr, key, expected,
             ProductConfig=freezerbox.ProductConfig,
             MakerConfig=freezerbox.MakerConfig,
             PrecursorConfig=freezerbox.PrecursorConfig,
+            MockMolecule=MockMolecule,
             attrgetter=attrgetter,
     )
 
     db = eval_db(db)
     config_cls = with_configs.exec(config_cls)['MockConfig']
-
-    if not products:
-        products = db.keys()
-
     obj = MockObj()
 
     if products_attr:

@@ -11,26 +11,32 @@ from .errors import QueryError, ParseError, only_raise
 
 @autoprop
 class ReagentConfig(appcli.Config):
+    """
+    Provide access to the `Reagent` object identified by the tag attribute of 
+    the object making use of this config.
+    """
     autoload = True
     autoload_db = True
     db_getter = attrgetter('db')
     tag_getter = attrgetter('tag')
+    reagent_cls = None
     transform = None
 
     @autoprop
     class Layer(appcli.Layer):
 
-        def __init__(self, *, db_getter, tag_getter, transform_func, autoload_db):
+        def __init__(self, *, db_getter, tag_getter, reagent_cls, transform_func, autoload_db):
             self.db_getter = db_getter
             self.tag_getter = tag_getter
+            self.reagent_cls = reagent_cls
             self.transform_func = transform_func
             self.autoload_db = autoload_db
             self.db = None
 
         def iter_values(self, key, log):
-            # First: See if the object has a database attribute.  If it does, 
-            # it costs nothing to access it, and it will allow us to log the 
-            # path to the database before any subsequent steps fail.
+            # See if the object has a database attribute.  If it does, it costs 
+            # nothing to access it, and it will allow us to log the path to the 
+            # database before any subsequent steps fail.
 
             if self.db:
                 log.info("using cached database: {db.name}", db=self.db)
@@ -47,7 +53,7 @@ class ReagentConfig(appcli.Config):
                 else:
                     log.info("found database: {db.name}", db=self.db)
 
-            # Second: Make sure we have a tag to look for.
+            # Make sure we have a tag to look for.
             
             try:
                 tag = self.tag_getter()
@@ -57,15 +63,15 @@ class ReagentConfig(appcli.Config):
             else:
                 log.info("found tag: {tag!r}", tag=tag)
 
-            # Third: Load the database, if necessary.
+            # Load the database, if necessary.
 
             if self.db is None:
                 from .model import load_db
                 self.db = load_db()
                 log.info("loaded database: {db.name}", db=self.db)
 
-            # Fourth: Give a useful error message if the tag doesn't match the 
-            # expected format.
+            # Give a useful error message if the tag doesn't match the expected 
+            # format.
             
             try:
                 check_tag(self.db, tag)
@@ -73,7 +79,7 @@ class ReagentConfig(appcli.Config):
                 log.info("no value found: not a valid FreezerBox tag")
                 return
 
-            # Fifth: Lookup the key as an attribute of the selected reagents.
+            # Find the reagent:
 
             try:
                 reagent = self.db[tag]
@@ -82,6 +88,18 @@ class ReagentConfig(appcli.Config):
                 return
             else:
                 log.info("found reagent: {reagent!r}", reagent=reagent)
+
+            # Make sure the reagent is of the expected type.
+
+            if self.reagent_cls and not isinstance(reagent, self.reagent_cls):
+                log.info(
+                        lambda e: f"expected {e.reagent_cls.__name__}, got {type(e.reagent).__name__}",
+                        reagent=reagent,
+                        reagent_cls=self.reagent_cls,
+                )
+                return
+
+            # Let subclasses customize the value that gets yielded.
 
             if self.transform_func:
                 try:
@@ -98,12 +116,14 @@ class ReagentConfig(appcli.Config):
             autoload_db=None,
             db_getter=None,
             tag_getter=None,
+            reagent_cls=None,
             transform=None,
     ):
         super().__init__(obj)
 
         self.db_getter = db_getter or unbind_method(self.db_getter) 
         self.tag_getter = tag_getter or unbind_method(self.tag_getter) 
+        self.reagent_cls = reagent_cls or self.reagent_cls
         self.transform = transform or unbind_method(self.transform) 
 
         self.autoload_db = (
@@ -113,6 +133,7 @@ class ReagentConfig(appcli.Config):
         yield self.Layer(
                 db_getter=self.get_db,
                 tag_getter=self.get_tag,
+                reagent_cls=self.reagent_cls,
                 transform_func=self.transform,
                 autoload_db=self.autoload_db,
         )
@@ -212,62 +233,99 @@ class DeprecatedReagentConfig:
 
 
 @autoprop
-class ProductConfig(appcli.Config):
+class BaseProductConfig(appcli.Config):
     autoload = False
     products_getter = lambda obj: obj.products
+    reagent_cls = None
 
     class Layer(appcli.Layer):
 
-        def __init__(self, products_getter):
+        def __init__(self, *, products_getter, reagent_cls):
             self.products_getter = products_getter
+            self.reagent_cls = reagent_cls
 
         def iter_values(self, key, log):
+            # Get the products for this maker.
+
             try:
                 products = self.products_getter()
             except AttributeError as err:
                 log.info("no products found: {err}", err=err)
                 return
 
+            # Require that there is only a single product.
+
             try:
                 product = one(products)
             except ValueError:
                 err = QueryError(
-                        lambda e: f"expected 1 product, found {len(products)}",
+                        lambda e: f"expected 1 product, found {len(e.products)}",
                         products=products,
                 )
                 raise err from None
             else:
                 log.info("found product: {product!r}", product=product)
 
+            # Make sure the product is of the expected type.
+
+            if self.reagent_cls and not isinstance(product, self.reagent_cls):
+                log.info(
+                        lambda e: f"expected {e.reagent_cls.__name__}, got {type(e.reagent).__name__}",
+                        reagent=product,
+                        reagent_cls=self.reagent_cls,
+                )
+                return
+
             yield from self.iter_product_values(product, key, log)
 
         def iter_product_values(self, product, key, log):
-            yield from getattr_or_call(product, key, log)
+            raise NotImplementedError
 
-    def __init__(self, obj, *, products_getter=None):
+    def __init__(self, obj, *, products_getter=None, reagent_cls=None):
         super().__init__(obj)
         self.products_getter = \
                 products_getter or unbind_method(self.products_getter) 
+        self.reagent_cls = reagent_cls or self.reagent_cls
 
     def load(self):
-        yield self.Layer(self.get_products)
+        yield self.Layer(
+                products_getter=self.get_products,
+                reagent_cls=self.reagent_cls,
+        )
 
     def get_products(self):
         return self.products_getter(self.obj)
 
 
-class MakerConfig(ProductConfig):
+class ProductConfig(BaseProductConfig):
+    """
+    Provide access to the `Reagent` object representing the product of a maker.
+    """
 
-    class Layer(ProductConfig.Layer):
+    class Layer(BaseProductConfig.Layer):
+
+        def iter_product_values(self, product, key, log):
+            yield from getattr_or_call(product, key, log)
+
+
+class MakerConfig(BaseProductConfig):
+    """
+    Provide access to the information in the "synthesis" or "cleanup" column of 
+    the database for a reagent.
+
+    This is a more convenient but less powerful version of `BaseProductConfig`.
+    """
+
+    class Layer(BaseProductConfig.Layer):
 
         def iter_product_values(self, product, key, log):
             dict_layer = appcli.DictLayer(product.maker_args)
             yield from dict_layer.iter_values(key, log)
 
 
-class PrecursorConfig(ProductConfig):
+class PrecursorConfig(BaseProductConfig):
 
-    class Layer(ProductConfig.Layer):
+    class Layer(BaseProductConfig.Layer):
 
         def iter_product_values(self, product, key, log):
             precursor = product.precursor

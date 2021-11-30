@@ -155,6 +155,45 @@ test_reagent_config:
       - using cached database: mock
       - found tag: 'x2'
       - no value found: tag not in database
+  -
+    id: reagent-wrong-type
+    db:
+      x1: MockReagent(name='a')
+    config_cls:
+      > class MockConfig(ReagentConfig):
+      >     reagent_cls = MockMolecule
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1'\, name='a'\)
+      - expected MockMolecule, got MockReagent
+  -
+    id: reagent-wrong-type-setup
+    db:
+      x1: MockReagent(name='a')
+    config_cls:
+      > MockConfig = ReagentConfig.setup(
+      >     reagent_cls=MockMolecule,
+      > )
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - using cached database: mock
+      - found tag: 'x1'
+      - found reagent: MockReagent\('x1'\, name='a'\)
+      - expected MockMolecule, got MockReagent
 
   -
     id: transform
@@ -238,7 +277,9 @@ test_reagent_config:
       x1: MockReagent(name='a')
     db_access: 'load'
     config_cls:
-      > MockConfig = ReagentConfig.setup(autoload_db=False)
+      > MockConfig = ReagentConfig.setup(
+      >     autoload_db=False,
+      > )
     obj:
       > obj = MockObj()
       > obj.tag = 'x1'
@@ -438,6 +479,45 @@ test_product_configs:
     info:
       - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
       - found 'name': 'x'
+  -
+    id: product-reagent-cls-class-attr
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > class MockConfig(ProductConfig):
+      >     reagent_cls=MockMolecule
+    products:
+      x1: 0
+    key: 'name'
+    expected:
+      []
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      - expected MockMolecule, got MockReagentIntermediate
+  -
+    id: product-reagent-cls-setup
+    db:
+      x1:
+        > MockReagent(
+        >     synthesis=parse_fields('a'),
+        >     name='x',
+        > )
+    config_cls:
+      > MockConfig = ProductConfig.setup(
+      >     reagent_cls=MockMolecule,
+      > )
+    products:
+      x1: 0
+    key: 'name'
+    expected:
+      []
+    info:
+      - found product: MockReagentIntermediate\('x1', step=0, synthesis=Fields\(\['a'\], \{\}\)\, name='x'\)
+      - expected MockMolecule, got MockReagentIntermediate
 
   -
     id: maker-key-str
