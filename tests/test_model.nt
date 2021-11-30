@@ -572,6 +572,33 @@ test_plasmid_resistance:
     expected:
       - MockR
   -
+    id: seq-mismatch
+    kwargs:
+      seq: 'GATACA'
+    config:
+      features:
+        -
+          name: 'MockR'
+          seq: 'GATTACA'
+          role: 'resistance'
+          identity_threshold: 0.8
+    expected:
+      - MockR
+  -
+    id: seq-mismatch
+    kwargs:
+      seq: 'GATACA'
+    config:
+      features:
+        -
+          name: 'MockR'
+          seq: 'GATTACA'
+          role: 'resistance'
+          identity_threshold: 0.9
+    error:
+      type: QueryError
+      message: p1: no resistance genes found
+  -
     id: seq-err-wrong-role
     kwargs:
       seq: 'GATTACA'

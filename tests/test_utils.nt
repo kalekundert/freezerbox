@@ -12,6 +12,50 @@ test_normalize_seq:
     raw_seq: /5Cy5/GATTACA/3Puro/
     expected: XGATTACAX
 
+test_calc_sequence_identity:
+  -
+    seq:
+    ref:
+    expected: 0
+  -
+    seq: A
+    ref: A
+    expected: 1
+  -
+    seq: a
+    ref: A
+    expected: 1
+  -
+    seq: A
+    ref: T
+    expected: 0
+  -
+    seq: AG
+    ref: TG
+    expected: 1/2
+  -
+    seq: AG
+    ref: ATG
+    expected: 1
+  -
+    seq: ATG
+    ref: AG
+    expected: 2/3
+
+test_calc_sequence_identity_with_rc:
+  -
+    seq: ATCG
+    ref: ATCG
+    expected: 1
+  -
+    seq: ATCG
+    ref: CGAT
+    expected: 1
+  -
+    seq: ATCG
+    ref: xxxx
+    expected: 0
+
 test_check_tag:
   -
     id: match-no-config

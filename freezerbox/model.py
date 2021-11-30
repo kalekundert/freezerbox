@@ -10,7 +10,6 @@ from inform import plural
 from more_itertools import flatten
 from stringcase import snakecase, sentencecase
 from mergedeep import merge
-from Bio.Seq import Seq
 from Bio.SeqUtils import MeltingTemp, molecular_weight
 from .config import Config, load_config
 from .errors import LoadError, QueryError, CheckError
@@ -667,7 +666,7 @@ class Plasmid(NucleicAcid):
         hits = []
 
         try:
-            plasmid_seq = Seq(self.seq.upper())
+            plasmid_seq = self.seq
         except QueryError:
             return []
 
@@ -676,7 +675,7 @@ class Plasmid(NucleicAcid):
         for feat in features:
             try:
                 feat_name = feat['name']
-                feat_seq = feat['seq'].upper()
+                feat_seq = feat['seq']
                 feat_role = feat['role']
             except KeyError as err1:
                 err2 = QueryError(db=self.db, feature=feat, key=err1.args[0])
@@ -688,17 +687,12 @@ class Plasmid(NucleicAcid):
             if role and feat_role != role:
                 continue
 
-            # Checking for an exact substring match.  In the future, 
-            # I'd like to relax this, e.g. do a sequence alignment and 
-            # check for a certain percent identity.  I'd also like to 
-            # allow protein sequences to be specified.
+            # This will fail if the resistance gene spans the ends of the 
+            # plasmid sequence string.  But I'll wait to worry about that until 
+            # I write a more comprehensive sequence manipulation module.
 
-            # This will also fail if the resistance gene spans the ends 
-            # of the plasmid sequence string.  But I'll wait to worry 
-            # about that until I write a more comprehensive sequence 
-            # manipulation module.
-            if feat_seq in plasmid_seq or \
-                    feat_seq in plasmid_seq.reverse_complement():
+            identity = calc_sequence_identity_with_rc(feat_seq, plasmid_seq)
+            if identity > feat.get('identity_threshold', 0.95):
                 hits.append(feat_name)
 
         return hits

@@ -2,7 +2,7 @@
 
 import re, os
 from stepwise import Quantity
-from more_itertools import split_when
+from more_itertools import split_when, zip_equal, first
 from contextlib import contextmanager
 from inform import did_you_mean
 from .errors import ParseError, only_raise
@@ -79,6 +79,67 @@ def normalize_seq(raw_seq):
     seq = re.sub(r'/.*?/', 'X', raw_seq)
 
     return seq.upper()
+
+def reverse_complement(seq):
+    from Bio.Seq import Seq
+    return str(Seq(seq).reverse_complement())
+
+def calc_sequence_identity(
+        seq, ref_seq, *,
+        match_score=1,
+        mismatch_score=-1,
+        open_gap_score=-0.5,
+        extend_gap_score=-0.5,
+):
+    """
+    Return the fraction of nucleotides in the given sequence that can be 
+    perfectly aligned to the reference sequence.
+
+    The basic algorithm is: perform a local sequence alignment, then count how 
+    many positions in the input sequence are present in the alignment and 
+    identical to the reference.  There are other ways to calculate percent 
+    identity (e.g. different choice of denominator, different treatment of 
+    gaps), but this should be reasonable.
+    """
+    from Bio.Align import PairwiseAligner
+
+    if not seq:
+        return 0
+
+    seq = seq.upper()
+    ref_seq = ref_seq.upper()
+
+    aligner = PairwiseAligner()
+    aligner.mode = 'local'
+    aligner.match_score = match_score
+    aligner.mismatch_score = mismatch_score
+    aligner.open_gap_score = open_gap_score
+    aligner.extend_gap_score = extend_gap_score
+
+    results = aligner.align(seq, ref_seq)
+
+    try:
+        result = first(results)
+    except ValueError:
+        return 0
+
+    aligned_chars = []
+
+    for (i,j), (k,l) in zip(*result.aligned):
+        aligned_chars += zip_equal(seq[i:j], ref_seq[k:l])
+
+    n_identities = sum(a == b for a,b in aligned_chars)
+    n_total = len(seq)
+
+    return n_identities / n_total
+
+def calc_sequence_identity_with_rc(seq, ref_seq, **kwargs):
+    ref_seqs = [ref_seq, reverse_complement(ref_seq)]
+    scores = [
+            calc_sequence_identity(seq, x, **kwargs)
+            for x in ref_seqs
+    ]
+    return max(scores)
 
 @only_raise(ParseError)
 def check_tag(db, tag):

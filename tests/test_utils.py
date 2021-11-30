@@ -23,6 +23,35 @@ parse_schema = lambda input_name, schema={}: Schema({
 def test_normalize_seq(raw_seq, expected):
     assert normalize_seq(raw_seq) == expected
 
+def test_reverse_complement():
+    # Don't need extensive tests, because we're just checking that we're 
+    # invoking biopython correctly.
+    assert reverse_complement('ATCG') == 'CGAT'
+
+@parametrize_from_file(
+        schema=Schema({
+            'seq': str,
+            'ref': str,
+            Optional('kwargs', default={}): with_py.eval,
+            'expected': with_py.eval,
+        }),
+)
+def test_calc_sequence_identity(seq, ref, kwargs, expected):
+    id = calc_sequence_identity(seq, ref, **kwargs)
+    assert id == pytest.approx(float(expected))
+
+@parametrize_from_file(
+        schema=Schema({
+            'seq': str,
+            'ref': str,
+            Optional('kwargs', default={}): with_py.eval,
+            'expected': with_py.eval,
+        }),
+)
+def test_calc_sequence_identity_with_rc(seq, ref, kwargs, expected):
+    id = calc_sequence_identity_with_rc(seq, ref, **kwargs)
+    assert id == pytest.approx(float(expected))
+
 @parametrize_from_file(
         schema=Schema({
             Optional('db', default={}): dict,
