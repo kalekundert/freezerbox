@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.22.0 (2021-11-30)
+### Feature
+* Allow small numbers of mismatches in feature sequences ([`ac5344c`](https://github.com/kalekundert/freezerbox/commit/ac5344c00c052a98f6572639c7632cb1b2b3780a))
+
 ## v0.21.0 (2021-11-30)
 ### Feature
 * Add antibiotic fields ([`e3c71e6`](https://github.com/kalekundert/freezerbox/commit/e3c71e67dc614c3320ec1517b0367b310d0795ed))
