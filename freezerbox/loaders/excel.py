@@ -169,6 +169,8 @@ def _load_seq(path):
 
     if path.suffix == '.dna':
         return snap.parse(path).dna_sequence
+    if path.suffix == '.prot':
+        return snap.parse(path).protein_sequence
 
     err = LoadError(path=path)
     err.brief = "can't load sequence info from {path.suffix!r} files"

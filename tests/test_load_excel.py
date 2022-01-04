@@ -186,6 +186,7 @@ def test_p4(db, tag='p4'):
 
 def test_r2(db, tag='r2'):
     assert isinstance(db[tag], Protein)
+    assert db[tag].seq == 'DYKDDDDK'
 
 
 def test_s2(db, tag='s2'):
