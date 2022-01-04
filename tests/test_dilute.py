@@ -7,34 +7,33 @@ import inform
 from stepwise import Q, pl, table, format_text
 from freezerbox import Database, parse_fields, parse_fields_list, cd
 from freezerbox.stepwise.dilute import *
-from schema_helpers import *
+from param_helpers import *
 from mock_model import *
 from pytest import approx
 from math import inf
 
+with_dilute = Namespace(
+        with_freeze,
+        'from freezerbox.stepwise.dilute import *',
+)
+
 given_expected_error = Schema({
     'given': eval,
-     **error_or({
-         'expected': eval_with(Stock=Stock, Q=Q, approx=approx),
+     **with_py.error_or({
+         'expected': with_dilute.eval,
      }),
 })
-app_expected_error=Schema({
-    'app': exec_with('app', Dilute=Dilute, Stock=Stock, Q=Q),
-    **error_or({
-        'expected': eval_with(
-            Q=Q,
-            approx=approx,
-            approx_Q=approx_Q,
-            pl=pl,
-            table=table,
-        ),
+app_expected_error = Schema({
+    'app': with_dilute.exec(get='app'),
+    **with_py.error_or({
+        'expected': with_sw.eval,
     }),
 })
-db_app_expected_error=Schema({
+db_app_expected_error = Schema({
     Optional('db', default={}): eval_db,
     **app_expected_error.schema,
 })
-app_expected_error_stderr=Schema({
+app_expected_error_stderr = Schema({
     Optional('stderr', default=''): str,
     **app_expected_error.schema,
 })

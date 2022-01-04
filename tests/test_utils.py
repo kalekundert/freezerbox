@@ -6,14 +6,14 @@ import parametrize_from_file
 from freezerbox.model import *
 from freezerbox.utils import *
 from stepwise import Quantity
-from schema_helpers import *
+from param_helpers import *
 from pytest import approx
 
 parse_schema = lambda input_name, schema={}: Schema({
     input_name: str,
-    Optional('kwargs', default={}): eval_freezerbox,
-    **error_or({
-        'parsed': eval_freezerbox,
+    Optional('kwargs', default={}): with_freeze.eval,
+    **with_freeze.error_or({
+        'parsed': with_freeze.eval,
         'converted': {str: eval},
     }),
     **schema,
@@ -57,7 +57,7 @@ def test_calc_sequence_identity_with_rc(seq, ref, kwargs, expected):
             Optional('db', default={}): dict,
             'tag': with_py.eval,
             **with_freeze.error_or({
-                'expected': partial(with_py.eval, eval_keys=True),
+                'expected': with_py.eval(keys=True),
             }),
         }),
 )
@@ -70,7 +70,7 @@ def test_check_tag(db, tag, expected, error):
 @parametrize_from_file(
         schema=Schema({
             'bool_str': str,
-            **error_or({
+            **with_freeze.error_or({
                 'expected': eval,
             }),
         }),
@@ -175,7 +175,7 @@ def test_parse_size(size_str, kwargs, parsed, converted, error):
         schema=Schema({
             'molecule': eval,
             Optional('default_strandedness', default='None'): eval,
-            **error_or({
+            **with_freeze.error_or({
                 'expected': eval,
             }),
         })
@@ -199,7 +199,7 @@ def test_mw_from_length(len, molecule, expected):
         schema=Schema({
             'items': eval,
             Optional('kwargs', default={}): {str: eval},
-            **error_or({
+            **with_freeze.error_or({
                 'expected': eval,
             }),
         }),

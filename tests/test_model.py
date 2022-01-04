@@ -6,12 +6,12 @@ import datetime
 import autoprop
 from freezerbox import Fields, QueryError
 from freezerbox.model import *
-from schema_helpers import *
+from param_helpers import *
 from mock_model import *
 
-kwargs_schema = lambda expected=eval_freezerbox: Schema({
-    Optional('kwargs', {}): empty_ok({str: eval_freezerbox}),
-    **error_or({
+kwargs_schema = lambda expected=with_freeze.eval: Schema({
+    Optional('kwargs', {}): {str: with_freeze.eval},
+    **with_freeze.error_or({
         'expected': expected,
     }),
 })
@@ -322,7 +322,7 @@ def test_molecule_length(kwargs, expected, error):
         assert x1.length == expected
 
 @parametrize_from_file(
-        schema=kwargs_schema([eval_freezerbox]),
+        schema=kwargs_schema([with_freeze.eval]),
 )
 def test_molecule_conc(kwargs, expected, error, mock_plugins):
     db = Database({})
@@ -350,7 +350,7 @@ def test_molecule_conc(kwargs, expected, error, mock_plugins):
             assert get_by_unit[q.unit]() == pytest.approx(q.value)
 
 @parametrize_from_file(
-        schema=kwargs_schema({str: eval_freezerbox}),
+        schema=kwargs_schema({str: with_freeze.eval}),
 )
 def test_molecule_volume(kwargs, expected, error, mock_plugins):
     db = Database({})
@@ -486,9 +486,7 @@ def test_strain_parent():
 @parametrize_from_file
 def test_strain_plasmids(db, kwargs, expected):
     db = eval_db(db)
-    kwargs, expected = with_freeze.copy()\
-            .use(DB=db)\
-            .eval(kwargs, expected)
+    kwargs, expected = Namespace(with_freeze, DB=db).eval(kwargs, expected)
 
     db['s1'] = s1 = Strain(**kwargs)
     assert s1.plasmids == expected
@@ -496,9 +494,7 @@ def test_strain_plasmids(db, kwargs, expected):
 @parametrize_from_file
 def test_strain_antibiotics(db, kwargs, expected):
     db = eval_db(db)
-    kwargs = with_freeze.copy()\
-            .use(DB=db)\
-            .eval(kwargs)
+    kwargs = Namespace(with_freeze, DB=db).eval(kwargs)
 
     db['s1'] = s1 = Strain(**kwargs)
     assert s1.antibiotics == expected

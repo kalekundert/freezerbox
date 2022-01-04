@@ -7,7 +7,7 @@ from stepwise.testing import disable_capture
 from freezerbox import Database, parse_fields
 from freezerbox.stepwise.make import Make
 from more_itertools import one
-from schema_helpers import *
+from param_helpers import *
 from mock_model import *
 from os import getcwd
 
@@ -51,7 +51,7 @@ def test_make(db, tags, expected, disable_capture, mock_plugins):
         schema=Schema({
             'db': eval_db,
             'tags': [str],
-            Optional('kwargs', default={}): {str: eval_pytest},
+            Optional('kwargs', default={}): {str: with_pytest.eval},
             'expected': [str],
         }),
 )
@@ -68,10 +68,10 @@ def test_collect_targets(db, tags, kwargs, expected, mock_plugins):
                         'db': eval_db,
                         'tag': str,
                         Optional('maker_attrs', default={}): {
-                            str: eval_freezerbox,
+                            str: with_freeze.eval,
                         },
                         Optional('reagent_attrs', default={}): {
-                            str: eval_freezerbox,
+                            str: with_freeze.eval,
                         },
                     },
                     _guess_tag,
@@ -80,10 +80,10 @@ def test_collect_targets(db, tags, kwargs, expected, mock_plugins):
                     {
                         'maker': str,
                         Optional('maker_attrs', default={}): {
-                            str: eval_freezerbox,
+                            str: with_freeze.eval,
                         },
                         Optional('reagent_attrs', default={}): {
-                            str: eval_freezerbox,
+                            str: with_freeze.eval,
                         },
                     },
                     _db_from_maker,

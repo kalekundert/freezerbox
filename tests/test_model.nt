@@ -1,6 +1,7 @@
 test_reagent_name:
   -
     kwargs:
+      {}
     expected: ''
 
   -
@@ -11,6 +12,7 @@ test_reagent_name:
 test_reagent_alt_names:
   -
     kwargs:
+      {}
     expected: []
 
   -
@@ -21,6 +23,7 @@ test_reagent_alt_names:
 test_reagent_date:
   -
     kwargs:
+      {}
     expected: None
   -
     kwargs:
@@ -30,6 +33,7 @@ test_reagent_date:
 test_reagent_desc:
   -
     kwargs:
+      {}
     expected: ''
   -
     kwargs:
@@ -39,6 +43,7 @@ test_reagent_desc:
 test_reagent_ready:
   -
     kwargs:
+      {}
     expected: True
   -
     kwargs:
@@ -84,6 +89,7 @@ test_molecule_seq:
   -
     id: err
     kwargs:
+      {}
     error:
       type: QueryError
       message: no sequence specified
@@ -111,6 +117,7 @@ test_molecule_length:
     expected: 4
   -
     kwargs:
+      {}
     error:
       type: QueryError
       message: no length specified
@@ -170,6 +177,7 @@ test_molecule_conc:
   -
     id: err
     kwargs:
+      {}
     error:
       type: QueryError
       message: x1: no concentration specified
@@ -214,6 +222,7 @@ test_molecule_volume:
   -
     id: err
     kwargs:
+      {}
     error:
       type: QueryError
       message: x1: no volume specified
@@ -229,6 +238,7 @@ test_nucleic_acid_molecule:
   -
     id: default
     kwargs:
+      {}
     expected:
       molecule: 'DNA'
       strandedness: 2
@@ -367,6 +377,7 @@ test_nucleic_acid_molecule:
 test_nucleic_acid_circular:
   -
     kwargs:
+      {}
     expected: False
   -
     kwargs:
@@ -456,6 +467,7 @@ test_nucleic_acid_mw:
   -
     id: err
     kwargs:
+      {}
     error:
       type: QueryError
       message: need sequence or length to calculate molecular weight

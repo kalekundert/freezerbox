@@ -2,14 +2,14 @@
 
 import freezerbox
 import networkx as nx
-from schema_helpers import *
+from param_helpers import *
 from mock_model import *
 
 @parametrize_from_file(
         schema=Schema({
             'nodes': empty_ok({eval: eval}),
             'edges': empty_ok([And(eval, tuple)]),
-            **error_or({
+            **with_nx.error_or({
                 'expected': empty_ok([And(eval, tuple)]),
             }),
         }),

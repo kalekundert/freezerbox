@@ -2,7 +2,7 @@
 
 from freezerbox.config import *
 from freezerbox.utils import cd
-from schema_helpers import *
+from param_helpers import *
 
 @parametrize_from_file(
         schema=Schema({

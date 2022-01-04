@@ -91,7 +91,7 @@ test_check_tag:
       message:
         - tag doesn't match expected pattern
         - relevant config: /path/to/conf
-        - expected '1' to match '\[a-z\]'
+        - expected '1' to match '[a-z]'
 
 test_parse_tag:
   -
@@ -226,7 +226,7 @@ test_parse_bool:
     bool_str: ?
     error:
       type: ParseError
-      message: can't interpret '\?' as a bool
+      message: can't interpret '?' as a bool
 
 test_parse_time:
   -
@@ -440,7 +440,7 @@ test_parse_temp:
     temp_str: 60 µL
     error:
       type: ParseError
-      message: can't interpret '60 µL' as a temperature, did you mean '60 °C'\?
+      message: can't interpret '60 µL' as a temperature, did you mean '60 °C'?
 
 test_parse_volume:
   -
@@ -495,7 +495,7 @@ test_parse_volume:
     vol_str: 1 µg
     error:
       type: ParseError
-      message: can't interpret '1 µg' as a volume, did you mean '1 µL'\?
+      message: can't interpret '1 µg' as a volume, did you mean '1 µL'?
 
 test_parse_mass:
   -
@@ -551,7 +551,7 @@ test_parse_mass:
     mass_str: 1 µL
     error:
       type: ParseError
-      message: can't interpret '1 µL' as a mass, did you mean '1 µg'\?
+      message: can't interpret '1 µL' as a mass, did you mean '1 µg'?
 
 test_parse_conc:
   -
@@ -738,7 +738,7 @@ test_parse_conc:
     mw: 1e6
     error:
       type: ParseError
-      message: can't interpret '4 µL' as a concentration, did you mean '4 .g/.L'\?
+      pattern: can't interpret '4 µL' as a concentration, did you mean '4 .g/.L'\?
 
 test_parse_size:
   -
@@ -807,7 +807,7 @@ test_parse_size:
     size_str: 100 µL
     error:
       type: ParseError
-      message: can't interpret '100 µL' as a size, did you mean '100 bp'\?
+      message: can't interpret '100 µL' as a size, did you mean '100 bp'?
 
 test_parse_stranded_molecule:
   -

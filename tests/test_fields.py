@@ -8,14 +8,12 @@ from freezerbox.fields import \
         Fields, word, key_value, parse_fields, parse_fields_list, _quote_word
 from freezerbox.errors import ParseError
 from parsy import ParseError as ParsyError
-from schema_helpers import *
+from param_helpers import *
 
-fields_dict = empty_ok({
-    'by_index': empty_ok([str]),
-    'by_name': empty_ok({str: str}),
-})
-fields_dict_list = empty_ok([fields_dict])
-
+fields_dict = {
+    'by_index': [str],
+    'by_name': {str: str},
+}
 
 @parametrize_from_file
 def test_word(given, expected):
@@ -57,7 +55,7 @@ def test_fields_err(given, messages):
 @parametrize_from_file(
         schema=Schema({
             'given': str,
-            'expected': fields_dict_list,
+            'expected': [fields_dict],
         }),
 )
 def test_fields_list(given, expected):
@@ -77,12 +75,12 @@ def test_fields_list_err(given, messages):
 
 @parametrize_from_file
 def test_fields_repr(expr):
-    fields = eval_freezerbox(expr)
+    fields = with_freeze.eval(expr)
     assert repr(fields) == expr
 
 @parametrize_from_file
 def test_fields_str(given, expected):
-    fields = eval_freezerbox(given)
+    fields = with_freeze.eval(given)
     assert str(fields) == expected
 
 

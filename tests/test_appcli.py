@@ -6,10 +6,10 @@ import parametrize_from_file
 from appcli.model import Log
 from more_itertools import one, zip_equal
 from re_assert import Matches
-from mock_model import mock_plugins
+from mock_model import mock_plugins, MockMolecule
 from operator import attrgetter
 from pprint import pprint
-from schema_helpers import *
+from param_helpers import *
 
 class MockObj:
     pass
@@ -71,8 +71,8 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
             'products': {str: Coerce(int)},
             Optional('products_attr', default='products'): str,
             'key': with_py.eval,
-            **error_or({
-                'expected': [eval_freezerbox],
+            **with_freeze.error_or({
+                'expected': [with_freeze.eval],
                 'info': [str],
             }),
     }),

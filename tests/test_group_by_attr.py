@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from schema_helpers import *
+from param_helpers import *
 
 class DummyItem:
 
@@ -17,15 +17,16 @@ class DummyItem:
     def __getattr__(self, name):
         return self.kwargs[name]
 
+with_dummy = Namespace(DummyItem=DummyItem)
 
 @parametrize_from_file(
         schema=Schema({
-            'grouper': eval_freezerbox,
-            'items': eval,
-            Optional('key', default='lambda x: x'): eval,
+            'grouper': with_freeze.eval,
+            'items': with_py.eval,
+            Optional('key', default='lambda x: x'): with_py.eval,
             'expected': empty_ok([{
-                'value': eval_pytest,
-                'items': eval_pytest,
+                'value': with_pytest.eval,
+                'items': with_pytest.eval,
             }]),
         }),
 )
@@ -42,13 +43,13 @@ def test_group_by(grouper, items, key, expected):
 
 @parametrize_from_file(
         schema=Schema({
-            'items': empty_ok([eval_with(DummyItem=DummyItem)]),
-            'group_by': empty_ok({str: eval_freezerbox}),
-            'merge_by': empty_ok({str: eval_freezerbox}),
-            Optional('keys', default={}): empty_ok({str: eval_freezerbox}),
+            'items': empty_ok([with_dummy.eval]),
+            'group_by': empty_ok({str: with_freeze.eval}),
+            'merge_by': empty_ok({str: with_freeze.eval}),
+            Optional('keys', default={}): empty_ok({str: with_freeze.eval}),
             'expected': empty_ok([{
-                'attrs': empty_ok({str: eval_pytest}),
-                'items': [eval_with(DummyItem=DummyItem)],
+                'attrs': empty_ok({str: with_pytest.eval}),
+                'items': [with_dummy.eval],
             }]),
         }),
 )
