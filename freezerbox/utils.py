@@ -76,7 +76,7 @@ def normalize_seq(raw_seq):
     # left-most occurrence of any overlapping patterns.  The non-greedy * is 
     # necessary to avoid eliding everything between the first and last 
     # nonstandard nucleotide.
-    seq = re.sub(r'/.*?/', 'X', raw_seq)
+    seq = re.sub(r'/.*?/', 'X', raw_seq.strip())
 
     return seq.upper()
 
