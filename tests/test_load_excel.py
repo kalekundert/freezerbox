@@ -35,6 +35,7 @@ def db(mock_plugins):
                         'format': 'excel',
                         'reagent': 'oligo',
                         'path': str(MOCK_DB / 'oligos.xlsx'),
+                        'worksheet': 'Oligos',
                     }, {
                         'format': 'excel',
                         'reagent': 'protein',

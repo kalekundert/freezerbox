@@ -13,6 +13,7 @@ schema = Schema({
         'format': 'excel',
         Required('reagent'): Any(*REAGENT_CLASSES),
         Required('path'): All(str, Coerce(Path)),
+        Optional('worksheet'): str,
         Optional('sequence'): str,
         Optional('tag_template'): str,
         'columns': {str: Any(
@@ -50,6 +51,7 @@ def load(db, config):
     from warnings import catch_warnings, filterwarnings
 
     path = config['path']
+    sheet = config.get('worksheet', 0)
     reagent = config['reagent']
     columns = config['columns']
     columns_user = {v: k for k, v in columns.items()}
@@ -71,7 +73,7 @@ def load(db, config):
                 category=DeprecationWarning,
                 message="`np.float` is a deprecated alias for the builtin `float`.",
         )
-        df = pd.read_excel(path)
+        df = pd.read_excel(path, sheet_name=sheet)
 
     df = df.rename(columns=columns)
     df = df.astype(object).where(pd.notnull(df), None)
