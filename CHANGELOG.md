@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v0.24.0 (2022-04-19)
+### Feature
+* Support loading from specific XLSX worksheets ([`c98f0e0`](https://github.com/kalekundert/freezerbox/commit/c98f0e07fafe56819026af0840bc33646cfae805))
+
+### Fix
+* Fail gracefully if the database can't be loaded ([`2bd1037`](https://github.com/kalekundert/freezerbox/commit/2bd1037036e6fefaa19fb5a4a8ba6d1f41496003))
+* Ignore leading/trailing whitespace in sequence strings ([`3a68766`](https://github.com/kalekundert/freezerbox/commit/3a6876616054b1ca50ca1d121806d49b6fc1b646))
+
 ## v0.23.0 (2022-01-04)
 ### Feature
 * Read protein sequences from snapgene '.prot' files ([`4e0f1af`](https://github.com/kalekundert/freezerbox/commit/4e0f1af0e79a3c6265aa33f9f02dfa7f98cbdb3d))
