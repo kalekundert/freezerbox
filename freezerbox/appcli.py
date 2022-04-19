@@ -7,7 +7,7 @@ from appcli import unbind_method
 from more_itertools import one, always_iterable
 from operator import attrgetter
 from .utils import check_tag
-from .errors import QueryError, ParseError, only_raise
+from .errors import QueryError, ParseError, LoadError, only_raise
 
 @autoprop
 class ReagentConfig(appcli.Config):
@@ -50,6 +50,9 @@ class ReagentConfig(appcli.Config):
                         return
                     else:
                         log.info("no database provided: {err}", err=err)
+                except LoadError as err:
+                    log.info("failed to load database: {err}", err=err)
+                    return
                 else:
                     log.info("found database: {db.name}", db=self.db)
 
@@ -67,8 +70,13 @@ class ReagentConfig(appcli.Config):
 
             if self.db is None:
                 from .model import load_db
-                self.db = load_db()
-                log.info("loaded database: {db.name}", db=self.db)
+                try:
+                    self.db = load_db()
+                except LoadError as err:
+                    log.info("failed to load database: {err}", err=err)
+                    return
+                else:
+                    log.info("loaded database: {db.name}", db=self.db)
 
             # Give a useful error message if the tag doesn't match the expected 
             # format.

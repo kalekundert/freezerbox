@@ -54,6 +54,25 @@ test_reagent_config:
       - found reagent: MockReagent\('x1', name='a'\)
       - found 'name': 'a'
   -
+    id: db-getter-load-err
+    db:
+      x1: MockReagent(name='a')
+    db_access: none
+    obj:
+      > class MockObj:
+      >     @property
+      >     def db(self):
+      >         raise LoadError("mock error")
+      >
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - failed to load database: mock error
+  -
     id: db-load
     db:
       x1: MockReagent(name='a')
@@ -71,6 +90,22 @@ test_reagent_config:
       - loaded database: mock
       - found reagent: MockReagent\('x1', name='a'\)
       - found 'name': 'a'
+  -
+    id: db-load-err
+    db:
+      x1: MockReagent(name='a')
+    db_access: load-err
+    obj:
+      > obj = MockObj()
+      > obj.tag = 'x1'
+    key:
+      > 'name'
+    expected:
+      []
+    info:
+      - no database provided: 'MockObj' object has no attribute 'db'
+      - found tag: 'x1'
+      - failed to load database: mock error
   -
     id: db-not-found
     db:
@@ -601,7 +636,7 @@ test_product_configs:
       - Quantity(10, 'nM')
     info:
       - found product: MockMoleculeIntermediate\('x1', step=1, synthesis=Fields\(\['a'\], \{'conc': '10nM'\}\), cleanups=\[Fields\(\['b'\], \{'conc': '20nM'\}\), Fields\(\['c'\], \{'conc': '30nM'\}\)\]\)
-      - found 'conc': Quantity\(10, 'nM'\)
+      - found 'conc': Quantity\(10.0, 'nM'\)
   -
     id: precursor-key-str
     db:
@@ -619,7 +654,7 @@ test_product_configs:
       - Quantity(20, 'nM')
     info:
       - found product: MockMoleculeIntermediate\('x1', step=2, synthesis=Fields\(\['a'\], \{'conc': '10nM'\}\), cleanups=\[Fields\(\['b'\], \{'conc': '20nM'\}\), Fields\(\['c'\], \{'conc': '30nM'\}\)\]\)
-      - found 'conc': Quantity\(20, 'nM'\)
+      - found 'conc': Quantity\(20.0, 'nM'\)
   -
     id: precursor-key-callable
     db:
@@ -639,5 +674,5 @@ test_product_configs:
       - found product: MockMoleculeIntermediate\('x1', step=1, synthesis=Fields\(\['a'\], \{'conc': '10nM'\}\), cleanups=\[Fields\(\['b'\], \{'conc': '20nM'\}\)\]\)
       -
         > called: operator.attrgetter\('conc'\)
-        > returned: Quantity\(10, 'nM'\)
+        > returned: Quantity\(10.0, 'nM'\)
 

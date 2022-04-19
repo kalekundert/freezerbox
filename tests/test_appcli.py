@@ -27,7 +27,8 @@ class MockObj:
 )
 def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, monkeypatch, mock_plugins):
     with_mock_obj = Namespace(
-            MockObj=MockObj
+            MockObj=MockObj,
+            LoadError=freezerbox.LoadError,
     )
     with_reagent_config = Namespace(
         ReagentConfig=freezerbox.ReagentConfig,
@@ -41,6 +42,9 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
     config = config_cls(obj)
     layer = one(config.load())
 
+    if db_access == 'none':
+        pass
+
     if db_access == 'cache':
         layer.db = db
 
@@ -50,6 +54,9 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
 
     if db_access == 'load':
         monkeypatch.setattr(freezerbox.model, 'load_db', lambda: db)
+    elif db_access == 'load-err':
+        def fail_to_load(): raise freezerbox.LoadError("mock error")
+        monkeypatch.setattr(freezerbox.model, 'load_db', fail_to_load)
     else:
         monkeypatch.setattr(freezerbox.model, 'load_db', lambda: NotImplemented)
 
