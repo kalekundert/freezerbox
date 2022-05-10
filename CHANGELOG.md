@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.25.1 (2022-05-10)
+### Fix
+* Allow repr to fail gracefully ([`fa1e90c`](https://github.com/kalekundert/freezerbox/commit/fa1e90ceff8eac541e16379875df73199ca0adb0))
+
 ## v0.25.0 (2022-05-10)
 ### Feature
 * Upgrade to BYOC ([`bf4dcd3`](https://github.com/kalekundert/freezerbox/commit/bf4dcd326a0d9cebbfa22dcb3d9bcdd896b64462))
