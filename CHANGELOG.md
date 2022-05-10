@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.25.0 (2022-05-10)
+### Feature
+* Upgrade to BYOC ([`bf4dcd3`](https://github.com/kalekundert/freezerbox/commit/bf4dcd326a0d9cebbfa22dcb3d9bcdd896b64462))
+
 ## v0.24.0 (2022-04-19)
 ### Feature
 * Support loading from specific XLSX worksheets ([`c98f0e0`](https://github.com/kalekundert/freezerbox/commit/c98f0e07fafe56819026af0840bc33646cfae805))
