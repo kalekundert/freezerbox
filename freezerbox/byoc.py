@@ -337,19 +337,24 @@ def getattr_or_call(obj, key, log):
         try:
             value = key(obj)
         except (QueryError, AttributeError) as err:
-            log.info(f"no value found: {err}")
+            log += f"no value found: {err}"
             return
         else:
-            log.info(f"called: {key!r}\nreturned: {value!r}")
+            log += lambda: f"called: {key!r}\nreturned: {safe_repr(value)}"
 
     else:
         try:
             value = getattr(obj, key)
         except (QueryError, AttributeError) as err:
-            log.info(f"no value found: {err}")
+            log += f"no value found: {err}"
             return
         else:
-            log.info(f"found {key!r}: {value!r}")
+            log += lambda: f"found {key!r}: {safe_repr(value)}"
 
     yield value
 
+def safe_repr(obj):
+    try:
+        return repr(obj)
+    except Exception as err:
+        return f'{obj.__class__.__name__}() <repr failed: {err}>'
