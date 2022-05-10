@@ -5,7 +5,7 @@ import sys
 import stepwise
 import freezerbox
 import autoprop
-import appcli
+import byoc
 import pandas as pd
 
 from stepwise import Quantity, pl, oxford_comma
@@ -13,7 +13,7 @@ from freezerbox import (
         MakerConfig, QueryError, convert_conc_unit, join_lists,
         iter_combo_makers, group_by_identity, unanimous,
 )
-from appcli import Key, Method, DocoptConfig
+from byoc import Key, Method, DocoptConfig
 from more_itertools import all_equal
 from dataclasses import dataclass
 from pathlib import Path
@@ -128,7 +128,7 @@ class Stock:
         self.mw = mw
 
 @autoprop
-class Dilute(appcli.App):
+class Dilute(byoc.App):
     """\
 Calculate dilutions.
 
@@ -232,47 +232,47 @@ Database:
             MakerConfig,
     ]
 
-    stocks = appcli.param(
+    stocks = byoc.param(
             Key(DocoptConfig, '<stocks>', cast=parse_stocks),
             Method(lambda self: [Stock(x.tag, None, None) for x in self.products]),
     )
-    target_conc = appcli.param(
+    target_conc = byoc.param(
             Key(DocoptConfig, '--conc'),
             Key(MakerConfig, 'conc'),
             cast=parse_conc,
             default=None,
     )
-    stock_conc = appcli.param(
+    stock_conc = byoc.param(
             Key(DocoptConfig, '--stock-conc'),
             cast=parse_conc,
             default=None,
     )
-    stock_volume_uL = appcli.param(
+    stock_volume_uL = byoc.param(
             Key(DocoptConfig, '--volume'),
             cast=parse_volume,
             default=None,
     )
-    diluent_volume_uL = appcli.param(
+    diluent_volume_uL = byoc.param(
             Key(DocoptConfig, '--diluent-volume'),
             cast=parse_volume,
             default=None,
     )
-    target_volume_uL = appcli.param(
+    target_volume_uL = byoc.param(
             Key(DocoptConfig, '--total-volume'),
             cast=parse_volume,
             default=None,
     )
-    mw = appcli.param(
+    mw = byoc.param(
             Key(DocoptConfig, '--mw'),
             cast=parse_mw,
             default=None,
     )
-    diluent = appcli.param(
+    diluent = byoc.param(
             Key(DocoptConfig, '--diluent'),
             Key(MakerConfig, 'diluent'),
             default=None,
     )
-    show_stub = appcli.param(
+    show_stub = byoc.param(
             default=False,
     )
 
@@ -286,7 +286,7 @@ Database:
     def make(cls, db, products):
 
         def factory():
-            app = cls.from_params()
+            app = cls.from_bare()
             app.db = db
             app.show_stub = True
             return app
@@ -302,7 +302,7 @@ Database:
 
     @classmethod
     def from_product(cls, product):
-        app = cls.from_params()
+        app = cls.from_bare()
         app.products = [product]
         app.load(MakerConfig)
         return app
@@ -504,7 +504,7 @@ Database:
             raise ValueError(f"specified {' and '.join(given)}")
 
 if __name__ == '__main__':
-    app = Dilute.from_params()
+    app = Dilute.from_bare()
     app.load(DocoptConfig)
     app.protocol.print()
 

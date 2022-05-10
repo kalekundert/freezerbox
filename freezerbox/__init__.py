@@ -9,7 +9,7 @@ __version__ = '0.24.0'
 from .config import *
 from .errors import *
 from .model import *
-from .appcli import *
+from .byoc import *
 from .fields import *
 from .group_by import *
 from .utils import *

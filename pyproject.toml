@@ -10,7 +10,7 @@ home-page = 'https://github.com/kalekundert/freezerbox'
 description-file = 'README.rst'
 requires-python = "~=3.8"
 requires = [
-  'appcli',
+  'byoc',
   'autoprop',
   'autosnapgene',
   'biopython',

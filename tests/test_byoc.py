@@ -3,7 +3,7 @@
 import freezerbox, pytest
 import parametrize_from_file
 
-from appcli.model import Log
+from byoc.errors import Log
 from more_itertools import one, zip_equal
 from re_assert import Matches
 from mock_model import mock_plugins, MockMolecule
@@ -66,9 +66,9 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
     try:
         assert values == expected
     finally:
-        print(log.err)
+        print(log.format())
 
-    for actual, pattern in zip_equal(log.err.info_strs, info):
+    for actual, pattern in zip_equal(log.message_strs, info):
         Matches(pattern).assert_matches(actual)
 
 @parametrize_from_file(
@@ -109,10 +109,10 @@ def test_product_configs(db, config_cls, products, products_attr, key, expected,
     with error:
         log = Log()
         values = list(layer.iter_values(key, log))
-        pprint(log.err.info_strs)
+        pprint(log.message_strs)
 
         assert values == expected
 
-        for actual, pattern in zip_equal(log.err.info_strs, info):
+        for actual, pattern in zip_equal(log.message_strs, info):
             Matches(pattern).assert_matches(actual)
 

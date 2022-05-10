@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import appcli
+import byoc
 import autoprop
 import stepwise
 import freezerbox
@@ -20,7 +20,7 @@ from os import getcwd
 from os.path import expanduser
 
 @autoprop.cache
-class Make(appcli.App):
+class Make(byoc.App):
     """\
 Display a protocol for making the given reagents.
 
@@ -171,12 +171,12 @@ not correspond to any stepwise commands, but are documented below:
 """
 
     __config__ = [
-            appcli.DocoptConfig,
+            byoc.DocoptConfig,
     ]
 
-    tags = appcli.param('<tags>')
-    recurse_deps = appcli.param('--no-recurse', cast=not_, default=True)
-    exclude_deps = appcli.param('--exclude', cast=lambda x: x.split(','), default=frozenset())
+    tags = byoc.param('<tags>')
+    recurse_deps = byoc.param('--no-recurse', cast=not_, default=True)
+    exclude_deps = byoc.param('--exclude', cast=lambda x: x.split(','), default=frozenset())
 
     def __init__(self, db, tags=None):
         self.db = db
@@ -394,7 +394,7 @@ def label_products(products):
 
 
 if __name__ == '__main__':
-    app = Make.from_params()
+    app = Make.from_bare()
     app.db = freezerbox.load_db()
     app.load()
     app.protocol.print()
