@@ -808,16 +808,45 @@ class MakerInterface:
 
 @autoprop.immutable
 class IntermediateMixin:
-    # Mixin class; must appear before Reagent in MRO, e.g.:
-    #
-    # class IntermediatePlasmid(IntermediateMixin, Plasmid):
-    #     pass
+    """
+    Represent an intermediate step in the process of synthesizing/cleaning up a 
+    reagent.
+
+    The main feature that intermediate reagents enable is the ability of 
+    cleanup steps to make use of concentrations/volumes set by previous steps.  
+    For example, if the user specifies a PCR reaction followed by a spin-column 
+    purification, the spin-column protocol could scale itself based on the 
+    volume of the PCR reaction, or print a warning if the quantity of material 
+    produced by the PCR reaction exceeds the capacity of the column.
+
+    This class is very tightly related to the `Reagent` class:
+
+    - This class is not meant to be instantiated on its own; it's meant to be 
+      used to make subclasses that also inherit from a `Reagent` class.  When 
+      making these subclasses, it's important to note that `IntermediateMixin` 
+      must appear before the `Reagent` class in the MRO, e.g.::
+
+          class IntermediatePlasmid(IntermediateMixin, Plasmid):
+              pass
+          
+    - In principle, there should be an "intermediate" version of each `Reagent` 
+      class.  Defining these intermediate classes manually would basically just 
+      be boilerplate though, so instead `Reagent.make_intermediate()` 
+      automatically creates these classes as they are needed.
+
+    - After instantiating an intermediate reagent object, its private `_step` 
+      and `_parent` attributes must be set manually.  No public constructor or 
+      method is provided to do this.  `Reagent.make_intermediate()` sets these 
+      attributes, meaning that `Reagent` knows about the private details of 
+      this mixin class.
+    """
 
     def get_step(self):
         # `self._step` is set by `Reagent.make_intermediate()`.
         return self._step
 
     def get_parent(self):
+        # `self._parent` is set by `Reagent.make_intermediate()`.
         return self._parent
 
     def get_precursor(self):
