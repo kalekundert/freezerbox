@@ -133,7 +133,7 @@ class Dilute(byoc.App):
 Calculate dilutions.
 
 Usage:
-    dilute <stocks>... (-v <µL> | -w <µL> | -V <µL>) [-c <conc>] [-C <conc>] 
+    dilute <stocks>... (-v <µL> | -D <µL> | -V <µL>) [-c <conc>] [-C <conc>] 
         [-w <Da>] [-d <name>]
 
 Arguments:
@@ -323,7 +323,7 @@ Database:
                 if callable(option):
                     try:
                         return option()
-                    except QueryError:
+                    except (QueryError, AttributeError):
                         continue
 
                 if option is not None:
