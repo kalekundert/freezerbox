@@ -103,8 +103,10 @@ def load(db, config):
 
     for i, row in df.iterrows():
         kwargs = {k: v for k, v in row.items() if v is not None}
+        if not kwargs:
+            continue
 
-        with LoadError.add_info('path: {path}', 'row: {i}', path=path, row=row, i=i):
+        with LoadError.add_info('path: {path}', 'sheet: {sheet}', 'row: {i}', path=path, sheet=sheet, row=row, i=i+1):
             tag = _find_tag(kwargs, config)
 
         if not kwargs.get('seq') and hasattr(reagent_cls, 'seq'):
