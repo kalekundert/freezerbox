@@ -6,13 +6,14 @@ from param_helpers import *
 from mock_model import *
 
 @parametrize_from_file(
-        schema=Schema({
-            'nodes': empty_ok({eval: eval}),
-            'edges': empty_ok([And(eval, tuple)]),
-            **with_nx.error_or({
-                'expected': empty_ok([And(eval, tuple)]),
-            }),
-        }),
+        schema=[
+            cast(
+                nodes=[empty(dict), with_py.eval(keys=True)],
+                edges=[empty(list), map_list(with_py.eval, tuple)],
+                expected=[empty(list), map_list(with_py.eval, tuple)],
+            ),
+            with_nx.error_or('expected'),
+        ],
 )
 def test_grouped_topological_sort(nodes, edges, expected, error):
     g = nx.DiGraph()
@@ -25,12 +26,7 @@ def test_grouped_topological_sort(nodes, edges, expected, error):
         actual = freezerbox.grouped_topological_sort(g)
         assert actual == expected
 
-@parametrize_from_file(
-        schema=Schema({
-            'db': dict,
-            'expected': [{'arg0': str, 'tags': str}],
-        }),
-)
+@parametrize_from_file
 def test_group_by_synthesis(db, expected, mock_plugins):
     db = eval_db(db)
 
@@ -45,12 +41,7 @@ def test_group_by_synthesis(db, expected, mock_plugins):
 
     assert actual == expected
 
-@parametrize_from_file(
-        schema=Schema({
-            'db': dict,
-            'expected': [{'arg0': str, 'ids': str}],
-        }),
-)
+@parametrize_from_file
 def test_group_by_cleanup(db, expected, mock_plugins):
     db = eval_db(db)
 

@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
-import re, os
+import sys, os, re
 from stepwise import Quantity
 from more_itertools import split_when, zip_equal, first
 from contextlib import contextmanager
 from inform import did_you_mean
 from .errors import ParseError, only_raise
+
+# I really hate that more-itertools makes me do this...
+if sys.version_info >= (3, 10):
+    def zip_equal(a, b):
+        return zip(a, b, strict=True)
 
 NO_DEFAULT = object()
 

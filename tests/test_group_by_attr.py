@@ -20,15 +20,17 @@ class DummyItem:
 with_dummy = Namespace(DummyItem=DummyItem)
 
 @parametrize_from_file(
-        schema=Schema({
-            'grouper': with_freeze.eval,
-            'items': with_py.eval,
-            Optional('key', default='lambda x: x'): with_py.eval,
-            'expected': empty_ok([{
-                'value': with_pytest.eval,
-                'items': with_pytest.eval,
-            }]),
-        }),
+        schema=[
+            cast(
+                grouper=with_freeze.eval,
+                items=with_py.eval,
+                key=with_py.eval,
+                expected=[empty(dict), with_pytest.eval],
+            ),
+            defaults(
+                key=lambda x: x,
+            ),
+        ],
 )
 def test_group_by(grouper, items, key, expected):
     actual = [
@@ -41,17 +43,27 @@ def test_group_by(grouper, items, key, expected):
     ]
     assert actual == expected
 
+F = open('xxx', 'w')
+
 @parametrize_from_file(
-        schema=Schema({
-            'items': empty_ok([with_dummy.eval]),
-            'group_by': empty_ok({str: with_freeze.eval}),
-            'merge_by': empty_ok({str: with_freeze.eval}),
-            Optional('keys', default={}): empty_ok({str: with_freeze.eval}),
-            'expected': empty_ok([{
-                'attrs': empty_ok({str: with_pytest.eval}),
-                'items': [with_dummy.eval],
-            }]),
-        }),
+        schema=[
+            cast(
+                items=[empty(list), with_dummy.eval],
+                group_by=[empty(dict), with_freeze.eval],
+                merge_by=[empty(dict), with_freeze.eval],
+                keys=[empty(dict), with_freeze.eval],
+                expected=[
+                    empty(list),
+                    map_list(cast(
+                        attrs=[empty(dict), with_pytest.eval],
+                        items=with_dummy.eval,
+                    )),
+                ],
+            ),
+            defaults(
+                keys={},
+            ),
+        ],
 )
 def test_iter_combos(items, group_by, merge_by, keys, expected):
     actual = [

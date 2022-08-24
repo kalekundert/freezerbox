@@ -1,7 +1,7 @@
 test_load_config:
   -
     id: cwd
-    files:
+    tmp_files:
       .config/freezerbox/conf.toml:
         > use = 'db1'
         >
@@ -50,7 +50,7 @@ test_load_config:
       features: BUILTIN_CONF
   -
     id: subdir
-    files:
+    tmp_files:
       .config/freezerbox/conf.toml:
         > use = 'db1'
         >

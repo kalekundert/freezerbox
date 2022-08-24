@@ -9,12 +9,11 @@ from freezerbox.model import *
 from param_helpers import *
 from mock_model import *
 
-kwargs_schema = lambda expected=with_freeze.eval: Schema({
-    Optional('kwargs', {}): {str: with_freeze.eval},
-    **with_freeze.error_or({
-        'expected': expected,
-    }),
-})
+kwargs_schema = [
+        defaults(kwargs={}),
+        cast(kwargs=with_freeze.eval, expected=with_freeze.eval),
+        with_freeze.error_or('expected'),
+]
 
 def test_database_init():
     db = Database({})
@@ -127,35 +126,35 @@ def test_reagent_intermediate_repr():
     assert repr(x1) == "MockReagent(synthesis=Fields(['m'], {}))"
     assert repr(i1) == "MockReagentIntermediate(step=0, synthesis=Fields(['m'], {}))"
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_reagent_name(kwargs, expected, error):
     db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.name == expected
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_reagent_alt_names(kwargs, expected, error):
     db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.alt_names == expected
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_reagent_date(kwargs, expected, error):
     db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.date == expected
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_reagent_desc(kwargs, expected, error):
     db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
     with error:
         assert x1.desc == expected
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_reagent_ready(kwargs, expected, error):
     db = Database({})
     db['x1'] = x1 = MockReagent(**kwargs)
@@ -303,7 +302,7 @@ def test_reagent_get_maker_attr_5():
     assert x1.get_maker_attr('product_conc', None) == None
 
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_molecule_seq(kwargs, expected, error, mock_plugins):
     db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
@@ -314,16 +313,14 @@ def test_molecule_seq(kwargs, expected, error, mock_plugins):
         x1._attrs['seq'] = '!!!'
         assert x1.seq == expected
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_molecule_length(kwargs, expected, error):
     db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
     with error:
         assert x1.length == expected
 
-@parametrize_from_file(
-        schema=kwargs_schema([with_freeze.eval]),
-)
+@parametrize_from_file(schema=kwargs_schema)
 def test_molecule_conc(kwargs, expected, error, mock_plugins):
     db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
@@ -349,9 +346,7 @@ def test_molecule_conc(kwargs, expected, error, mock_plugins):
         with error:
             assert get_by_unit[q.unit]() == pytest.approx(q.value)
 
-@parametrize_from_file(
-        schema=kwargs_schema({str: with_freeze.eval}),
-)
+@parametrize_from_file(schema=kwargs_schema)
 def test_molecule_volume(kwargs, expected, error, mock_plugins):
     db = Database({})
     db['x1'] = x1 = MockMolecule(**kwargs)
@@ -373,12 +368,7 @@ def test_protein_mw_err():
     with pytest.raises(QueryError, match="'X' is not a valid unambiguous letter for protein"):
         r1.mw
 
-@parametrize_from_file(
-        schema=kwargs_schema({
-            'molecule': eval,
-            'strandedness': eval,
-        }),
-)
+@parametrize_from_file(schema=kwargs_schema)
 def test_nucleic_acid_molecule(kwargs, expected, error, mock_plugins):
     db = Database({})
     db['f1'] = f1 = NucleicAcid(**kwargs)
@@ -387,7 +377,7 @@ def test_nucleic_acid_molecule(kwargs, expected, error, mock_plugins):
         assert f1.is_double_stranded == (expected['strandedness'] == 2)
         assert f1.is_single_stranded == (expected['strandedness'] == 1)
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_nucleic_acid_circular(kwargs, expected, error, mock_plugins):
     db = Database({})
     db['f1'] = f1 = NucleicAcid(**kwargs)
@@ -395,9 +385,7 @@ def test_nucleic_acid_circular(kwargs, expected, error, mock_plugins):
         assert f1.is_circular == expected
         assert f1.is_linear == (not expected)
 
-@parametrize_from_file(
-        schema=kwargs_schema(),
-)
+@parametrize_from_file(schema=kwargs_schema)
 def test_nucleic_acid_mw(kwargs, expected, error):
     # 5'-phosphorylation assumed.
     # http://molbiotools.com/dnacalculator.html
@@ -416,13 +404,11 @@ def test_plasmid_mw():
     assert p1.mw == pytest.approx(2471.58, abs=0.1)
 
 @parametrize_from_file(
-        schema=Schema({
-            Optional('config', default={}): with_py.eval,
-            Optional('kwargs', default={}): with_py.eval,
-            **with_freeze.error_or({
-                'expected': str,
-            }),
-        }),
+        schema=[
+            cast(config=with_py.eval, kwargs=with_py.eval),
+            defaults(config={}, kwargs={}),
+            with_freeze.error_or('expected'),
+        ],
 )
 def test_plasmid_origin(config, kwargs, expected, error):
     db = Database(config)
@@ -431,13 +417,11 @@ def test_plasmid_origin(config, kwargs, expected, error):
         assert p1.origin == expected
 
 @parametrize_from_file(
-        schema=Schema({
-            Optional('config', default={}): with_py.eval,
-            Optional('kwargs', default={}): with_py.eval,
-            **with_freeze.error_or({
-                'expected': [str],
-            }),
-        }),
+        schema=[
+            cast(config=with_py.eval, kwargs=with_py.eval),
+            defaults(config={}, kwargs={}),
+            with_freeze.error_or('expected'),
+        ],
 )
 def test_plasmid_resistance(config, kwargs, expected, error):
     db = Database(config)
@@ -446,13 +430,11 @@ def test_plasmid_resistance(config, kwargs, expected, error):
         assert p1.resistance == expected
 
 @parametrize_from_file(
-        schema=Schema({
-            Optional('config', default={}): with_py.eval,
-            Optional('kwargs', default={}): with_py.eval,
-            **with_freeze.error_or({
-                'expected': [str],
-            }),
-        }),
+        schema=[
+            cast(config=with_py.eval, kwargs=with_py.eval),
+            defaults(config={}, kwargs={}),
+            with_freeze.error_or('expected'),
+        ],
 )
 def test_plasmid_antibiotics(config, kwargs, expected, error):
     db = Database(config)
@@ -470,7 +452,7 @@ def test_oligo_mw():
     assert o1.is_double_stranded == (not o1.is_single_stranded) == False
     assert o1.mw == pytest.approx(1173.82, abs=0.1)
 
-@parametrize_from_file(schema=kwargs_schema())
+@parametrize_from_file(schema=kwargs_schema)
 def test_oligo_tm(kwargs, expected, error):
     db = Database({})
     db['o1'] = o1 = Oligo(**kwargs)
@@ -556,14 +538,11 @@ def test_intermediate(mock_plugins):
 
 
 @parametrize_from_file(
-        schema=Schema({
-            'db': dict,
-            'tags': with_py.eval,
-            Optional('kwargs', default={}): dict,
-            **with_freeze.error_or({
-                'expected': str,
-            }),
-        })
+        schema=[
+            cast(tags=with_py.eval),
+            defaults(kwargs={}),
+            with_freeze.error_or('expected'),
+        ]
 )
 def test_find(db, tags, kwargs, expected, error):
     db = eval_db(db)

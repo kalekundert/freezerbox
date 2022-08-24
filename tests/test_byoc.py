@@ -4,7 +4,8 @@ import freezerbox, pytest
 import parametrize_from_file
 
 from byoc.errors import Log
-from more_itertools import one, zip_equal
+from freezerbox.utils import zip_equal
+from more_itertools import one
 from re_assert import Matches
 from mock_model import mock_plugins, MockMolecule
 from operator import attrgetter
@@ -15,15 +16,16 @@ class MockObj:
     pass
 
 @parametrize_from_file(
-        schema=Schema({
-            'db': dict,
-            'obj': str,
-            Optional('config_cls', default='class MockConfig(ReagentConfig): pass'): str,
-            Optional('db_access', default='cache'): str,
-            'key': with_py.eval,
-            'expected': [with_py.eval],
-            'info': [str],
-    }),
+        schema=[
+            defaults(
+                config_cls='class MockConfig(ReagentConfig): pass',
+                db_access='cache',
+            ),
+            cast(
+                key=with_py.eval,
+                expected=with_py.eval,
+            ),
+        ],
 )
 def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, monkeypatch, mock_plugins):
     with_mock_obj = Namespace(
@@ -72,17 +74,15 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
         Matches(pattern).assert_matches(actual)
 
 @parametrize_from_file(
-        schema=Schema({
-            'db': dict,
-            'config_cls': str,
-            'products': {str: Coerce(int)},
-            Optional('products_attr', default='products'): str,
-            'key': with_py.eval,
-            **with_freeze.error_or({
-                'expected': [with_freeze.eval],
-                'info': [str],
-            }),
-    }),
+        schema=[
+            cast(
+                products=with_py.eval,
+                key=with_py.eval,
+                expected=with_freeze.eval,
+            ),
+            defaults(products_attr='products'),
+            with_freeze.error_or('expected', 'info'),
+        ],
 )
 def test_product_configs(db, config_cls, products, products_attr, key, expected, info, error, mock_plugins):
     with_configs = Namespace(

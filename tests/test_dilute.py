@@ -17,26 +17,23 @@ with_dilute = Namespace(
         'from freezerbox.stepwise.dilute import *',
 )
 
-given_expected_error = Schema({
-    'given': eval,
-     **with_py.error_or({
-         'expected': with_dilute.eval,
-     }),
-})
-app_expected_error = Schema({
-    'app': with_dilute.exec(get='app'),
-    **with_py.error_or({
-        'expected': with_sw.eval,
-    }),
-})
-db_app_expected_error = Schema({
-    Optional('db', default={}): eval_db,
-    **app_expected_error.schema,
-})
-app_expected_error_stderr = Schema({
-    Optional('stderr', default=''): str,
-    **app_expected_error.schema,
-})
+given_expected_error = [
+        cast(given=with_py.eval, expected=with_dilute.eval),
+        with_py.error_or('expected'),
+]
+app_expected_error = [
+        cast(app=with_dilute.exec(get='app'), expected=with_sw.eval),
+        with_py.error_or('expected'),
+]
+db_app_expected_error = [
+        defaults(db={}),
+        cast(db=eval_db),
+        *app_expected_error,
+]
+app_expected_error_stderr = [
+        defaults(stderr=''),
+        *app_expected_error,
+]
 
 @parametrize_from_file(schema=given_expected_error)
 def test_parse_stock(given, expected, error):

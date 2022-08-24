@@ -10,11 +10,6 @@ from freezerbox.errors import ParseError
 from parsy import ParseError as ParsyError
 from param_helpers import *
 
-fields_dict = {
-    'by_index': [str],
-    'by_name': {str: str},
-}
-
 @parametrize_from_file
 def test_word(given, expected):
     assert word.parse(given) == expected
@@ -33,12 +28,7 @@ def test_key_value_err(given):
     with pytest.raises(ParsyError):
         key_value.parse(given)
 
-@parametrize_from_file(
-        schema=Schema({
-            'given': str,
-            'expected': fields_dict,
-        }),
-)
+@parametrize_from_file
 def test_fields(given, expected):
     parsed = parse_fields(given)
     assert parsed.by_index == expected['by_index']
@@ -52,12 +42,7 @@ def test_fields_err(given, messages):
     for message in messages:
         assert message in str(err.value)
 
-@parametrize_from_file(
-        schema=Schema({
-            'given': str,
-            'expected': [fields_dict],
-        }),
-)
+@parametrize_from_file
 def test_fields_list(given, expected):
     parsed = [
             {'by_index': x.by_index, 'by_name': x.by_name}

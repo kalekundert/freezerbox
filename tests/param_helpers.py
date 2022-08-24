@@ -4,18 +4,15 @@ import freezerbox
 import pytest
 import parametrize_from_file
 
-from parametrize_from_file import star
-from parametrize_from_file.voluptuous import Namespace
+from parametrize_from_file import Namespace, cast, defaults, star
 from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
+from more_itertools import always_iterable
 from pathlib import Path
 
 TEST_DIR = Path(__file__).parent
 
 def eval_db(reagents):
-    schema = Schema({
-            str: with_freeze.eval,
-    })
-    reagents = schema(reagents)
+    reagents = with_freeze.eval(reagents)
 
     meta = reagents.pop('meta', {})
     config = meta.get('config', {})
@@ -32,8 +29,20 @@ def eval_db(reagents):
 
     return db
 
-def empty_ok(x):
-    return Or(x, And('', lambda y: type(x)()))
+def empty(factory):
+    return lambda x: x or factory()
+
+def map_list(*funcs):
+
+    def inner_map(xs):
+        out = []
+        for x in xs:
+            for f in always_iterable(funcs):
+                x = f(x)
+            out.append(x)
+        return out
+
+    return inner_map
 
 def approx_Q(x):
     from stepwise import Quantity
@@ -61,13 +70,3 @@ with_freeze = Namespace(
         'from mock_model import *',
         TEST_DIR=TEST_DIR,
 )
-
-@pytest.fixture
-def files(request, tmp_path):
-    for name, contents in request.param.items():
-        p = tmp_path / name
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(contents)
-
-    return tmp_path
-

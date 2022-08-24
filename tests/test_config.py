@@ -5,24 +5,19 @@ from freezerbox.utils import cd
 from param_helpers import *
 
 @parametrize_from_file(
-        schema=Schema({
-            'files': {str: str},
-            Optional('cwd', default='.'): str,
-            'expected_config': dict,
-            'expected_paths': dict,
-        }),
-        indirect=['files'],
+        schema=defaults(cwd='.'),
+        indirect=['tmp_files'],
 )
-def test_load_config(files, cwd, expected_config, expected_paths):
+def test_load_config(tmp_files, cwd, expected_config, expected_paths):
     load_config.cache_clear()
 
     with_paths = Namespace(
-            DIR=files,
+            DIR=tmp_files,
             BUILTIN_CONF=BUILTIN_CONF,
     )
     expected_paths = with_paths.eval(expected_paths)
 
-    with cd(files / cwd):
+    with cd(tmp_files / cwd):
         config = load_config()
 
         # Remove feature sequences, just to simplify test files:

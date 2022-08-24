@@ -30,11 +30,10 @@ def _guess_tag(x):
 
 
 @parametrize_from_file(
-        schema=Schema({
-            'db': eval_db,
-            Optional('tags', default=[]): [str],
-            'expected': empty_ok([str]),
-        }),
+        schema=[
+            cast(db=eval_db),
+            defaults(tags=[]),
+        ],
 )
 def test_make(db, tags, expected, disable_capture, mock_plugins):
     cwd = getcwd()
@@ -48,12 +47,10 @@ def test_make(db, tags, expected, disable_capture, mock_plugins):
     assert getcwd() == cwd
 
 @parametrize_from_file(
-        schema=Schema({
-            'db': eval_db,
-            'tags': [str],
-            Optional('kwargs', default={}): {str: with_pytest.eval},
-            'expected': [str],
-        }),
+        schema=[
+            cast(db=eval_db, kwargs=with_py.eval),
+            defaults(kwargs={}),
+        ],
 )
 def test_collect_targets(db, tags, kwargs, expected, mock_plugins):
     from freezerbox.stepwise.make import collect_targets
@@ -61,35 +58,24 @@ def test_collect_targets(db, tags, kwargs, expected, mock_plugins):
     assert targets == set(expected)
 
 @parametrize_from_file(
-        schema=Schema(
-            Or(
-                And(
-                    {
-                        'db': eval_db,
-                        'tag': str,
-                        Optional('maker_attrs', default={}): {
-                            str: with_freeze.eval,
-                        },
-                        Optional('reagent_attrs', default={}): {
-                            str: with_freeze.eval,
-                        },
-                    },
-                    _guess_tag,
-                ),
-                And(
-                    {
-                        'maker': str,
-                        Optional('maker_attrs', default={}): {
-                            str: with_freeze.eval,
-                        },
-                        Optional('reagent_attrs', default={}): {
-                            str: with_freeze.eval,
-                        },
-                    },
-                    _db_from_maker,
-                ),
+        schema=[
+            cast(
+                db=eval_db,
+                maker_attrs=with_freeze.eval,
+                reagent_attrs=with_freeze.eval,
             ),
-        ),
+            defaults(
+                maker_attrs={},
+                reagent_attrs={},
+            ),
+
+            # If the test includes a "maker" field, use that information to 
+            # instantiate fill in the "db" and "tag" fields.  The "maker" field 
+            # is removed.
+            _db_from_maker,
+
+            _guess_tag,
+        ],
 )
 def test_builtin_maker_attrs(db, tag, maker_attrs, reagent_attrs, disable_capture):
     with disable_capture:

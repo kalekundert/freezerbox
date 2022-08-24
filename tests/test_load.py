@@ -8,10 +8,10 @@ from param_helpers import *
 # themselves.
 
 @parametrize_from_file(
-        schema=Schema({
-            'config': {str: eval},
-            'error': with_freeze.error,
-        }),
+        schema=cast(
+            config=with_py.eval,
+            error=with_freeze.error,
+        ),
 )
 def test_load_db_err(config, error):
     with error:
