@@ -60,6 +60,7 @@ test = [
   'pytest-cov',
   'coveralls',
   'parametrize_from_file',
+  'pytest_tmp_files',
   're_assert',
 ]
 doc = [
