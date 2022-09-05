@@ -123,6 +123,11 @@ class group_by_cluster:
         for order, value, items in sorted(clusters):
             yield value, items
 
+# Alternative names for this function:
+# - group_by_equality
+# - group_by_unanimity
+# - group_by_consensus
+
 def group_by_identity(items, key=lambda x: x):
     # The advantage of this algorithm is that it only requires the items to 
     # support the equality operator.  More efficient algorithms would require 

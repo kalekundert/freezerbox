@@ -16,63 +16,75 @@ class MockMolecule(freezerbox.Molecule):
 class MockNucleicAcid(freezerbox.NucleicAcid):
     pass
 
-class MockSoloMaker:
+class MockMakerPlugin:
 
-    @classmethod
-    def make(cls, db, products):
-        yield from (cls(x) for x in products)
+    @staticmethod
+    def maker_from_reagent(db, reagent):
+        from freezerbox import parse_bool
 
-    def __init__(self, product):
-        args = product.maker_args
+        args = reagent.maker_args
 
-        self.products = [product]
-        self.dependencies = args.get('deps', [])
+        maker = MockMaker()
 
-        if isinstance(self.dependencies, str):
-            self.dependencies = self.dependencies.split(',')
+        # Initialize attributes that control how the protocol is formatted. 
+        # These attributes will only be used in `protocols_from_makers()`:
 
-        if 'protocol' in args:
-            self.protocol = stepwise.Protocol(steps=args['protocol'])
+        maker._steps = args.get('protocol', [])
+        maker._merge = args.get('merge', False)
 
-        # Maker attributes:
-        if 'conc' in args:
-            self.product_conc = stepwise.Quantity.from_string(args['conc'])
+        # Initialize attributes that provide information about the reagent 
+        # itself.  These attributes may be read by FreezerBox:
 
-        if 'volume' in args:
-            self.product_volume = stepwise.Quantity.from_string(args['volume'])
+        deps = args.get('deps', [])
+        if isinstance(deps, str):
+            deps = deps.split(',')
+        maker.dependencies = deps
 
-        # Synthesis attributes:
         if 'seq' in args:
-            self.product_seqs = [args['seq']]
+            maker.product_seq = args['seq']
 
         if 'molecule' in args:
-            self.product_molecule = args['molecule']
+            maker.product_molecule = args['molecule']
+
+        if 'conc' in args:
+            maker.product_conc = stepwise.Quantity.from_string(args['conc'])
+
+        if 'volume' in args:
+            maker.product_volume = stepwise.Quantity.from_string(args['volume'])
 
         if 'circular' in args:
-            self.is_product_circular = freezerbox.parse_bool(args['circular'])
+            maker.is_product_circular = parse_bool(args['circular'])
 
+        if '5phos' in args:
+            maker.is_product_phosphorylated_5 = parse_bool(args['5phos'])
 
-class MockComboMaker:
+        if '3phos' in args:
+            maker.is_product_phosphorylated_3 = parse_bool(args['3phos'])
 
-    @classmethod
-    def make(cls, db, products):
-        yield cls(list(products))
+        return maker
 
-    def __init__(self, products):
+    @staticmethod
+    def protocols_from_makers(makers):
         from more_itertools import flatten
 
-        steps = list(flatten(
-            x.maker_args.get('protocol', [])
-            for x in products
-        ))
-        deps = list(flatten(
-            x.maker_args.get('deps', [])
-            for x in products
-        ))
+        # Group the makers based on their *merge* attribute.  The purpose of 
+        # this is to make it easy to test different ways of grouping makers.
+        groups = {}
 
-        self.products = products
-        self.protocol = stepwise.Protocol(steps=steps)
-        self.dependencies = deps
+        for maker in makers:
+            groups.setdefault(maker._merge, []).append(maker)
+
+        ungrouped = groups.pop(False, [])
+
+        for k, group in sorted(groups.items()):
+            steps = list(flatten(x._steps for x in group))
+            yield group, stepwise.Protocol(steps=steps)
+
+        for maker in ungrouped:
+            yield [maker], stepwise.Protocol(steps=maker._steps)
+
+class MockMaker:
+    pass
 
 class MockEntryPoint:
 
@@ -82,15 +94,13 @@ class MockEntryPoint:
     def load(self):
         return self.plugin
 
-MockMaker = MockSoloMaker
 
 @pytest.fixture
 def mock_plugins(monkeypatch):
     from string import ascii_lowercase
     monkeypatch.setattr(freezerbox.model, 'MAKER_PLUGINS', {
         **freezerbox.model.MAKER_PLUGINS,
-        'mock': MockEntryPoint(MockSoloMaker),
-        'merge': MockEntryPoint(MockComboMaker),
-        **{k: MockEntryPoint(MockSoloMaker) for k in ascii_lowercase},
+        'mock': MockEntryPoint(MockMakerPlugin),
+        **{k: MockEntryPoint(MockMakerPlugin) for k in ascii_lowercase},
     })
 

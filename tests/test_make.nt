@@ -49,7 +49,7 @@ test_make:
     db:
       x1:
         > MockReagent(
-        >         synthesis=Fields(['merge'], {'protocol': ['1']}),
+        >         synthesis=Fields(['a'], {'protocol': ['1'], 'merge': True}),
         >         cleanups=[
         >             Fields(['b'], {'protocol': ['2']}),
         >             Fields(['c'], {'protocol': ['3']}),
@@ -57,7 +57,7 @@ test_make:
         > )
       x2:
         > MockReagent(
-        >         synthesis=Fields(['merge'], {'protocol': ['4']}),
+        >         synthesis=Fields(['a'], {'protocol': ['4'], 'merge': True}),
         >         cleanups=[
         >             Fields(['b'], {'protocol': ['5']}),
         >             Fields(['c'], {'protocol': ['6']}),
@@ -129,7 +129,7 @@ test_make:
     db:
       x1:
         > MockReagent(
-        >         synthesis=Fields(['merge'], {'protocol': ['1']}),
+        >         synthesis=Fields(['a'], {'protocol': ['1'], 'merge': True}),
         >         cleanups=[
         >             Fields(['b'], {'protocol': ['2']}),
         >             Fields(['c'], {'protocol': ['3']}),
@@ -137,7 +137,7 @@ test_make:
         > )
       x2:
         > MockReagent(
-        >         synthesis=Fields(['merge'], {'protocol': ['4']}),
+        >         synthesis=Fields(['a'], {'protocol': ['4'], 'merge': True}),
         >         cleanups=[
         >             Fields(['b'], {'protocol': ['5']}),
         >             Fields(['c'], {'protocol': ['6']}),
@@ -162,7 +162,7 @@ test_make:
       # dictionary.
       x2:
         > MockReagent(
-        >         synthesis=Fields(['merge'], {'protocol': ['4']}),
+        >         synthesis=Fields(['a'], {'protocol': ['4'], 'merge': True}),
         >         cleanups=[
         >             Fields(['b'], {'protocol': ['5']}),
         >             Fields(['c'], {'protocol': ['6']}),
@@ -171,7 +171,7 @@ test_make:
         > )
       x1:
         > MockReagent(
-        >         synthesis=Fields(['merge'], {'protocol': ['1']}),
+        >         synthesis=Fields(['a'], {'protocol': ['1'], 'merge': True}),
         >         cleanups=[
         >             Fields(['b'], {'protocol': ['2']}),
         >             Fields(['c'], {'protocol': ['3']}),
@@ -343,7 +343,7 @@ test_builtin_maker_attrs:
     id: sw-seq
     maker: sw step A seq=GATTACA
     maker_attrs:
-      0.product_seqs: ['GATTACA']
+      0.product_seq: 'GATTACA'
     reagent_attrs:
       seq: 'GATTACA'
   -
@@ -457,7 +457,7 @@ test_builtin_maker_attrs:
     id: order-seq
     maker: order vendor=IDT seq=GATTACA
     maker_attrs:
-      0.product_seqs: ['GATTACA']
+      0.product_seq: 'GATTACA'
   -
     id: order-conc
     maker: order vendor=IDT conc=75nM

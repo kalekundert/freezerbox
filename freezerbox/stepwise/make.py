@@ -7,9 +7,10 @@ import freezerbox
 import shlex
 
 from freezerbox import (
-        load_maker_factory, group_by_synthesis, group_by_cleanup,
+        load_maker_plugin, group_by_synthesis, group_by_cleanup,
         iter_combo_makers, group_by_identity,
-        join_lists, join_sets, unanimous, only_raise, QueryError, cd
+        join_lists, join_sets, unanimous, only_raise, QueryError, cd,
+        parse_volume, parse_conc, parse_bool,
 )
 from stepwise import Quantity
 from natsort import natsort_key
@@ -191,63 +192,47 @@ not correspond to any stepwise commands, but are documented below:
         )
 
         for key, group in group_by_synthesis(targets):
-            for maker in build_makers(self.db, key, group):
-                protocol += maker.protocol
-                if getattr(maker, 'label_products', True):
-                    protocol += label_products(maker.products)
+            labels = label_makers(group)
+
+            for makers, protocol_i in iter_protocols(key, group):
+                protocol += protocol_i
+                if any(getattr(x, 'label_products', True) for x in makers):
+                    protocol += label_products(makers, labels)
 
             parents = [x.parent for x in group]
             for key, subgroup in group_by_cleanup(parents):
-                for maker in build_makers(self.db, key, subgroup):
-                    protocol += maker.protocol
+                for makers, protocol_i in iter_protocols(key, subgroup):
+                    protocol += protocol_i
 
         return protocol
 
 @autoprop
 class StepwiseMaker:
 
-    def __init__(self):
-        self.dependencies = set()
-        self._product_seqs = []
-        self._product_concs = []
-        self._product_volumes = []
-        self._product_molecules = []
-
     @classmethod
-    def make(cls, db, products):
-        yield from iter_combo_makers(
-                cls,
-                map(cls.from_product, products),
-                group_by={
-                    '_protocol_str': group_by_identity,
-                },
-                merge_by={
-                    'protocol': first,
-                    'dependencies': join_sets,
-                    '_product_seqs': join_lists,
-                    '_product_concs': join_lists,
-                    '_product_volumes': join_lists,
-                    '_product_molecules': join_lists,
-                }
-        )
-
-    @classmethod
-    def from_product(cls, product):
+    def maker_from_reagent(cls, db, reagent):
         maker = cls()
-        args = product.maker_args
-
-        maker.products = [product]
+        args = reagent.maker_args
 
         if 'deps' in args:
             maker.dependencies = {x.strip() for x in args['deps'].split(',')}
+        else:
+            maker.dependencies = set()
+
         if 'seq' in args:
-            maker._product_seqs = [args['seq']]
-        if 'conc' in args:
-            maker._product_concs = [Quantity.from_string(args['conc'])]
-        if 'volume' in args:
-            maker._product_volumes = [Quantity.from_string(args['volume'])]
+            maker.product_seq = args['seq']
         if 'molecule' in args:
-            maker._product_molecules = [args['molecule']]
+            maker.product_molecule = args['molecule']
+        if 'volume' in args:
+            maker.product_volume = parse_volume(args['volume'])
+        if 'conc' in args:
+            maker.product_conc = parse_conc(args['conc'])
+        if 'circular' in args:
+            maker.is_product_circular = parse_bool(args['circular'])
+        if '5-phos' in args:
+            maker.is_product_phosphorylated_5 = parse_bool(args['5phos'])
+        if '3-phos' in args:
+            maker.is_product_phosphorylated_3 = parse_bool(args['3phos'])
 
         if 'cwd' in args:
             cwd = expanduser(args['cwd'])
@@ -267,69 +252,58 @@ class StepwiseMaker:
         with cd(cwd):
             maker.protocol = stepwise.load(load_cmd).protocol
 
-        maker._protocol_str = maker.protocol.format_text()
+        maker.protocol_str = maker.protocol.format_text()
 
         return maker
 
-    def get_product_seqs(self):
-        return self._product_seqs
+    @staticmethod
+    def protocols_from_makers(makers):
+        for _, group in group_by_identity(makers, lambda x: x.protocol_str):
+            yield group, first(group).protocol
 
-    @only_raise(QueryError, AttributeError)
-    def get_product_conc(self):
-        return self._unanimous_or_undef(self._product_concs, 'product_conc')
-
-    @only_raise(QueryError, AttributeError)
-    def get_product_volume(self):
-        return self._unanimous_or_undef(self._product_volumes, 'product_volume')
-
-    @only_raise(QueryError, AttributeError)
-    def get_product_molecule(self):
-        return self._unanimous_or_undef(self._product_molecules, 'product_molecule')
-
-    def _unanimous_or_undef(self, values, attr):
-        return unanimous(
-                values,
-                err_empty=AttributeError(f"{self!r} object has no attribute {attr!r}"),
-                err_multiple=lambda x1, x2: QueryError(f"{self!r} object has multiple values for {attr!r}: {x1!r}, {x2!r}")
-        )
 
 
 @autoprop
 class OrderMaker:
 
     @classmethod
-    def make(cls, db, products):
-        yield from map(cls.from_product, products)
-
-    @classmethod
-    def from_product(cls, product):
+    def maker_from_reagent(cls, db, reagent):
         maker = cls()
-        args = product.maker_args
+        args = reagent.maker_args
 
-        maker.products = [product]
+        maker.product = reagent
         maker.dependencies = set()
         maker.vendor = args['vendor']
         maker.label_products = False
 
         if 'seq' in args:
-            maker.product_seqs = [args['seq']]
-        if 'conc' in args:
-            maker.product_conc = Quantity.from_string(args['conc'])
-        if 'volume' in args:
-            maker.product_volume = Quantity.from_string(args['volume'])
+            maker.product_seq = args['seq']
         if 'molecule' in args:
             maker.product_molecule = args['molecule']
+        if 'volume' in args:
+            maker.product_volume = parse_volume(args['volume'])
+        if 'conc' in args:
+            maker.product_conc = parse_conc(args['conc'])
 
         return maker
 
-    def get_protocol(self):
-        p = stepwise.Protocol()
-        p += f"Order {one(self.products).tag} from {self.vendor}."
-        return p
+    @staticmethod
+    def protocols_from_makers(makers):
+        for vendor, group in group_by_identity(makers, lambda x: x.vendor):
+            protocol = stepwise.Protocol()
 
-def build_makers(db, key, targets):
-    factory = load_maker_factory(key)
-    yield from factory(db, targets)
+            if len(group) == 1:
+                protocol += f"Order {one(group).product.tag} from {vendor}."
+            else:
+                protocol += f"Order the following from {vendor}: {', '.join(x.product.tag for x in group)}"
+
+            yield group, protocol
+
+
+def iter_protocols(key, targets):
+    plugin = load_maker_plugin(key)
+    makers = [x.maker for x in targets]
+    yield from plugin.protocols_from_makers(makers)
 
 def collect_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
     # I'm not totally sure that `grouped_topological_sort()` is stable, and if 
@@ -388,9 +362,12 @@ def collect_targets(db, tags, recurse_deps=True, exclude_deps=frozenset()):
 
     return sorted(targets, key=by_stable_then_natsort)
 
-def label_products(products):
-    tags = ', '.join(str(x.tag) for x in products)
-    return f"Label the {plural(products):product/s}: {tags}"
+def label_makers(products):
+    return {id(x.maker): x.tag for x in products}
+
+def label_products(makers, labels):
+    tags = ', '.join(str(labels[id(x)]) for x in makers)
+    return f"Label the {plural(makers):product/s}: {tags}"
 
 
 if __name__ == '__main__':

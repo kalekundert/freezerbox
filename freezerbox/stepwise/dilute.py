@@ -283,7 +283,17 @@ Database:
         self.stocks = stocks
 
     @classmethod
-    def make(cls, db, products):
+    def maker_from_reagent(cls, db, reagent):
+        app = cls.from_bare()
+        app.db = db
+        app.products = [reagent]
+        app.load(MakerConfig)
+        return app
+
+    @classmethod
+    def protocols_from_makers(cls, makers):
+        # This plugin implementation is directly ported from the original 
+        # `make()` interface and is no longer idiomatic.
 
         def factory():
             app = cls.from_bare()
@@ -291,21 +301,15 @@ Database:
             app.show_stub = True
             return app
 
-        yield from iter_combo_makers(
-                factory,
-                map(cls.from_product, products),
-                group_by={
-                    'target_conc': group_by_identity,
-                    'diluent': group_by_identity,
-                },
-        )
-
-    @classmethod
-    def from_product(cls, product):
-        app = cls.from_bare()
-        app.products = [product]
-        app.load(MakerConfig)
-        return app
+        for maker in iter_combo_makers(
+                    factory,
+                    map(cls.from_product, products),
+                    group_by={
+                        'target_conc': group_by_identity,
+                        'diluent': group_by_identity,
+                    },
+            ):
+            yield maker.products, maker.protocol
 
     def get_db(self):
         if self._db is None:

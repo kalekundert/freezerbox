@@ -350,10 +350,7 @@ class Molecule(Reagent):
         # If we have instructions for how to make this molecule, try getting
         # the sequence from that.
         if not seq:
-            seq = only(
-                    self.get_synthesis_attr('product_seqs', []),
-                    too_long=QueryError("protocol has multiple sequences", culprit=self),
-            )
+            seq = self.get_synthesis_attr('product_seq', None)
 
         if not seq:
             raise QueryError("no sequence specified", culprit=self)
@@ -436,7 +433,7 @@ class Molecule(Reagent):
 
         try:
             primary_seq = self.seq
-            protocol_seq = one(self.get_synthesis_attr('product_seqs'))
+            protocol_seq = self.get_synthesis_attr('product_seq')
         except (QueryError, ValueError):
             pass
         else:
@@ -720,25 +717,71 @@ class Oligo(NucleicAcid):
 
 
 
+class MakerPlugin:
+    # This class only exists for documentation purposes: it just shows what 
+    # methods a maker plugin is expected to implement.  There's no need (or 
+    # reason) for plugins to actually inherit from this class.  There's not 
+    # even any need for plugins to be classes; they could just as well be 
+    # modules containing the functions described below.
+
+    @staticmethod
+    def maker_from_reagent(db, reagent):
+        """
+        Return an object (hereafter referred to as a "maker") that describes 
+        how to synthesize/cleanup a single reagent.
+
+        The returned maker object will serve two roles.  The first is to 
+        provide information about the state of the reagent after the 
+        synthesis/cleanup in question, e.g. concentration, volume, sequence, 
+        etc.  Not all of this information is applicable to all reagents, and 
+        it's all provided on an optional basis.
+
+        The second role of the maker is to be an input to the plugin's 
+        `protocols_from_makers()` function.  In this role, the maker is treated 
+        as a black box.  It should contain whatever information is necessary to 
+        create a protocol, but none of that information needs to be accessible 
+        to FreezerBox.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def protocols_from_makers(makers):
+        """
+        Create one or more protocols describing how to synthesize/cleanup the 
+        given makers.
+
+        Arguments:
+            makers:
+                A list of "maker" objects representing specific reagents to 
+                synthesize/cleanup.  Each of these object will have been 
+                initially created by the `maker_from_reagent()` function, and 
+                can be of any type.
+
+                Freezerbox guarantees that all of the makers passed to this 
+                function will be of the same type and will not need to be 
+                synthesized/cleaned up in any particular order (i.e. they can 
+                be synthesized/cleaned up simultaneously).  
+
+        Yields:
+            Tuples of the form (makers, protocol) where *makers* is a subset of 
+            the makers passed into this function and *protocol* is a 
+            `stepwise.Protocol` object detailing the synthesis/cleanup of those 
+            makers.  Ideally, the makers will be condensed into the smallest 
+            number of protocols possible, e.g. by setting up master mixes, etc.
+            protocol.  This function is typically implemented as a generator, 
+            but it is also ok to return an iterable.
+        """
+        raise NotImplementedError
+
 class MakerInterface:
-    # Maker classes are not required to actually inherit from this class, but 
-    # they are expected to implement this interface.
+    # This class only exists for documentation purposes: it just shows which 
+    # methods makers (e.g. as returned by `MakerPluging.maker_from_reagent()`) 
+    # can implement to tell FreezerBox about the reagent in question.  All of 
+    # these methods are optional.
 
     # Note that I don't use autoprop on this class, because I don't want 
     # getters to be part of the interface.  Subclasses are free to use 
     # autoprop, though.
-
-    @classmethod
-    def make(self, db, products):
-        raise NotImplementedError
-
-    @property
-    def protocol(self):
-        raise AttributeError
-
-    @property
-    def protocol_duration(self):
-        raise AttributeError
 
     @property
     def dependencies(self):
@@ -754,16 +797,7 @@ class MakerInterface:
         raise AttributeError
 
     @property
-    def products(self):
-        # Required by make for "Label the product..." step.
-        raise AttributeError
-
-    @property
-    def product_tags(self):
-        raise AttributeError
-
-    @property
-    def product_seqs(self):
+    def product_seq(self):
         raise AttributeError
 
     @property
@@ -861,9 +895,8 @@ class IntermediateMixin:
         except IndexError:
             raise QueryError("no protocol specified", culprit=self)
 
-        factory = load_maker_factory(key)
-        makers = list(factory(self.db, [self]))
-        return one(makers)
+        plugin = load_maker_plugin(key)
+        return plugin.maker_from_reagent(self.db, self)
 
     def get_maker_args(self):
         if self.step == 0:
@@ -915,13 +948,11 @@ def load_db(use=None, config=None):
 
     return db
 
-def load_maker_factory(key):
+def load_maker_plugin(key):
     try:
-        plugin = MAKER_PLUGINS[key].load()
+        return MAKER_PLUGINS[key].load()
     except KeyError as err:
         raise QueryError(f"no {err.args[0]!r} maker plugins found")
-
-    return plugin.make
 
 def find(db, tags, reagent_cls=None):
     if isinstance(tags, str):

@@ -253,7 +253,7 @@ test_reagent_config:
       - found reagent: MockReagent\('x1', synthesis=Fields\(\['m'\], \{'deps': 'x2'\}\)\)
       -
         > called: <function MockConfig.<lambda> at .*>
-        > returned: <mock_model.MockSoloMaker object at .*>
+        > returned: <mock_model.MockMaker object at .*>
       - found 'dependencies': \['x2'\]
   -
     id: transform-err
@@ -304,7 +304,7 @@ test_reagent_config:
       - found reagent: MockReagent\('x1', synthesis=Fields\(\['m'\], \{'deps': 'x2'\}\)\)
       -
         > called: <function <lambda> at .*>
-        > returned: <mock_model.MockSoloMaker object at .*>
+        > returned: <mock_model.MockMaker object at .*>
       - found 'dependencies': \['x2'\]
   -
     id: setup-autoload-db
