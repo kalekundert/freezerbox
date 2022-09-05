@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 17 1,15 * *'
+
+jobs:
+  test:
+    name: Run pytest
+
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+      - name: Run test suite
+        run: |
+          pytest tests --cov freezerbox -vv
+      - name: Report test coverage
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        run: |
+          coveralls
