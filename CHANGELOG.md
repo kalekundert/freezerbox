@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v0.26.0 (2022-09-05)
+### Feature
+* Improve maker plugin API ([`71fec2b`](https://github.com/kalekundert/freezerbox/commit/71fec2b3eca51d51a41cef1eded30b05098aa294))
+
+### Fix
+* Wrong option name in usage text ([`2bac1fd`](https://github.com/kalekundert/freezerbox/commit/2bac1fd072524aebb0c84de9223a165a580a0a53))
+* Improve error messages when loading tags from Excel ([`10a435b`](https://github.com/kalekundert/freezerbox/commit/10a435b5701441cea56d408559f6c80dfbffc28a))
+
+### Documentation
+* Describe the role of the IntermediateMixin class ([`b42dc9f`](https://github.com/kalekundert/freezerbox/commit/b42dc9f1b77798e030da1c1c359eadf94ef56a66))
+
 ## v0.25.1 (2022-05-10)
 ### Fix
 * Allow repr to fail gracefully ([`fa1e90c`](https://github.com/kalekundert/freezerbox/commit/fa1e90ceff8eac541e16379875df73199ca0adb0))
