@@ -14,7 +14,7 @@ FreezerBox
    :alt: Documentation
    :target: https://freezerbox.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/github/workflow/status/kalekundert/freezerbox/Test%20and%20release/master
+.. image:: https://img.shields.io/github/actions/workflow/status/kalekundert/freezerbox/test.yml?branch=master
    :alt: Test status
    :target: https://github.com/kalekundert/freezerbox/actions
 
