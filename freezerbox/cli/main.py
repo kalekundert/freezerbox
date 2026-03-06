@@ -94,7 +94,7 @@ def which():
     else:
         print("Available databases:")
         for db in config['database']:
-            print(f"  {db!r} ({config['database'][db]['type']})")
+            print(f"  {db!r}")
 
 
 
