@@ -15,6 +15,7 @@ from .config import Config, load_config
 from .errors import LoadError, QueryError, CheckError
 from .utils import *
 
+# Migrate to `importlib.metadata`
 DB_PLUGINS = entrypoints.get_group_named('freezerbox.databases')
 MAKER_PLUGINS = entrypoints.get_group_named('freezerbox.make')
 REAGENT_CLASSES = {}
@@ -208,6 +209,9 @@ class Reagent:
             ready = ready()
 
         return ready
+
+    def get_makers(self):
+        return [self.synthesis_maker, *self.cleanup_makers]
 
     def get_maker_attr(self, attr, default=NO_DEFAULT):
         try:
