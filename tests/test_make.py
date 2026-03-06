@@ -25,7 +25,7 @@ def _db_from_maker(x):
 
 def _guess_tag(x):
     if 'tag' not in x:
-        x['tag'] = one(x['db'], too_short=Invalid, too_long=Invalid)
+        x['tag'] = one(x['db'])
     return x
 
 

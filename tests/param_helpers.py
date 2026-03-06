@@ -5,7 +5,6 @@ import pytest
 import parametrize_from_file
 
 from parametrize_from_file import Namespace, cast, defaults, star
-from voluptuous import Schema, Invalid, Coerce, And, Or, Optional
 from more_itertools import always_iterable
 from pathlib import Path
 
