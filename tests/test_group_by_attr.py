@@ -42,9 +42,6 @@ def test_group_by(grouper, items, key, expected):
             for x in expected
     ]
     assert actual == expected
-
-F = open('xxx', 'w')
-
 @parametrize_from_file(
         schema=[
             cast(
