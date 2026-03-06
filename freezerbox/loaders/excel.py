@@ -76,7 +76,6 @@ def load(db, config):
         df = pd.read_excel(path, sheet_name=sheet)
 
     df = df.rename(columns=columns)
-    df = df.astype(object).where(pd.notnull(df), None)
 
     def _find_tag(kwargs, config):
         try:
@@ -102,7 +101,7 @@ def load(db, config):
             raise err2 from None
 
     for i, row in df.iterrows():
-        kwargs = {k: v for k, v in row.items() if v is not None}
+        kwargs = {k: v for k, v in row.items() if pd.notna(v)}
         if not kwargs:
             continue
 
