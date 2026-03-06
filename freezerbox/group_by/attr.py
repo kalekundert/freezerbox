@@ -30,6 +30,7 @@ def iter_combo_makers(
     )
     for attrs, items in combos:
         combo_maker = factory()
+        combo_maker.makers = items
         for k, v in attrs.items():
             setattr(combo_maker, k, v)
         yield combo_maker
