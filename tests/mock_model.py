@@ -8,7 +8,6 @@ class MockReagent(freezerbox.Reagent):
     pass
 
 class MockMolecule(freezerbox.Molecule):
-    pass
 
     def _calc_mw(self):
         raise freezerbox.QueryError

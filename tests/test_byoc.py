@@ -76,15 +76,15 @@ def test_reagent_config(db, config_cls, obj, db_access, key, expected, info, mon
 @parametrize_from_file(
         schema=[
             cast(
-                products=with_py.eval,
+                product=cast(tag=str, intermediate=int),
                 key=with_py.eval,
                 expected=with_freeze.eval,
             ),
-            defaults(products_attr='products'),
+            defaults(product_attr='product'),
             with_freeze.error_or('expected', 'info'),
         ],
 )
-def test_product_configs(db, config_cls, products, products_attr, key, expected, info, error, mock_plugins):
+def test_product_configs(db, config_cls, product, product_attr, key, expected, info, error, mock_plugins):
     with_configs = Namespace(
             ProductConfig=freezerbox.ProductConfig,
             MakerConfig=freezerbox.MakerConfig,
@@ -97,11 +97,9 @@ def test_product_configs(db, config_cls, products, products_attr, key, expected,
     config_cls = with_configs.exec(config_cls)['MockConfig']
     obj = MockObj()
 
-    if products_attr:
-        setattr(obj, products_attr, [
-            db[k].make_intermediate(i)
-            for k,i in products.items()
-        ])
+    if product_attr:
+        tag, i = product['tag'], product['intermediate']
+        setattr(obj, product_attr, db[tag].make_intermediate(i))
 
     config = config_cls(obj)
     layer = one(config.load())

@@ -238,35 +238,28 @@ class DeprecatedReagentConfig:
 
 @autoprop
 class BaseProductConfig(byoc.Config):
+    """
+    Provide access to the `Reagent`/`IntermediateMixin` object representing the 
+    product of a maker.
+    """
     autoload = False
-    products_getter = lambda obj: obj.products
+    product_getter = lambda obj: obj.product
     reagent_cls = None
 
     class Layer(byoc.Layer):
 
-        def __init__(self, *, products_getter, reagent_cls):
-            self.products_getter = products_getter
+        def __init__(self, *, product_getter, reagent_cls):
+            self.product_getter = product_getter
             self.reagent_cls = reagent_cls
 
         def iter_values(self, key, log):
             # Get the products for this maker.
 
             try:
-                products = self.products_getter()
+                product = self.product_getter()
             except AttributeError as err:
-                log.info(f"no products found: {err}")
+                log.info(f"no product found: {err}")
                 return
-
-            # Require that there is only a single product.
-
-            try:
-                product = one(products)
-            except ValueError:
-                err = QueryError(
-                        lambda e: f"expected 1 product, found {len(e.products)}",
-                        products=products,
-                )
-                raise err from None
             else:
                 log.info(f"found product: {product!r}")
 
@@ -281,31 +274,30 @@ class BaseProductConfig(byoc.Config):
         def iter_product_values(self, product, key, log):
             raise NotImplementedError
 
-    def __init__(self, obj, *, products_getter=None, reagent_cls=None):
+    def __init__(self, obj, *, product_getter=None, reagent_cls=None):
         super().__init__(obj)
-        self.products_getter = \
-                products_getter or unbind_method(self.products_getter) 
+        self.product_getter = \
+                product_getter or unbind_method(self.product_getter) 
         self.reagent_cls = reagent_cls or self.reagent_cls
 
     def load(self):
         yield self.Layer(
-                products_getter=self.get_products,
+                product_getter=self.get_product,
                 reagent_cls=self.reagent_cls,
         )
 
-    def get_products(self):
-        return self.products_getter(self.obj)
+    def get_product(self):
+        return self.product_getter(self.obj)
 
 
 class ProductConfig(BaseProductConfig):
-    """
-    Provide access to the `Reagent` object representing the product of a maker.
-    """
 
     class Layer(BaseProductConfig.Layer):
 
         def iter_product_values(self, product, key, log):
-            yield from getattr_or_call(product, key, log)
+            # Ignore key errors because it's common to do 
+            # `product.maker_args[key]`.  This is a bit of a hack, though...
+            yield from getattr_or_call(product, key, log, skip=(KeyError,))
 
 
 class MakerConfig(BaseProductConfig):
@@ -331,12 +323,12 @@ class PrecursorConfig(BaseProductConfig):
             precursor = product.precursor
             yield from getattr_or_call(precursor, key, log)
 
-def getattr_or_call(obj, key, log):
+def getattr_or_call(obj, key, log, skip=()):
 
     if callable(key):
         try:
             value = key(obj)
-        except (QueryError, AttributeError) as err:
+        except (QueryError, AttributeError, *skip) as err:
             log += f"no value found: {err}"
             return
         else:
@@ -345,7 +337,7 @@ def getattr_or_call(obj, key, log):
     else:
         try:
             value = getattr(obj, key)
-        except (QueryError, AttributeError) as err:
+        except (QueryError, AttributeError, *skip) as err:
             log += f"no value found: {err}"
             return
         else:

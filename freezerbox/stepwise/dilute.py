@@ -234,7 +234,7 @@ Database:
 
     stocks = byoc.param(
             Key(DocoptConfig, '<stocks>', cast=parse_stocks),
-            Method(lambda self: [Stock(x.tag, None, None) for x in self.products]),
+            Method(lambda self: [Stock(self.product.tag, None, None)]),
     )
     target_conc = byoc.param(
             Key(DocoptConfig, '--conc'),
@@ -286,7 +286,7 @@ Database:
     def maker_from_reagent(cls, db, reagent):
         app = cls.from_bare()
         app.db = db
-        app.products = [reagent]
+        app.product = reagent
         app.load(MakerConfig)
         return app
 

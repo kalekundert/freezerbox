@@ -371,8 +371,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = ProductConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 'name'
     expected:
       - 'x'
@@ -389,8 +390,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = ProductConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: attrgetter('name')
     expected:
       - 'x'
@@ -408,8 +410,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = ProductConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 'invalid_attr'
     expected:
       []
@@ -425,8 +428,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = ProductConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: attrgetter('invalid_attr')
     expected:
       []
@@ -443,36 +447,15 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = ProductConfig
-    products:
-      x1: 0
-    products_attr:
+    product:
+      tag: x1
+      intermediate: 0
+    product_attr:
     key: 'name'
     expected:
       []
     info:
-      - no products found: 'MockObj' object has no attribute 'products'
-  -
-    id: product-found-multiple
-    db:
-      x1:
-        > MockReagent(
-        >     synthesis=parse_fields('a'),
-        >     name='x',
-        > )
-      x2:
-        > MockReagent(
-        >     synthesis=parse_fields('b'),
-        >     name='y',
-        > )
-    config_cls:
-      > MockConfig = ProductConfig
-    products:
-      x1: 0
-      x2: 0
-    key: 'seq'
-    error:
-      type: QueryError
-      message: expected 1 product, found 2
+      - no product found: 'MockObj' object has no attribute 'product'
   -
     id: product-getter-class-attr
     db:
@@ -483,10 +466,11 @@ test_product_configs:
         > )
     config_cls:
       > class MockConfig(ProductConfig):
-      >     products_getter = attrgetter('my_products')
-    products:
-      x1: 0
-    products_attr: my_products
+      >     product_getter = attrgetter('my_product')
+    product:
+      tag: x1
+      intermediate: 0
+    product_attr: my_product
     key: 'name'
     expected:
       - 'x'
@@ -503,11 +487,12 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = ProductConfig.setup(
-      >     products_getter=attrgetter('my_products'),
+      >     product_getter=attrgetter('my_product'),
       > )
-    products:
-      x1: 0
-    products_attr: my_products
+    product:
+      tag: x1
+      intermediate: 0
+    product_attr: my_product
     key: 'name'
     expected:
       - 'x'
@@ -525,8 +510,9 @@ test_product_configs:
     config_cls:
       > class MockConfig(ProductConfig):
       >     reagent_cls=MockMolecule
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 'name'
     expected:
       []
@@ -545,8 +531,9 @@ test_product_configs:
       > MockConfig = ProductConfig.setup(
       >     reagent_cls=MockMolecule,
       > )
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 'name'
     expected:
       []
@@ -560,8 +547,9 @@ test_product_configs:
       x1: MockReagent(synthesis=parse_fields('a b c=d'))
     config_cls:
       > MockConfig = MakerConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 'c'
     expected:
       - 'd'
@@ -574,8 +562,9 @@ test_product_configs:
       x1: MockReagent(synthesis=parse_fields('a b c=d'))
     config_cls:
       > MockConfig = MakerConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 1
     expected:
       - 'b'
@@ -592,8 +581,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = MakerConfig
-    products:
-      x1: 0
+    product:
+      tag: x1
+      intermediate: 0
     key: 'a'
     expected:
       - 'b'
@@ -610,8 +600,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = MakerConfig
-    products:
-      x1: 1
+    product:
+      tag: x1
+      intermediate: 1
     key: 'a'
     expected:
       - 'c'
@@ -629,8 +620,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = PrecursorConfig
-    products:
-      x1: 1
+    product:
+      tag: x1
+      intermediate: 1
     key: 'conc'
     expected:
       - Quantity(10, 'nM')
@@ -647,8 +639,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = PrecursorConfig
-    products:
-      x1: 2
+    product:
+      tag: x1
+      intermediate: 2
     key: 'conc'
     expected:
       - Quantity(20, 'nM')
@@ -665,8 +658,9 @@ test_product_configs:
         > )
     config_cls:
       > MockConfig = PrecursorConfig
-    products:
-      x1: 1
+    product:
+      tag: x1
+      intermediate: 1
     key: attrgetter('conc')
     expected:
       - Quantity(10, 'nM')
