@@ -463,7 +463,8 @@ test_nucleic_acid_mw:
       seq: 'X'
     error:
       type: QueryError
-      message: '+X'+ is not a valid unambiguous letter
+      # See `test_protein_mw_err` for explanation of `'+X'+`
+      match: '+X'+ is not a valid unambiguous letter
   -
     id: err
     kwargs:

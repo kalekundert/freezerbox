@@ -365,7 +365,12 @@ def test_protein_mw():
 def test_protein_mw_err():
     db = Database({})
     db['r1'] = r1 = Protein(seq='X')
-    with pytest.raises(QueryError, match="'X' is not a valid unambiguous letter for protein"):
+    
+    # For some reason, the single quotes in this error message are 
+    # duplicated.  This is a bug in BioPython, and it's not really a problem, 
+    # so we just check against a pattern that matches both the expected 
+    # string and the actual one.
+    with pytest.raises(QueryError, match="'+X'+ is not a valid unambiguous letter for protein"):
         r1.mw
 
 @parametrize_from_file(schema=kwargs_schema)
