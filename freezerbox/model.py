@@ -550,6 +550,8 @@ class NucleicAcid(Molecule):
         from Bio.SeqUtils import molecular_weight
 
         try:
+            # This function can't handle ambiguous nucleotides, e.g. N.  More 
+            # reason to write my own sequence class...
             mw = molecular_weight(
                     seq=self.seq,
                     seq_type=self.molecule,
@@ -704,6 +706,9 @@ class Oligo(NucleicAcid):
 
     def get_melting_temp_C(self):
         from Bio.SeqUtils import MeltingTemp
+
+        if tm := self._attrs.get('melting_temp_C'):
+            return tm
 
         # If the Tm is encoded in the oligo name, use that.
         if m := re.search(r'[-_ ](TM|Tm|tm)=?(\d+)', self.name):
