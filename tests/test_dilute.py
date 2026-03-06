@@ -37,6 +37,7 @@ app_expected_error_stderr = [
 
 @parametrize_from_file(schema=given_expected_error)
 def test_parse_stock(given, expected, error):
+    debug(given)
     with error, cd(TEST_DIR):
         assert list(parse_stock(given)) == expected
 

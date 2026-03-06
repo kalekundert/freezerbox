@@ -46,6 +46,54 @@ test_parse_stock:
       - Stock('x1', Q('500 ng/µL'), None)
       - Stock('x2', Q('400 ng/µL'), None)
   -
+    given: 'mock_nanodrop/header_only.tsv'
+    error:
+      type: ValueError
+      message:
+        - header_only.tsv
+        - expected at least two rows
+        - found 1
+  -
+    given: 'mock_nanodrop/missing_tag.tsv'
+    error:
+      type: ValueError
+      message:
+        - missing a required column
+        - missing_tag.tsv
+        - none of the following columns were found: 'Sample Name', 'Sample ID'
+  -
+    given: 'mock_nanodrop/missing_conc.tsv'
+    error:
+      type: ValueError
+      message:
+        - missing a required column
+        - missing_conc.tsv
+        - none of the following columns were found: 'Nucleic Acid(ng/uL)', 'Nucleic Acid'
+  -
+    given: 'mock_nanodrop/duplicate_tag.tsv'
+    error:
+      type: ValueError
+      message:
+        - must not have duplicate columns
+        - duplicate_tag.tsv
+        - duplicate columns: 'Sample Name', 'Sample ID'
+  -
+    given: 'mock_nanodrop/duplicate_conc.tsv'
+    error:
+      type: ValueError
+      message:
+        - must not have duplicate columns
+        - duplicate_conc.tsv
+        - duplicate columns: 'Nucleic Acid(ng/uL)', 'Nucleic Acid'
+  -
+    given: 'mock_nanodrop/missing_data.tsv'
+    error:
+      type: ValueError
+      message:
+        - must have the same number of columns
+        - missing_data.tsv
+        - row 2 has 3 columns, expected 24
+  -
     given: ':::'
     error:
       type: ValueError

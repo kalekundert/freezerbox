@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-
 import stepwise
 import freezerbox
 import autoprop
@@ -14,10 +12,10 @@ from freezerbox import (
         iter_combo_makers, group_by_identity, unanimous,
 )
 from byoc import Key, Method, DocoptConfig
-from more_itertools import all_equal
 from dataclasses import dataclass
+from typing import Callable, Any
 from pathlib import Path
-from inform import warn, conjoin, plural
+from inform import warn, plural
 
 def parse_stocks(stock_strs):
     return join_lists(parse_stock(x) for x in stock_strs)
@@ -26,7 +24,7 @@ def parse_stock(stock_str):
     if stock_str:
         path = Path(stock_str)
         if path.exists():
-            yield from load_stocks(path)
+            yield from load_stocks_from_tsv(path)
             return
 
     fields = stock_str.split(':')
@@ -51,39 +49,105 @@ def parse_stock(stock_str):
 
     yield Stock(tag=tag, conc=conc, mw=mw)
 
-def load_stocks(path):
+def load_stocks_from_tsv(path):
+    """
+    Load stock concentrations from a TSV file.
+
+    In particular, this function is designed to parse TSV files in the format 
+    exported by NanoDrop machines.  Support for other formats can be added on 
+    an as-needed basis.
+    """
+    import csv
+
+    def read_tsv(path, encoding):
+        with open(path, newline='', encoding=encoding) as f:
+            reader = csv.reader(f, dialect='excel-tab')
+            return [x for x in reader]
+
     try:
         # Nanodrop ONE
-        nanodrop = pd.read_csv(path, sep='\t', encoding='utf-8', dtype=str)
+        tsv_rows = read_tsv(path, encoding='utf-8')
     except UnicodeDecodeError:
         # Nanodrop 2000/2000c
-        nanodrop = pd.read_csv(path, sep='\t', encoding='latin-1', dtype=str)
+        tsv_rows = read_tsv(path, encoding='latin-1')
 
-    tag_cols = 'Sample Name', 'Sample ID'
-    conc_cols = 'Nucleic Acid(ng/uL)', 'Nucleic Acid'
-    mw_cols = 'Molecular Weight', 'MW'
+    if len(tsv_rows) < 2:
+        raise ValueError(f"stock concentration file doesn't have the expected format.\n- path: {path}\n- expected at least two rows (a header and at least one stock concentration), but only found {len(tsv_rows)}")
 
-    def get_col(df, names, strict=True):
-        for name in names:
-            if name in df:
-                return df[name]
+    ## Parse the column names:
 
-        if strict:
-            raise KeyError(names)
-        else:
-            return None
+    @dataclass
+    class ColumnSchema:
+        headers: list[str]
+        required: bool = True
+        parse_value: Callable[[str], Any] = str
 
-    df = pd.DataFrame()
-    df['tag'] = get_col(nanodrop, tag_cols)
-    df['conc_ng_uL'] = get_col(nanodrop, conc_cols)
-    df['mw'] = get_col(nanodrop, mw_cols, strict=False)
+    @dataclass
+    class Column:
+        schema: ColumnSchema
+        header: str
+        index: int
 
-    for i, row in df.iterrows():
-        yield Stock(
-                row.get('tag'),
-                parse_conc(row.get('conc_ng_uL')),
-                parse_mw(row.get('mw')),
+    def conc_ng_uL_from_str(x):
+        return Quantity(float(x), 'ng/µL')
+
+    column_schemas = {
+            'tag': ColumnSchema(
+                headers=['Sample Name', 'Sample ID'],
+            ),
+            'conc': ColumnSchema(
+                headers=['Nucleic Acid(ng/uL)', 'Nucleic Acid'],
+                parse_value=conc_ng_uL_from_str,
+            ),
+            'mw': ColumnSchema(
+                headers=['Molecular Weight', 'MW'],
+                required=False,
+                parse_value=float,
+            ),
+    }
+    column_keys_from_headers = {
+            header: key
+            for key, schema in column_schemas.items()
+            for header in schema.headers
+    }
+
+    columns = {}
+
+    for i, header in enumerate(tsv_rows[0]):
+        try:
+            key = column_keys_from_headers[header]
+        except KeyError:
+            continue
+
+        if key in columns:
+            raise ValueError(f"stock concentration file must not have duplicate columns.\n- path: {path}\n- duplicate columns: {repr(columns[key].header)}, {repr(header)}")
+
+        columns[key] = Column(
+                schema=column_schemas[key],
+                header=header,
+                index=i,
         )
+
+    for key, schema in column_schemas.items():
+        if schema.required and key not in columns:
+            raise ValueError(f"stock concentration file is missing a required column.\n- path: {path}\nnone of the following columns were found: {', '.join(repr(x) for x in schema.headers)}")
+            
+    ## Parse the actual stock concentrations:
+
+    num_columns = len(tsv_rows[0])
+
+    for i, row in enumerate(tsv_rows[1:]):
+        if len(row) != num_columns:
+            raise ValueError(f"every row in the stock concentration file must have the same number of columns as the header\n- path: {path}\n- row {i+2} has {len(row)} columns, expected {num_columns}")
+
+        stock_kwargs = {}
+
+        for key, col in columns.items():
+            value_str = row[col.index]
+            value = col.schema.parse_value(value_str)
+            stock_kwargs[key] = value
+
+        yield Stock(**stock_kwargs)
 
 def parse_conc(conc_str):
     if not conc_str:
